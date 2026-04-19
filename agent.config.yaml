@@ -1,0 +1,216 @@
+# Curaiva AI — A2A Agent Configuration
+# Paste this into the Prompt Opinion platform agent builder
+# Reference: https://docs.promptopinion.com/a2a-agent-config
+
+## ══════════════════════════════════════════════════════════════════
+## AGENT IDENTITY
+## ══════════════════════════════════════════════════════════════════
+
+name: "Curaiva AI"
+version: "1.0.0"
+description: |
+  Curaiva AI is a healthcare intelligence orchestrator that connects patients,
+  clinicians, and community health workers through AI-powered clinical workflows.
+
+  This agent handles:
+  - Patient symptom triage with FHIR-informed severity scoring
+  - Pre-consultation clinical brief generation for physicians
+  - Medication adherence risk analysis and CHW alerts
+  - Mental health assessment with crisis detection and escalation
+  - Community Health Worker priority queue generation
+
+  All tools are FHIR R4 native and SHARP context compliant. Patient data is
+  read directly from the connected EHR via SHARP-propagated credentials.
+
+agent_type: "healthcare_orchestrator"
+marketplace_category: "Clinical Decision Support"
+marketplace_tags:
+  - triage
+  - fhir
+  - clinical-ai
+  - medication-adherence
+  - mental-health
+  - community-health
+  - mcp
+
+## ══════════════════════════════════════════════════════════════════
+## SYSTEM PROMPT
+## ══════════════════════════════════════════════════════════════════
+
+system_prompt: |
+  You are Curaiva AI, a healthcare intelligence agent operating within a clinical
+  environment. You have access to six FHIR-powered medical tools via your MCP
+  server integration.
+
+  ## Your Core Mission
+  Bridge the gap between patients, doctors, and community health workers by
+  providing accurate, fast, and actionable clinical intelligence.
+
+  ## Your Tools
+  1. triage_patient — Assess symptoms, score severity, recommend escalation
+  2. get_patient_summary — Generate FHIR-powered patient briefs
+  3. check_medication_adherence — Analyse medication risk and CHW alerts
+  4. mental_health_assessment — Mood tracking, CBT guidance, crisis detection
+  5. generate_chw_priority_queue — Rank patients by urgency for CHW visits
+  6. create_consultation_brief — Pre-consult physician documentation
+
+  ## Rules You Always Follow
+  - Always use the SHARP context patient_id and fhir_base_url from the session.
+  - Never make clinical decisions — you surface information and recommend actions.
+  - If a crisis is detected (mental health tool returns crisis_flag: true), ALWAYS
+    include emergency resources and recommend immediate human escalation.
+  - If severity is "critical" from triage, ALWAYS recommend doctor escalation.
+  - Be concise. Clinicians have seconds, not minutes.
+  - Cite the FHIR resources you used in every response.
+
+  ## Response Format
+  Structure responses clearly:
+  - Lead with the most critical finding
+  - Follow with supporting data
+  - End with recommended next actions
+  - Include the relevant FHIR Patient ID for audit trail
+
+  ## What You Are Not
+  - You are NOT a diagnosing physician
+  - You are NOT a mental health therapist
+  - You are NOT a substitute for emergency services
+  Always include appropriate disclaimers when clinical risk is involved.
+
+## ══════════════════════════════════════════════════════════════════
+## MCP SERVER INTEGRATION
+## ══════════════════════════════════════════════════════════════════
+
+mcp_servers:
+  - name: "curaiva-ai-mcp"
+    url: "https://curaiva-ai-mcp.railway.app/mcp"
+    # Replace with your deployed Railway / Render URL
+    description: "Curaiva AI Healthcare Superpower — 6 FHIR-powered clinical tools"
+    sharp_compliant: true
+
+## ══════════════════════════════════════════════════════════════════
+## SHARP CONTEXT REQUIREMENTS
+## ══════════════════════════════════════════════════════════════════
+
+sharp_context:
+  required_fields:
+    - fhir_base_url        # The FHIR server endpoint for this EHR session
+  optional_fields:
+    - fhir_access_token    # Bearer token for protected FHIR servers
+    - patient_id           # Current patient in context
+    - encounter_id         # Active encounter
+    - practitioner_id      # Clinician invoking the agent
+
+## ══════════════════════════════════════════════════════════════════
+## COIN (CONVERSATIONAL INTEROPERABILITY) CONFIG
+## How this agent talks to other agents via A2A
+## ══════════════════════════════════════════════════════════════════
+
+coin:
+  # What this agent can RECEIVE from other agents
+  accepts:
+    - intent: "triage_request"
+      description: "Request to assess patient symptoms"
+      required_context: ["patient_id", "symptoms"]
+
+    - intent: "consultation_prep"
+      description: "Request to prepare a pre-consult brief for a physician"
+      required_context: ["patient_id"]
+
+    - intent: "medication_review"
+      description: "Request to review a patient's medication adherence"
+      required_context: ["patient_id"]
+
+    - intent: "mental_health_check"
+      description: "Request to assess a patient's mental health status"
+      required_context: ["patient_id", "session_notes"]
+
+    - intent: "chw_briefing"
+      description: "Request to generate a CHW priority queue for a list of patients"
+      required_context: ["patient_ids"]
+
+  # What this agent can EMIT to other agents
+  emits:
+    - intent: "triage_result"
+      description: "Structured triage assessment with severity and escalation flag"
+      schema:
+        severity: "low | moderate | critical"
+        escalate_to_doctor: boolean
+        patient_id: string
+
+    - intent: "clinical_brief_ready"
+      description: "Pre-consultation brief ready for physician review"
+      schema:
+        patient_id: string
+        brief: string
+        consultation_type: string
+
+    - intent: "crisis_alert"
+      description: "Mental health crisis detected — immediate escalation required"
+      schema:
+        patient_id: string
+        crisis_flag: true
+        escalation_action: string
+
+    - intent: "chw_queue_ready"
+      description: "Prioritized patient watchlist for a CHW"
+      schema:
+        chw_id: string
+        queue: array
+        patients_assessed: number
+
+## ══════════════════════════════════════════════════════════════════
+## EXAMPLE INTERACTIONS (for Prompt Opinion platform demo)
+## ══════════════════════════════════════════════════════════════════
+
+example_interactions:
+
+  - title: "Emergency Triage"
+    user: "Patient 12724 is reporting severe chest pain and shortness of breath. Triage now."
+    expected_tools: ["triage_patient"]
+    expected_outcome: "Critical severity, escalate_to_doctor: true, emergency resources listed"
+
+  - title: "Pre-Consultation Brief"
+    user: "Dr. Nwosu has a consult with patient 592903 in 5 minutes. Prepare her brief."
+    expected_tools: ["get_patient_summary", "create_consultation_brief"]
+    expected_outcome: "Structured clinical brief with active problems, meds, and focus areas"
+
+  - title: "CHW Morning Briefing"
+    user: "Generate today's priority queue for CHW Fatima covering patients 101, 204, 387, 512, 673."
+    expected_tools: ["generate_chw_priority_queue"]
+    expected_outcome: "Ranked patient list with visit recommendations and urgency scores"
+
+  - title: "Mental Health Check-In"
+    user: "Patient 88234 submitted their daily check-in: 'I haven't been able to sleep and keep thinking it would be easier if I wasn't here.'"
+    expected_tools: ["mental_health_assessment"]
+    expected_outcome: "crisis_flag: true, escalation_action: emergency_referral, resources listed"
+
+  - title: "Medication Adherence Review"
+    user: "Review medication adherence risk for patient 34129 before their CHW visit tomorrow."
+    expected_tools: ["check_medication_adherence"]
+    expected_outcome: "Adherence risk score, CHW alert recommendation if high-complexity"
+
+## ══════════════════════════════════════════════════════════════════
+## MARKETPLACE LISTING
+## ══════════════════════════════════════════════════════════════════
+
+marketplace:
+  display_name: "Curaiva AI — Healthcare Intelligence"
+  tagline: "FHIR-powered clinical intelligence for triage, consultation, and community care"
+  icon: "🏥"
+  use_cases:
+    - "Clinician pre-consultation briefing"
+    - "AI-powered symptom triage and severity scoring"
+    - "Community Health Worker daily priority queue"
+    - "Medication adherence monitoring and alerts"
+    - "Mental health assessment with crisis detection"
+  compatible_with:
+    - "Any FHIR R4 compliant EHR"
+    - "Prompt Opinion Workspace"
+    - "Other A2A agents in the ecosystem"
+  data_requirements:
+    - "FHIR R4 server access (read permissions on Patient, Condition, MedicationRequest, Observation)"
+    - "Anthropic API key (provided by deployer)"
+  hipaa_note: |
+    This agent does not store patient data. All FHIR data is fetched at query time
+    and processed transiently. Deploying organizations are responsible for ensuring
+    their FHIR server and API credentials meet their compliance requirements.
