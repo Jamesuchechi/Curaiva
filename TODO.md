@@ -1,289 +1,566 @@
-# Curaiva AI — Hackathon Build TODO
+# Curaiva AI — Full Build TODO
 ## Agents Assemble: Healthcare AI Endgame Challenge
 ### Target: $7,500 Grand Prize
 
-> **Strategy: Do both paths. Ship real FHIR data. Win.**
+> **Strategy: Ship a real product. Real FHIR data. Real UI. Both MCP + A2A. Win.**
 
 ---
 
-## PHASE 0 — Setup & Accounts (2 hrs)
-> Do this FIRST before writing a line of code.
+## TEAM SPLIT (Read This First)
 
-- [ ] **Create Prompt Opinion account** at promptopinion.com
-- [ ] **Watch the Getting Started video** → https://youtu.be/Qvs_QK4meHc
-- [ ] **Register on hackathon website** (devpost or linked page)
-- [ ] Get Anthropic API key from console.anthropic.com
-- [ ] Create Railway account at railway.app (free tier sufficient)
-- [ ] Bookmark HAPI FHIR public server: https://hapi.fhir.org/baseR4
-- [ ] Test a FHIR patient fetch manually:
+| Developer | Primary Ownership |
+|---|---|
+| **Dev 1 — Backend** | Phase 1 (MCP Server), Phase 3 (Deploy + Prompt Opinion) |
+| **Dev 2 — Frontend** | Phase 2 (Design System), Phase 4 (Patient UI), Phase 5 (Doctor UI) |
+| **Dev 3 — Full-stack** | Phase 4 (Auth + Supabase), Phase 6 (CHW UI), Phase 7 (A2A Agent) |
+
+**Parallel tracks:** Dev 1 builds the backend while Dev 2 builds the design system and pages. They merge at Phase 4 when the frontend hooks into real MCP tool calls.
+
+**Critical path:**
+```
+Phase 0 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Phase 5 ∥ Phase 6] → Phase 7 → Phase 8 → Phase 9 → Phase 10
+```
+
+---
+
+## PHASE 0 — Setup & Accounts
+**Est. 2 hrs · Everyone**
+
+### Accounts (do before anything else)
+- [ ] Create **Prompt Opinion** account → promptopinion.com
+- [ ] Watch Getting Started video → https://youtu.be/Qvs_QK4meHc
+- [ ] Register on **hackathon website**
+- [ ] Get **Anthropic API key** → console.anthropic.com
+- [ ] Create **Railway** account → railway.app (free tier)
+- [ ] Create **Supabase** project → supabase.com (free tier)
+- [ ] Create **Vercel** account → vercel.com (free tier)
+
+### Repository
+- [ ] Create GitHub repo: `curaiva-ai` (set to **public**)
+- [ ] Create monorepo structure:
+  ```
+  curaiva-ai/
+  ├── mcp-server/        ← Dev 1
+  ├── web/               ← Dev 2 + 3 (Next.js app)
+  ├── a2a-agent/         ← Dev 3
+  └── docs/
+  ```
+- [ ] Add `.gitignore`, `README.md`, `LICENSE`
+- [ ] All team members have push access ✅
+
+### Test FHIR connectivity
+- [ ] Run this — confirm real patient data comes back:
   ```bash
   curl https://hapi.fhir.org/baseR4/Patient/592903
   ```
-- [ ] Confirm you can see a Patient resource with real data
+- [ ] Bookmark demo patient IDs: `592903`, `12724`, `88234`, `45611`
 
-**✅ Done when:** You have Prompt Opinion, Railway, and Anthropic accounts ready.
+**✅ Phase 0 done when:** Repo exists, all accounts created, FHIR test returns data.
 
 ---
 
-## PHASE 1 — MCP Server (8 hrs)
-### Build The Superpower
+## PHASE 1 — MCP Server (Backend)
+**Est. 8 hrs · Dev 1**
+> Build the Superpower — 6 FHIR-powered clinical tools
 
+### Init & Run
 - [ ] `cd mcp-server && npm install`
-- [ ] Copy `.env.example` → `.env`, add your `ANTHROPIC_API_KEY`
-- [ ] Run dev server: `npm run dev`
-- [ ] Test the health endpoint:
-  ```bash
-  curl http://localhost:3001/health
-  ```
-  Confirm all 6 tools appear in the tools array.
+- [ ] Copy `.env.example` → `.env`, fill in `ANTHROPIC_API_KEY`
+- [ ] `npm run dev` — server starts on port 3001
+- [ ] `GET /health` returns all 6 tools ✅
 
-### Test Each Tool Locally
+### Test Each Tool with Real FHIR Data
+- [ ] `triage_patient` → `severity: "critical"`, `escalate_to_doctor: true`
+- [ ] `get_patient_summary` → structured markdown brief with FHIR data
+- [ ] `check_medication_adherence` → adherence risk score + CHW alert flag
+- [ ] `mental_health_assessment` → `crisis_flag: true` on crisis language
+- [ ] `generate_chw_priority_queue` → ranked list sorted by urgency score
+- [ ] `create_consultation_brief` → physician-ready pre-consult document
 
-- [ ] **triage_patient** — test with chest pain symptoms + HAPI patient ID
-  ```json
-  {
-    "symptoms": "severe chest pain radiating to left arm, 30 minutes",
-    "patient_id": "592903",
-    "include_history": true
-  }
-  ```
-  Expect: `severity: "critical"`, `escalate_to_doctor: true`
+### Error Handling
+- [ ] FHIR 404 → graceful error message, no crash
+- [ ] FHIR auth error → clear message returned
+- [ ] Claude API timeout → safe fallback response with escalation
+- [ ] Invalid patient ID → Zod catches it, returns 400
 
-- [ ] **get_patient_summary** — test consultation brief
-  ```json
-  { "patient_id": "592903", "summary_type": "consultation" }
-  ```
-  Expect: Structured markdown brief with patient data
-
-- [ ] **check_medication_adherence** — test med review
-  ```json
-  { "patient_id": "592903", "flag_threshold": 3 }
-  ```
-
-- [ ] **mental_health_assessment** — test crisis detection
-  ```json
-  {
-    "patient_id": "592903",
-    "session_notes": "I feel like there's no point anymore, sometimes I think about not being here",
-    "check_fhir_history": true
-  }
-  ```
-  Expect: `crisis_flag: true`, `escalation_action: "emergency_referral"`
-
-- [ ] **generate_chw_priority_queue** — test with multiple patient IDs
-  ```json
-  { "patient_ids": ["592903", "12724", "88234", "45611"], "max_results": 4 }
-  ```
-
-- [ ] **create_consultation_brief** — test pre-consult doc
-  ```json
-  {
-    "patient_id": "592903",
-    "chief_complaint": "chest pain",
-    "triage_severity": "critical",
-    "consultation_type": "urgent"
-  }
-  ```
-
-- [ ] All 6 tools pass tests with real FHIR data ✅
-
-### Fix & Polish
-
-- [ ] Handle FHIR 404 gracefully (patient not found)
-- [ ] Handle FHIR auth errors gracefully
-- [ ] Handle Claude API errors with safe fallbacks
-- [ ] Add request logging (console.log tool name + patient ID + timestamp)
-- [ ] Validate all tool inputs with Zod (already in code, verify it works)
-
-**✅ Done when:** All 6 tools return valid JSON with real FHIR data locally.
+**✅ Phase 1 done when:** All 6 tools return valid JSON with real FHIR data locally.
 
 ---
 
-## PHASE 2 — Deploy MCP Server (2 hrs)
-### Get It Live on the Internet
+## PHASE 2 — Design System & Project Setup
+**Est. 4 hrs · Dev 2**
+> Build the foundation FIRST. Every page sits on top of this. Do not skip.
 
-- [ ] Install Railway CLI: `npm install -g @railway/cli`
-- [ ] Login: `railway login`
-- [ ] Init project: `cd mcp-server && railway init`
-- [ ] Add environment variable in Railway dashboard:
-  - `ANTHROPIC_API_KEY` = your key
-  - `DEFAULT_FHIR_BASE_URL` = `https://hapi.fhir.org/baseR4`
-  - `NODE_ENV` = `production`
-- [ ] Deploy: `railway up`
-- [ ] Note your deployment URL: `https://curaiva-ai-mcp.railway.app`
-- [ ] Test deployed health endpoint:
+### Next.js Init
+- [ ] `npx create-next-app@latest web --typescript --tailwind --app`
+- [ ] Install deps:
   ```bash
-  curl https://curaiva-ai-mcp.railway.app/health
+  npm install @supabase/supabase-js @supabase/ssr lucide-react clsx tailwind-merge
   ```
-- [ ] Test deployed MCP endpoint responds (even if you can't manually call it without the SDK)
+- [ ] Set up `lib/utils.ts` with `cn()` helper (clsx + tailwind-merge)
+- [ ] Create `.env.local` with Supabase + MCP server URL
 
-**✅ Done when:** Health check returns 200 with all 6 tools from the Railway URL.
+### Design Tokens — `app/globals.css`
+Define these CSS variables. All components reference them — never hardcode a colour.
+- [ ] Background layers: `--bg`, `--bg2`, `--bg3`
+- [ ] Surface layers: `--surface`, `--surface2`
+- [ ] Brand: `--green`, `--green-dim`, `--lime`, `--lime-dim`
+- [ ] Semantic: `--teal`, `--coral`, `--amber`, `--purple`, `--red`
+- [ ] Text: `--white`, `--muted`, `--light`
+- [ ] Borders: `--border`, `--border2`
+- [ ] Shape: `--radius: 14px`, `--radius-sm: 9px`, `--sidebar: 240px`
+
+### Typography
+- [ ] Import `Fraunces` (display headings), `Instrument Sans` (body), `DM Mono` (data/code) from Google Fonts
+- [ ] Apply via CSS variables in `globals.css`
+- [ ] Verify: headings use Fraunces, body uses Instrument Sans, numbers/IDs use DM Mono
+
+### Shared Component Library — `components/ui/`
+Build these before touching any page. Pages consume them.
+- [ ] `<Card>` — base card with border, background, optional padding variant
+- [ ] `<Badge>` — severity/status pill: `critical` (red), `moderate` (amber), `low` (teal), `stable` (green), `new` (purple)
+- [ ] `<Button>` — variants: `primary` (lime), `ghost` (border only), `danger` (red), `icon` (square)
+- [ ] `<Avatar>` — circular emoji or initials, with size variants
+- [ ] `<MetricCard>` — label, large value (Fraunces), trend indicator (↑↓ coloured), icon, hover lift
+- [ ] `<Sparkline>` — canvas-based mini line chart, accepts `data[]`, `color`, `min`, `max`
+- [ ] `<Spinner>` — animated ring, used on all AI loading states
+- [ ] `<Skeleton>` — shimmer placeholder, used while data loads
+- [ ] `<EmptyState>` — icon + heading + sub-text for empty lists
+- [ ] `<StatusDot>` — blinking dot for live/connected status
+- [ ] `<Toast>` — success (teal), error (red), warning (amber) notification
+
+### Layout Shell — `app/(dashboard)/layout.tsx`
+- [ ] Sidebar: Curaiva logo, nav sections, nav items with icons + badges, user card at bottom
+- [ ] Role-aware nav: Patient nav / Doctor nav / CHW nav switch based on `profile.role`
+- [ ] Topbar: page title, status pill ("FHIR Connected"), context CTA button
+- [ ] Main content area: `overflow-y-auto` with custom scrollbar
+- [ ] Sidebar collapses to icon strip at `< 768px`
+- [ ] All transitions smooth: `transition-all duration-200`
+
+**✅ Phase 2 done when:** Design system renders correctly, layout shell shows with sidebar + topbar, all shared components exist and look right in isolation.
 
 ---
 
-## PHASE 3 — Prompt Opinion MCP Integration (3 hrs)
-### Connect the Superpower to the Platform
+## PHASE 3 — MCP Deploy + Prompt Opinion
+**Est. 3 hrs · Dev 1**
 
-- [ ] Log into Prompt Opinion dashboard
-- [ ] Navigate to **Tools / MCP Servers → Add Server**
-- [ ] Enter your Railway MCP URL
-- [ ] Platform discovers all 6 tools — confirm they appear ✅
-- [ ] Test each tool from the Prompt Opinion tool tester:
-  - [ ] `triage_patient` with a HAPI FHIR patient ID
-  - [ ] `get_patient_summary`
-  - [ ] `mental_health_assessment` (test crisis path)
-  - [ ] `generate_chw_priority_queue` with 3-4 patient IDs
-- [ ] Screenshot: All tools visible in Prompt Opinion ✅
-- [ ] Screenshot: Successful tool call with FHIR data ✅
+### Deploy to Railway
+- [ ] `npm install -g @railway/cli && railway login`
+- [ ] `cd mcp-server && railway init && railway up`
+- [ ] Add env vars in Railway dashboard: `ANTHROPIC_API_KEY`, `DEFAULT_FHIR_BASE_URL`, `NODE_ENV`
+- [ ] `curl https://curaiva-ai-mcp.railway.app/health` → 200 with all 6 tools ✅
+- [ ] Share the live URL with Dev 2 + 3 — they need it for API routes
+
+### Connect to Prompt Opinion
+- [ ] Prompt Opinion → Tools → Add MCP Server → paste Railway URL
+- [ ] All 6 tools auto-discovered and listed ✅
+- [ ] Test `triage_patient` from Prompt Opinion tool tester ✅
+- [ ] Test `mental_health_assessment` crisis path ✅
+- [ ] 📸 Screenshot: all tools visible in Prompt Opinion
 - [ ] Publish MCP server to **Marketplace**
-- [ ] Screenshot: Marketplace listing live ✅
+- [ ] 📸 Screenshot: Marketplace listing live
 
-**✅ Done when:** All 6 tools are live and callable from Prompt Opinion platform.
-
----
-
-## PHASE 4 — A2A Agent Configuration (3 hrs)
-### Build The Orchestrator
-
-- [ ] In Prompt Opinion, navigate to **Agents → Create New Agent**
-- [ ] Set agent name: "Curaiva AI"
-- [ ] Paste the system prompt from `a2a-agent/agent-config.yaml`
-- [ ] Connect MCP server (the one you just published)
-- [ ] Configure COIN intents (accepts / emits) from the config file
-- [ ] Set SHARP context fields: fhir_base_url (required), patient_id, fhir_access_token
-- [ ] Test these 5 scenarios in the agent chat:
-
-  **Scenario 1 — Triage:**
-  ```
-  Patient 592903 is reporting severe chest pain and difficulty breathing. Triage now.
-  ```
-  Expect: Agent calls `triage_patient`, returns critical, doctor escalation
-
-  **Scenario 2 — Pre-consult:**
-  ```
-  Dr. Obi has a consultation with patient 592903 in 5 minutes. Prepare her brief.
-  ```
-  Expect: Agent calls `get_patient_summary` + `create_consultation_brief`
-
-  **Scenario 3 — CHW briefing:**
-  ```
-  Generate today's priority queue for CHW Fatima — patients 592903, 12724, 88234.
-  ```
-  Expect: Agent calls `generate_chw_priority_queue`, ranked list returned
-
-  **Scenario 4 — Crisis:**
-  ```
-  Patient 88234 just submitted: "I feel like there's no point anymore."
-  ```
-  Expect: crisis_flag: true, emergency resources included, escalation recommended
-
-  **Scenario 5 — Medication:**
-  ```
-  Review medication adherence risk for patient 12724 before their visit tomorrow.
-  ```
-  Expect: `check_medication_adherence` called, risk score returned
-
-- [ ] All 5 scenarios pass ✅
-- [ ] **Publish agent to Marketplace**
-- [ ] Screenshot: Agent published and discoverable ✅
-- [ ] Test: Can another agent in the platform invoke Curaiva AI via A2A? ✅
-
-**✅ Done when:** Agent is live on Prompt Opinion Marketplace, all 5 scenarios work.
+**✅ Phase 3 done when:** MCP is live on Railway AND published in Prompt Opinion Marketplace.
 
 ---
 
-## PHASE 5 — Demo Video (3 hrs)
-### The 3-Minute Submission Video
+## PHASE 4 — Auth Pages + Patient Dashboard
+**Est. 6 hrs · Dev 2 + Dev 3**
+> Patient is the primary end-user. This is the heart of the product.
 
-> This is as important as the code. Judges watch videos.
+### Auth Pages (Dev 3)
 
-**Setup before recording:**
-- [ ] Clean browser — no personal info visible
-- [ ] Prompt Opinion tab open and logged in
-- [ ] HAPI FHIR server confirmed working
-- [ ] Test all scenarios one more time
+**`/login` page:**
+- [ ] Centred card layout on dark background
+- [ ] Curaiva logo + tagline at top
+- [ ] Email + password fields with focus states
+- [ ] "Sign In" button — shows `<Spinner>` while loading
+- [ ] Error message displayed below form (red text)
+- [ ] "Don't have an account? Register" link
+- [ ] Supabase `signInWithPassword()` wired up
+- [ ] On success → redirect to correct dashboard by role
 
-**Script (3 minutes exactly):**
+**`/register` page:**
+- [ ] Same centred layout
+- [ ] Name, email, password fields
+- [ ] **Role selector** — three clickable cards side by side:
+  - 🧑 Patient — "Access triage, consultations, and medication tracking"
+  - 👨‍⚕️ Doctor — "Manage your consultation inbox and patient briefs"
+  - 🌍 Community Health Worker — "Monitor and prioritise your patient community"
+  - Selected card: lime border + lime-tinted background
+- [ ] Supabase `signUp()` + insert into `profiles` table with role
+- [ ] On success → redirect to role dashboard
 
-- [ ] **0:00–0:15** — Open with the problem:
-  *"4.5 billion people lack adequate healthcare access. Curaiva AI closes that gap."*
+**`middleware.ts`:**
+- [ ] Protect all `/dashboard/*` routes
+- [ ] Redirect unauthenticated users to `/login`
+- [ ] Redirect wrong-role users to `/unauthorized`
 
-- [ ] **0:15–0:45** — Show the MCP Server:
-  - Open Railway URL /health → 6 tools visible
-  - Show MCP server in Prompt Opinion Marketplace
+### Patient Dashboard Page (Dev 2) — `/dashboard/patient`
 
-- [ ] **0:45–1:30** — Live triage demo:
-  - On Prompt Opinion, invoke `triage_patient` with patient 592903
-  - Show FHIR data being fetched (mention "this is a real HAPI FHIR R4 patient")
-  - Show structured critical assessment returned
+**Metric strip (4 cards):**
+- [ ] Health Score — large number in teal, trend arrow
+- [ ] Medication Adherence — percentage in amber, "↓ missed X doses"
+- [ ] Today's Mood — score/10 in purple, emoji
+- [ ] Open Consultations — count in green, "X awaiting reply"
 
-- [ ] **1:30–2:15** — A2A Agent demo:
-  - Open Curaiva AI agent chat
-  - "Dr. Obi has a consult with patient 592903 in 5 minutes. Prepare the brief."
-  - Show agent calling MCP tools automatically
-  - Show physician brief generated
+**AI Triage panel:**
+- [ ] `<textarea>` — placeholder: *"Describe how you're feeling… (e.g. chest pain since this morning)"*
+- [ ] Character counter below textarea
+- [ ] 🎙 Voice Input button — uses Web Speech API, pulses red while recording, fills textarea on stop
+- [ ] "Assess Symptoms" button — disabled when textarea is empty
+- [ ] On submit: show `<Spinner>` + *"Analysing via FHIR context…"*
+- [ ] **Wire to MCP:** `POST /api/triage` → server calls `triage_patient` tool → returns assessment
+- [ ] Result renders below (animated slide-in):
+  - `<Badge>` with severity
+  - Primary concern headline (bold)
+  - Recommended action paragraph
+  - Self-care steps as a `<ul>`
+  - Red flags section — only shows if `red_flags.length > 0`
+  - "Connect to Doctor →" primary button — only shows if `escalate_to_doctor: true`
+  - Footer: *"Assessed using FHIR Patient 592903 · Claude Opus via MCP"*
 
-- [ ] **2:15–2:50** — CHW and mental health:
-  - Quick: generate CHW queue for 3 patients — show ranked results
-  - Quick: mental health crisis message — show crisis_flag: true, resources
+**Mood tracker:**
+- [ ] 7-column grid: Mon → Today
+- [ ] Each column: day label (small, muted), emoji, score (DM Mono, coloured)
+- [ ] Today's column: lime border + lime-dim background highlight
+- [ ] `<Sparkline>` chart below columns
+- [ ] "Log Today's Mood" link → opens modal:
+  - Slider 1–10
+  - Emoji preview updates as slider moves
+  - "Save" button → inserts into `mental_health_sessions`
 
-- [ ] **2:50–3:00** — Close:
-  - Show Marketplace listing
-  - *"Curaiva AI — FHIR R4 native, SHARP compliant, live on Prompt Opinion. Built for the Endgame."*
+**Today's Medications:**
+- [ ] Fetch active medications from Supabase
+- [ ] Each row: pill emoji, medication name (bold), dosage, schedule
+- [ ] Dose dots: teal = taken, red = missed, grey = pending
+- [ ] "Log Dose" button per pending dose slot
+  - Click → `PATCH /api/medications/log` → marks as taken
+  - Button turns to "✓ Taken" (grey, disabled) — dot turns teal
+- [ ] Adherence streak banner if 5+ days in a row: "🔥 6-day streak!"
 
-**Recording:**
-- [ ] Record with Loom (free, easy shareable link)
-- [ ] Keep under 3:00 exactly (hackathon requirement)
-- [ ] No dead air — every second counts
-- [ ] Test audio before recording
+**Recent Activity feed:**
+- [ ] Chronological list of events (triage, doctor replies, missed doses, mental health flags)
+- [ ] Each: coloured icon in rounded square, description, relative timestamp
+- [ ] Show 5 items max → "View all →" link
 
-**✅ Done when:** Video is under 3 minutes, shows all components, uploaded to Loom.
+**✅ Phase 4 done when:** Patient registers, logs in, runs real triage via MCP, sees Critical badge, logs a dose.
 
 ---
 
-## PHASE 6 — Submission (1 hr)
-### Cross the Finish Line
+## PHASE 5 — Doctor Workspace UI
+**Est. 6 hrs · Dev 2**
+> Speed and signal. A busy doctor must read the most important thing in 5 seconds.
 
-- [ ] Submit on hackathon website with:
-  - [ ] Project title: "Curaiva AI — Healthcare Intelligence Superpower + Orchestrator"
-  - [ ] Prompt Opinion Marketplace URL (MCP server)
-  - [ ] Prompt Opinion Marketplace URL (A2A agent)
-  - [ ] GitHub repository URL (public)
-  - [ ] Demo video URL (Loom, under 3 minutes)
-  - [ ] Brief description (use the README intro)
+### Doctor Dashboard Page — `/dashboard/doctor`
+
+**Metric strip (4 cards):**
+- [ ] Open Consultations — count in coral, "X critical" warning sub-text
+- [ ] Avg Response Time — minutes in amber, trend down = good
+- [ ] Patients Seen This Week — count in teal
+- [ ] AI Briefs Ready — count in lime
+
+**Consultation Inbox (left ~55% of content area):**
+- [ ] Filter tabs: All / Critical / Moderate / Resolved — updates list
+- [ ] **Supabase Realtime** subscription on `consultations` table filtered by `doctor_id`
+  - New consultations slide in from top automatically — no refresh needed
+- [ ] Each inbox row:
+  - Unread: lime 3px left border indicator
+  - Critical: subtle red background tint
+  - Patient avatar (emoji/initials)
+  - Patient name — bold if unread
+  - AI preview snippet in muted text (truncated at 1 line)
+  - `<Badge>` severity top-right
+  - Relative timestamp
+  - Hover: background darkens slightly
+- [ ] Clicking a row → loads the AI Brief panel (no navigation, stays on same page)
+
+**AI Brief Panel (right ~45% of content area):**
+- [ ] Default: centred `<EmptyState>` — "Select a consultation to load the AI brief"
+- [ ] Loading: `<Skeleton>` shimmer on all text sections
+- [ ] **Wire to MCP:** clicking a row calls `POST /api/brief` → `create_consultation_brief` tool
+- [ ] Loaded state:
+  - Patient name, age, gender — header row
+  - `FHIR R4 · SHARP` monospace badge in lime (shows data provenance)
+  - ⚠ Alert banner (red background) if `triage_severity === "critical"`
+  - **CHIEF COMPLAINT** — plain text
+  - **ACTIVE PROBLEMS** — conditions as `<Badge variant="condition">` tags (purple)
+  - **CURRENT MEDICATIONS** — med names as amber tags
+  - **RECENT OBSERVATIONS** — vitals in a small table (DM Mono values)
+  - **SUGGESTED FOCUS AREAS** — numbered list, each item is a specific clinical action
+  - "Reply to Patient" primary button (lime)
+  - "Mark Resolved" ghost button
+- [ ] Reply → opens inline text editor below, "Send" posts message to `messages` table
+
+**MCP Tool Call Log (below brief panel):**
+- [ ] Live log of every MCP call made this session
+- [ ] Each entry (DM Mono font):
+  - Tool name in lime
+  - HTTP status badge (200 OK in teal / error in red)
+  - Timestamp (HH:MM:SS)
+  - Patient ID + FHIR resources used in muted text
+- [ ] New entries insert at top with `slideIn` animation
+- [ ] Shows judges exactly how MCP integration works — keep it visible during demo
+
+**Analytics cards (bottom row, 3 cards):**
+- [ ] Consults This Week — `<Sparkline>` bar chart Mon–Fri
+- [ ] Severity Distribution — canvas donut chart (critical / moderate / low)
+- [ ] FHIR Resource Usage — horizontal bar per resource type (Patient, Condition, MedicationRequest, Observation)
+
+**✅ Phase 5 done when:** Doctor sees inbox, clicks a consult, real AI brief generates via MCP, MCP log updates, doctor can reply.
+
+---
+
+## PHASE 6 — CHW Command Centre UI
+**Est. 5 hrs · Dev 3**
+> The priority queue is the "wow" moment in the demo. Make it undeniable.
+
+### CHW Dashboard Page — `/dashboard/chw`
+
+**Metric strip (4 cards):**
+- [ ] My Patients — total count in purple
+- [ ] Urgent Visits — count in red
+- [ ] Missed Doses Across Community — count in amber
+- [ ] Visits Done This Week — count in teal + progress indicator
+
+**AI Priority Queue (main section, ~65% width):**
+- [ ] Section header: "AI Priority Queue" + "Generated HH:MM · FHIR R4" badge
+- [ ] **Wire to MCP:** on page load → `POST /api/queue` → `generate_chw_priority_queue` with CHW's patient IDs
+- [ ] Loading: `<Skeleton>` shimmer on 5 rows
+- [ ] Each queue row:
+  - Left border colour: red (`score ≥ 75`), amber (`50–74`), teal (`< 50`)
+  - Large priority score (Fraunces serif, colour-matched to border)
+  - Patient name + age
+  - Priority reason in muted text (from AI)
+  - Two contextual action buttons:
+    - Score 75+: "Visit Now" (primary) + "Call"
+    - Score 50–74: "Visit" + "Message" (primary)
+    - Score < 50: "Visit" + "Check In" (primary)
+- [ ] Sort controls: Score ↓ / Name A–Z / Last Contact
+- [ ] "Refresh Queue" button → re-calls MCP tool, animates row reordering
+
+**Patient Detail Drawer:**
+- [ ] Clicking any queue row opens a right-side drawer (slides in 300ms)
+- [ ] Drawer shows:
+  - Patient name, age, gender, FHIR ID
+  - Recent triage assessment (from Supabase)
+  - Medication list with adherence dots (last 7 days)
+  - Mental health mood trend (7-day mini chart)
+  - Message input textarea + "Send Message" button
+  - "Schedule Visit" button → simple date picker, saves to Supabase
+- [ ] Drawer closes on Escape key or clicking the backdrop overlay
+
+**Live Alerts panel (right ~35%):**
+- [ ] **Supabase Realtime** on `crisis_alerts` + `medication_logs` tables
+- [ ] Each alert: coloured dot (red = crisis, amber = missed dose, teal = doctor reply), description, relative time
+- [ ] Crisis alerts: full red background band — impossible to miss
+- [ ] "Acknowledge" button → removes from feed
+- [ ] Empty state: "✓ No active alerts"
+
+**Community Health summary card:**
+- [ ] Avg medication adherence % (DM Mono, coloured)
+- [ ] Active conditions count
+- [ ] Critical patients count (red)
+- [ ] Weekly visit progress bar (lime fill, grey track, "7 / 12" label)
+
+**✅ Phase 6 done when:** CHW logs in, sees real AI priority queue from FHIR, crisis alert is visible, drawer opens with patient history, message can be sent.
+
+---
+
+## PHASE 7 — A2A Agent + API Routes
+**Est. 4 hrs · Dev 3**
+
+### A2A Agent on Prompt Opinion
+- [ ] Prompt Opinion → Agents → Create New Agent → name: "Curaiva AI"
+- [ ] Paste system prompt from `a2a-agent/agent-config.yaml`
+- [ ] Connect MCP server, configure COIN intents, set SHARP context fields
+- [ ] Test all 5 scenarios (triage, pre-consult, CHW briefing, crisis, medication)
+- [ ] All 5 pass ✅
+- [ ] Publish to Marketplace ✅
+- [ ] 📸 Screenshot: Agent listed in Prompt Opinion Marketplace
+
+### Next.js API Routes (wire UI → MCP securely)
+All routes: check Supabase session first, then call MCP. API key never exposed to browser.
+- [ ] `POST /api/triage` → `triage_patient`
+- [ ] `POST /api/summary` → `get_patient_summary`
+- [ ] `POST /api/brief` → `create_consultation_brief`
+- [ ] `POST /api/adherence` → `check_medication_adherence`
+- [ ] `POST /api/mental-health` → `mental_health_assessment`
+- [ ] `POST /api/queue` → `generate_chw_priority_queue`
+- [ ] `PATCH /api/medications/log` → update `medication_logs` in Supabase
+- [ ] `POST /api/messages` → insert into `messages` in Supabase
+
+### Supabase Tables
+- [ ] `profiles` — id, full_name, role, fhir_patient_id
+- [ ] `consultations` — patient_id, doctor_id, status, ai_summary, priority, created_at
+- [ ] `messages` — consultation_id, sender_id, content, created_at
+- [ ] `medication_logs` — patient_id, medication_id, scheduled_at, taken_at, status
+- [ ] `mental_health_sessions` — patient_id, mood_score, session_notes, crisis_flagged, created_at
+- [ ] Realtime enabled on: `consultations`, `messages`
+- [ ] RLS policies on every table — patients only see their own data ✅
+
+**✅ Phase 7 done when:** All 3 dashboards call real MCP tools. A2A agent live on Marketplace.
+
+---
+
+## PHASE 8 — UI Polish & QA
+**Est. 4 hrs · Everyone**
+> This is what separates a winner from a participant.
+
+### Loading States (every page, every AI call)
+- [ ] `<Skeleton>` shimmer on all data that loads async
+- [ ] `<Spinner>` inside buttons while submitting
+- [ ] Graceful error states on all MCP calls: "Unable to load — try again"
+- [ ] Empty states on all list views
+
+### Micro-interactions
+- [ ] Sidebar nav: hover tint + active lime highlight + 3px left border
+- [ ] Critical `<Badge>`: subtle pulse animation
+- [ ] `<MetricCard>`: hover lifts `translateY(-1px)` + deeper shadow
+- [ ] Triage result panel: `fadeUp` slide-in animation
+- [ ] Inbox rows: hover background transition
+- [ ] Queue rows: border-left colour transition on hover
+- [ ] Buttons: `scale(0.97)` on active state
+- [ ] "Log Dose" → "✓ Taken": colour + text transition, dot fills teal
+- [ ] MCP log entries: `slideIn` from top on each new entry
+
+### Responsive Check
+- [ ] 1440px (primary design target) — looks great ✅
+- [ ] 1024px (laptop) — still readable ✅
+- [ ] 768px (tablet) — sidebar collapses ✅
+
+### Full End-to-End QA
+
+**Patient flow:**
+- [ ] Register as Patient → Patient Dashboard ✅
+- [ ] Type chest pain symptoms → Critical triage via MCP ✅
+- [ ] "Connect to Doctor" → consultation created ✅
+- [ ] Log 2 medication doses → dots update ✅
+- [ ] Log mood 7/10 → sparkline updates ✅
+
+**Doctor flow:**
+- [ ] Log in as Doctor → Doctor Workspace ✅
+- [ ] New consultation appears in inbox (Realtime) ✅
+- [ ] Click → AI brief loads via `create_consultation_brief` MCP call ✅
+- [ ] MCP tool log shows all 3 tool calls ✅
+- [ ] Reply to patient → message saved ✅
+
+**CHW flow:**
+- [ ] Log in as CHW → CHW Command Centre ✅
+- [ ] Priority queue loads from `generate_chw_priority_queue` MCP call ✅
+- [ ] Crisis alert visible in live alerts panel ✅
+- [ ] Click patient row → drawer slides in ✅
+- [ ] Send message → saved in Supabase ✅
+
+**✅ Phase 8 done when:** All 3 roles work end-to-end, no broken states, UI is polished and demo-ready.
+
+---
+
+## PHASE 9 — Deploy Frontend + Demo Video
+**Est. 4 hrs · Dev 2 + Dev 3**
+
+### Deploy to Vercel
+- [ ] `cd web && vercel --prod`
+- [ ] Add env vars in Vercel dashboard:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `ANTHROPIC_API_KEY`
+  - `MCP_SERVER_URL=https://curaiva-ai-mcp.railway.app`
+- [ ] Test live URL — all 3 roles work end-to-end ✅
+
+### Seed Demo Accounts
+- [ ] Demo patient → email: patient@curaiva.ai, FHIR ID: 592903
+- [ ] Demo doctor → email: doctor@curaiva.ai, assigned to demo patient
+- [ ] Demo CHW → email: chw@curaiva.ai, assigned 4 demo patients
+- [ ] Verify all 3 logins work cleanly before recording ✅
+
+### Demo Video Script (3 min MAXIMUM)
+Rehearse this 3 times. Every second counts.
+
+- [ ] **0:00–0:12** — Hook:
+  *"4.5 billion people lack healthcare access. Curaiva AI fixes that — with MCP, A2A, and real FHIR data."*
+
+- [ ] **0:12–0:40** — The Superpower:
+  - Show `https://curaiva-ai-mcp.railway.app/health` → 6 tools in JSON
+  - Cut to Prompt Opinion Marketplace → MCP listed, tools visible
+
+- [ ] **0:40–1:20** — Patient Dashboard:
+  - Log in as patient@curaiva.ai
+  - Type "severe chest pain, shortness of breath" → Assess Symptoms
+  - Show Critical badge appearing, self-care tips, "Connect to Doctor" button
+  - Click it → consultation created
+
+- [ ] **1:20–2:00** — Doctor Workspace:
+  - Log in as doctor@curaiva.ai
+  - New consultation appears in inbox (real-time)
+  - Click it → AI brief generates (point to MCP tool log)
+  - Say: *"This brief was generated by calling `create_consultation_brief` against real FHIR data — Patient 592903"*
+  - Reply to patient
+
+- [ ] **2:00–2:40** — CHW Command Centre + A2A:
+  - Log in as chw@curaiva.ai
+  - Show priority queue — point out "94 urgency score" patient
+  - Briefly show A2A agent on Prompt Opinion invoking a query
+  - Show Marketplace listing (both MCP + Agent)
+
+- [ ] **2:40–3:00** — Close:
+  *"Curaiva AI — FHIR R4 native, SHARP compliant, three real dashboards, live on Prompt Opinion. Built for the Endgame."*
+
+- [ ] Record with Loom
+- [ ] Under 3:00 exactly ✅
+- [ ] Test audio before recording ✅
+- [ ] No dead air, no fumbling
+
+---
+
+## PHASE 10 — Submission
+**Est. 1 hr · Anyone**
 
 - [ ] GitHub repo is public ✅
-- [ ] README.md is clear and complete ✅
-- [ ] Health endpoint is live on Railway ✅
-- [ ] Both MCP server AND A2A agent are published to Prompt Opinion Marketplace ✅
-- [ ] Video is unlisted (not private) ✅
+- [ ] README.md complete ✅
+- [ ] MCP server live on Railway ✅
+- [ ] A2A agent live on Prompt Opinion Marketplace ✅
+- [ ] Frontend live on Vercel ✅
+- [ ] Demo video on Loom (anyone with link) ✅
 
-**✅ Done when:** Submission is submitted before the deadline.**
-
----
-
-## PHASE 7 — Judge Extras (if time allows)
-### Stuff That Pushes You from Finalist to Winner
-
-- [ ] Add a FHIR test patient seeder script (populate HAPI FHIR with realistic data)
-- [ ] Add a second MCP tool: `search_similar_cases` — searches FHIR for patients with similar conditions
-- [ ] Write a 1-page technical architecture PDF and include in submission
-- [ ] Add a demonstration of agent-to-agent: have another Prompt Opinion agent call Curaiva AI via A2A
-- [ ] Add structured FHIR Observation writes (not just reads) — show the agent updating the record
+**Submit with:**
+- [ ] Title: `Curaiva AI — Healthcare Intelligence Superpower + Orchestrator`
+- [ ] Prompt Opinion MCP Marketplace URL
+- [ ] Prompt Opinion A2A Agent Marketplace URL
+- [ ] GitHub repo URL
+- [ ] Live app URL (Vercel)
+- [ ] Demo video URL (Loom, under 3 min)
 
 ---
 
-## Task Assignment
+## UI PAGES TRACKER
 
-| Who | Owns |
-|---|---|
-| **Dev 1 (Backend)** | Phase 1 (MCP server code), Phase 2 (Railway deploy) |
-| **Dev 2 (Full-stack)** | Phase 3 (Prompt Opinion integration), Phase 4 (A2A config) |
-| **Dev 3 (Any)** | Phase 5 (demo video), Phase 6 (submission), landing page |
-
-**Critical path:** Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6
-Do not start Phase 3 until Phase 2 is deployed and health check passes.
+| Page | Route | Owner | Phase | Done? |
+|---|---|---|---|---|
+| Login | `/login` | Dev 3 | 4 | [ ] |
+| Register | `/register` | Dev 3 | 4 | [ ] |
+| Patient Dashboard | `/dashboard/patient` | Dev 2 | 4 | [ ] |
+| Patient — Mental Health | `/dashboard/patient/mental-health` | Dev 2 | 5 | [ ] |
+| Patient — Medications | `/dashboard/patient/medications` | Dev 2 | 4 | [ ] |
+| Patient — Consultations | `/dashboard/patient/consultations` | Dev 2 | 5 | [ ] |
+| Doctor — Workspace | `/dashboard/doctor` | Dev 2 | 5 | [ ] |
+| Doctor — Consult Detail | `/dashboard/doctor/consultation/[id]` | Dev 2 | 5 | [ ] |
+| CHW — Command Centre | `/dashboard/chw` | Dev 3 | 6 | [ ] |
+| CHW — Patient Drawer | (component, not page) | Dev 3 | 6 | [ ] |
+| Unauthorized | `/unauthorized` | Dev 3 | 4 | [ ] |
 
 ---
 
-*Curaiva AI · Agents Assemble Challenge · Prize Target: $7,500 Grand Prize*
+## STRETCH GOALS (after submission)
+
+- [ ] Voice-first triage — entire flow via voice, no typing
+- [ ] Multi-language — Hausa, Yoruba, Igbo UI + triage
+- [ ] PWA — works offline for low-connectivity areas
+- [ ] FHIR Observation writes — agent updates the EHR record, not just reads
+- [ ] `search_similar_cases` — 7th MCP tool, finds patients with matching symptom patterns
+- [ ] Agent-to-agent demo — another Prompt Opinion agent calls Curaiva via A2A live in the video
+
+---
+
+*Curaiva AI · Agents Assemble Challenge · $7,500 Grand Prize · Built to win.*

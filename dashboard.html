@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curaiva AI — Agent Workspace | Prompt Opinion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0b0f0e;
+  --bg2:     #111715;
+  --bg3:     #161d1a;
+  --surface: #1c2422;
+  --surface2:#212e2b;
+  --green:   #2d9574;
+  --green2:  #1e6651;
+  --lime:    #c8f04e;
+  --lime-dim:rgba(200,240,78,.09);
+  --teal:    #5dc4a8;
+  --coral:   #f4845f;
+  --amber:   #f5b944;
+  --red:     #f06060;
+  --purple:  #9b79f0;
+  --white:   #faf8f4;
+  --muted:   #566b65;
+  --light:   #8aa39c;
+  --border:  rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.04);
+  --radius:  12px;
+  --sidebar-w: 220px;
+  --right-w:  300px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--white);font-family:'Instrument Sans',sans-serif;font-size:13px;display:flex;-webkit-font-smoothing:antialiased;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-top{padding:1rem .9rem .6rem;border-bottom:1px solid var(--border);}
+.logo{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:.45rem;letter-spacing:-.02em;}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--lime);animation:blink 2.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+.logo span{color:var(--lime);}
+.platform-tag{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted);letter-spacing:.08em;margin-top:.25rem;}
+
+.sb-section{padding:.7rem .9rem .2rem;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;}
+.sb-item{display:flex;align-items:center;gap:.65rem;padding:.52rem .9rem;margin:1px .4rem;border-radius:8px;font-size:.78rem;font-weight:500;color:var(--light);cursor:pointer;transition:all .15s;position:relative;}
+.sb-item:hover{background:var(--surface);color:var(--white);}
+.sb-item.active{background:var(--lime-dim);color:var(--lime);font-weight:600;}
+.sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:2.5px;height:16px;border-radius:0 3px 3px 0;background:var(--lime);}
+.sb-icon{font-size:.88rem;width:16px;text-align:center;flex-shrink:0;}
+.sb-badge{margin-left:auto;background:var(--red);color:#fff;font-size:.58rem;font-weight:700;padding:.1rem .38rem;border-radius:100px;min-width:16px;text-align:center;}
+.sb-badge.ok{background:var(--green);}
+.sb-badge.amber{background:var(--amber);color:var(--bg);}
+.sb-badge.lime{background:var(--lime);color:var(--bg);}
+
+.sidebar-bottom{margin-top:auto;padding:.8rem .9rem;border-top:1px solid var(--border);}
+.server-status{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem;}
+.ss-row{display:flex;align-items:center;justify-content:space-between;font-size:.7rem;}
+.ss-label{color:var(--muted);}
+.ss-val{font-family:'DM Mono',monospace;color:var(--teal);}
+.ss-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2s infinite;flex-shrink:0;}
+
+/* ── MAIN LAYOUT ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+
+/* Topbar */
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.4rem;gap:1rem;flex-shrink:0;}
+.tb-breadcrumb{display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--muted);}
+.tb-breadcrumb span{color:var(--white);font-weight:500;}
+.tb-sep{font-size:.7rem;}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:.7rem;}
+.pill{display:flex;align-items:center;gap:.35rem;font-family:'DM Mono',monospace;font-size:.62rem;padding:.28rem .7rem;border-radius:100px;}
+.pill-green{background:rgba(45,149,116,.1);border:1px solid rgba(45,149,116,.2);color:var(--teal);}
+.pill-lime{background:var(--lime-dim);border:1px solid rgba(200,240,78,.2);color:var(--lime);}
+.pill-dot{width:5px;height:5px;border-radius:50%;}
+.topbar-btn{background:var(--surface);border:1px solid var(--border);color:var(--light);font-size:.72rem;font-weight:500;padding:.32rem .8rem;border-radius:7px;cursor:pointer;transition:all .15s;font-family:'Instrument Sans',sans-serif;}
+.topbar-btn:hover{border-color:var(--green);color:var(--white);}
+.topbar-btn.cta{background:var(--lime);border-color:var(--lime);color:var(--bg);font-weight:700;}
+.topbar-btn.cta:hover{background:#d4f55c;}
+
+/* ── WORKSPACE BODY ── */
+.workspace{flex:1;display:flex;overflow:hidden;}
+
+/* Left: Agent chat */
+.agent-pane{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--border);min-width:0;}
+
+/* Agent context bar */
+.agent-context{padding:.7rem 1.2rem;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem;}
+.agent-avatar{width:32px;height:32px;border-radius:10px;background:var(--green2);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;}
+.agent-meta{flex:1;}
+.agent-name{font-size:.82rem;font-weight:700;}
+.agent-sub{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);margin-top:.1rem;}
+.context-chips{display:flex;gap:.4rem;margin-left:auto;}
+.ctx-chip{font-family:'DM Mono',monospace;font-size:.58rem;background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:.18rem .55rem;border-radius:100px;}
+.ctx-chip.active{border-color:rgba(200,240,78,.25);color:var(--lime);}
+
+/* Chat messages */
+.chat-messages{flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:.85rem;}
+.chat-messages::-webkit-scrollbar{width:3px;}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--surface2);}
+
+.cm{display:flex;flex-direction:column;gap:.2rem;}
+.cm-role{font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;}
+.cm-bubble{padding:.65rem .9rem;border-radius:10px;font-size:.78rem;line-height:1.65;}
+.cm.user .cm-bubble{background:rgba(200,240,78,.07);border:1px solid rgba(200,240,78,.13);border-radius:10px 10px 3px 10px;color:var(--white);}
+.cm.user{align-items:flex-end;}
+.cm.user .cm-role{text-align:right;}
+.cm.agent .cm-bubble{background:var(--surface);border:1px solid var(--border);border-radius:10px 10px 10px 3px;color:var(--light);}
+.cm.agent .cm-bubble strong{color:var(--white);}
+.cm.system .cm-bubble{background:transparent;border:none;padding:.3rem 0;color:var(--muted);font-size:.72rem;font-family:'DM Mono',monospace;text-align:center;}
+
+/* Tool call embed */
+.tool-embed{background:var(--bg);border:1px solid rgba(45,149,116,.2);border-radius:9px;padding:.65rem .9rem;font-family:'DM Mono',monospace;font-size:.67rem;margin:.15rem 0;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.te-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;}
+.te-fn{color:var(--lime);font-weight:500;}
+.te-status{font-size:.57rem;padding:.12rem .4rem;border-radius:100px;}
+.te-ok{background:rgba(93,196,168,.1);color:var(--teal);}
+.te-err{background:rgba(240,96,96,.1);color:var(--red);}
+.te-time{margin-left:auto;color:var(--muted);font-size:.6rem;}
+.te-param{color:var(--muted);}
+.te-param span{color:var(--light);}
+.te-result{color:var(--teal);margin-top:.3rem;padding-top:.3rem;border-top:1px solid var(--border2);}
+.te-result.critical{color:var(--red);}
+
+/* Chat input */
+.chat-input-wrap{border-top:1px solid var(--border);padding:.8rem 1.2rem;background:var(--bg2);display:flex;gap:.6rem;align-items:flex-end;}
+.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:.55rem .85rem;color:var(--white);font-family:'Instrument Sans',sans-serif;font-size:.78rem;resize:none;height:36px;transition:border-color .2s;line-height:1.4;}
+.chat-input:focus{outline:none;border-color:var(--green);}
+.chat-input::placeholder{color:var(--muted);}
+.send-btn{background:var(--lime);color:var(--bg);border:none;border-radius:8px;padding:.55rem 1.1rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:'Instrument Sans',sans-serif;transition:all .18s;white-space:nowrap;}
+.send-btn:hover{background:#d4f55c;}
+.quick-prompts{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.4rem;}
+.qp{font-size:.68rem;font-weight:500;padding:.25rem .7rem;border-radius:100px;border:1px solid var(--border);color:var(--light);cursor:pointer;transition:all .15s;background:transparent;}
+.qp:hover{border-color:var(--lime);color:var(--lime);}
+
+/* ── RIGHT PANEL: Inspector ── */
+.inspector{width:var(--right-w);background:var(--bg2);display:flex;flex-direction:column;overflow:hidden;}
+.inspector-tabs{display:flex;border-bottom:1px solid var(--border);}
+.ins-tab{flex:1;padding:.6rem .5rem;text-align:center;font-size:.68rem;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;border-bottom:2px solid transparent;font-family:'DM Mono',monospace;letter-spacing:.04em;}
+.ins-tab.active{color:var(--lime);border-bottom-color:var(--lime);}
+.ins-body{flex:1;overflow-y:auto;padding:.9rem;}
+.ins-body::-webkit-scrollbar{width:3px;}
+.ins-body::-webkit-scrollbar-thumb{background:var(--surface2);}
+
+/* Inspector tabs content */
+.ins-tab-content{display:none;}
+.ins-tab-content.active{display:block;}
+
+/* SHARP context card */
+.ins-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:.7rem;}
+.ins-card-head{padding:.55rem .8rem;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ins-card-title{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.06em;}
+.ins-card-badge{font-size:.56rem;font-weight:700;padding:.12rem .4rem;border-radius:100px;}
+.icb-ok{background:rgba(93,196,168,.1);color:var(--teal);}
+.icb-fhir{background:var(--lime-dim);color:var(--lime);}
+.icb-a2a{background:rgba(155,121,240,.1);color:var(--purple);}
+.ins-card-body{padding:.7rem .8rem;font-family:'DM Mono',monospace;font-size:.67rem;display:flex;flex-direction:column;gap:.3rem;}
+.icr{display:flex;gap:.5rem;}
+.ick{color:var(--muted);min-width:90px;flex-shrink:0;font-size:.63rem;}
+.icv{color:var(--light);word-break:break-all;}
+.icv.lime{color:var(--lime);}
+.icv.teal{color:var(--teal);}
+.icv.red{color:var(--red);}
+.icv.amber{color:var(--amber);}
+.ic-sep{height:1px;background:var(--border2);margin:.2rem 0;}
+
+/* Tool list */
+.tool-list{display:flex;flex-direction:column;gap:.5rem;}
+.tool-item{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:.7rem .8rem;cursor:pointer;transition:all .15s;}
+.tool-item:hover{border-color:rgba(200,240,78,.2);background:var(--lime-dim);}
+.tool-item.called{border-color:rgba(93,196,168,.2);}
+.ti-name{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--lime);font-weight:500;margin-bottom:.25rem;}
+.ti-desc{font-size:.7rem;color:var(--muted);line-height:1.4;margin-bottom:.4rem;}
+.ti-fhir{display:flex;flex-wrap:wrap;gap:.25rem;}
+.ti-tag{font-family:'DM Mono',monospace;font-size:.57rem;background:rgba(45,149,116,.08);border:1px solid rgba(45,149,116,.15);color:var(--teal);padding:.1rem .4rem;border-radius:3px;}
+.ti-calls{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);margin-top:.35rem;display:flex;align-items:center;gap:.4rem;}
+.ti-calls span{color:var(--teal);}
+
+/* COIN events */
+.coin-event{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:.7rem .8rem;margin-bottom:.5rem;animation:fadeIn .3s ease;}
+.ce-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;}
+.ce-intent{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--lime);}
+.ce-dir{font-size:.58rem;padding:.1rem .38rem;border-radius:100px;font-family:'DM Mono',monospace;}
+.ce-emit{background:rgba(93,196,168,.1);color:var(--teal);}
+.ce-recv{background:rgba(155,121,240,.1);color:var(--purple);}
+.ce-time{margin-left:auto;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);}
+.ce-body{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted);line-height:1.6;}
+.ce-body span{color:var(--light);}
+
+/* Tool call log tab */
+.log-entry{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:.65rem .8rem;margin-bottom:.5rem;}
+.le-head{display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem;}
+.le-fn{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--lime);}
+.le-status{font-size:.57rem;padding:.1rem .38rem;border-radius:100px;}
+.le-ok{background:rgba(93,196,168,.1);color:var(--teal);}
+.le-time{margin-left:auto;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);}
+.le-body{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted);line-height:1.6;}
+.le-body span{color:var(--light);}
+.le-latency{font-size:.6rem;color:var(--green);margin-top:.2rem;}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <div class="logo"><span class="logo-dot"></span>Curai<span>va</span> AI</div>
+    <div class="platform-tag">Prompt Opinion · MCP + A2A</div>
+  </div>
+
+  <div class="sb-section">Agent</div>
+  <div class="sb-item active"><span class="sb-icon">🤖</span>Agent Workspace<span class="sb-badge lime">Live</span></div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">💬</span>COIN Intents</div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">📡</span>A2A Connections</div>
+
+  <div class="sb-section">MCP Server</div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">🔧</span>Tool Registry<span class="sb-badge ok">6</span></div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">📊</span>Tool Call Logs</div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">❤️</span>Health Check<span class="sb-badge ok">✓</span></div>
+
+  <div class="sb-section">FHIR</div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">🏥</span>FHIR Resources</div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">🔐</span>SHARP Context</div>
+
+  <div class="sb-section">Marketplace</div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">🏪</span>Published Listing</div>
+  <div class="sb-item" onclick="setNav(this)"><span class="sb-icon">⚙️</span>Settings</div>
+
+  <div class="sidebar-bottom">
+    <div class="server-status">
+      <div class="ss-row" style="margin-bottom:.3rem;">
+        <span class="ss-label">MCP Server</span>
+        <div style="display:flex;align-items:center;gap:.35rem;"><div class="ss-dot"></div><span class="ss-val">online</span></div>
+      </div>
+      <div class="ss-row" style="margin-bottom:.3rem;">
+        <span class="ss-label">FHIR</span>
+        <span class="ss-val">hapi.fhir.org</span>
+      </div>
+      <div class="ss-row">
+        <span class="ss-label">Tools</span>
+        <span class="ss-val">6 / 6 ready</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="tb-breadcrumb">
+      Prompt Opinion <span class="tb-sep">/</span> Marketplace <span class="tb-sep">/</span> <span>Curaiva AI</span> <span class="tb-sep">/</span> <span>Workspace</span>
+    </div>
+    <div class="tb-right">
+      <div class="pill pill-green"><div class="pill-dot" style="background:var(--teal);animation:blink 2s infinite;"></div>FHIR Connected</div>
+      <div class="pill pill-lime"><div class="pill-dot" style="background:var(--lime);"></div>SHARP Active</div>
+      <button class="topbar-btn">Docs</button>
+      <button class="topbar-btn cta">Invoke Tool →</button>
+    </div>
+  </div>
+
+  <!-- Workspace -->
+  <div class="workspace">
+
+    <!-- Agent chat pane -->
+    <div class="agent-pane">
+      <div class="agent-context">
+        <div class="agent-avatar">✚</div>
+        <div class="agent-meta">
+          <div class="agent-name">Curaiva AI</div>
+          <div class="agent-sub">A2A Healthcare Orchestrator · 6 MCP tools · claude-opus-4-6</div>
+        </div>
+        <div class="context-chips">
+          <div class="ctx-chip active">patient: 592903</div>
+          <div class="ctx-chip active">SHARP</div>
+          <div class="ctx-chip">encounter: ENC-7741</div>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chat">
+
+        <div class="cm system"><div class="cm-bubble">— Session started · SHARP context loaded · FHIR: hapi.fhir.org/baseR4 —</div></div>
+
+        <div class="cm user">
+          <div class="cm-role">Clinician · Dr. Emeka Nwosu</div>
+          <div class="cm-bubble">Patient 592903 is reporting severe chest pain radiating to the left arm. Triage now.</div>
+        </div>
+
+        <div class="tool-embed">
+          <div class="te-head">
+            <span class="te-fn">triage_patient()</span>
+            <span class="te-status te-ok">200 OK</span>
+            <span class="te-time">09:14:22</span>
+          </div>
+          <div class="te-param">patient_id: <span>592903</span></div>
+          <div class="te-param">symptoms: <span>"severe chest pain, left arm radiation"</span></div>
+          <div class="te-param">fhir_fetch: <span>Patient · Condition(hypertension, T2DM) · Observation(BP 158/98)</span></div>
+          <div class="te-result critical">→ severity: critical · score: 9/10 · escalate_to_doctor: true</div>
+        </div>
+
+        <div class="cm agent">
+          <div class="cm-role">Curaiva AI</div>
+          <div class="cm-bubble"><strong>⚠ Critical — Score 9/10</strong><br>Chest pain with left arm radiation in a patient with active hypertension (FHIR confirmed). Pattern consistent with acute cardiac event. <strong>Escalate to physician immediately.</strong><br><br><span style="font-size:.7rem;color:var(--muted);">FHIR used: Patient/592903 · Condition · Observation · SHARP context</span></div>
+        </div>
+
+        <div class="cm user">
+          <div class="cm-role">Clinician · Dr. Emeka Nwosu</div>
+          <div class="cm-bubble">Prepare my pre-consultation brief for this patient.</div>
+        </div>
+
+        <div class="tool-embed">
+          <div class="te-head">
+            <span class="te-fn">get_patient_summary()</span>
+            <span class="te-status te-ok">200 OK</span>
+            <span class="te-time">09:14:31</span>
+          </div>
+          <div class="te-param">summary_type: <span>consultation</span></div>
+          <div class="te-param">resources: <span>Patient · Condition · MedicationRequest · Observation · Encounter</span></div>
+        </div>
+
+        <div class="tool-embed">
+          <div class="te-head">
+            <span class="te-fn">create_consultation_brief()</span>
+            <span class="te-status te-ok">200 OK</span>
+            <span class="te-time">09:14:35</span>
+          </div>
+          <div class="te-param">type: <span>urgent</span></div>
+          <div class="te-param">triage_severity: <span style="color:var(--red)">critical</span></div>
+          <div class="te-result">→ brief generated · 847 tokens · physician-ready</div>
+        </div>
+
+        <div class="cm agent">
+          <div class="cm-role">Curaiva AI</div>
+          <div class="cm-bubble">
+            <strong>Patient Brief — Amara Osei · F · 41y · FHIR/592903</strong><br><br>
+            <strong style="color:var(--teal)">Chief:</strong> Chest pain, left arm radiation, onset 30 min ago<br>
+            <strong style="color:var(--teal)">Active conditions:</strong> Hypertension (active) · Type 2 Diabetes<br>
+            <strong style="color:var(--teal)">Medications:</strong> Metformin 500mg BD · Lisinopril 10mg OD<br>
+            <strong style="color:var(--teal)">Last vitals (FHIR):</strong> BP 158/98 mmHg · HR 94 bpm<br>
+            <strong style="color:var(--teal)">Suggested focus:</strong> ECG, troponin, cardiac enzymes · Review Lisinopril dose
+          </div>
+        </div>
+
+        <div class="cm system"><div class="cm-bubble">— COIN intent emitted: triage_result · clinical_brief_ready → available to other A2A agents —</div></div>
+
+      </div><!-- end chat messages -->
+
+      <!-- Quick prompts -->
+      <div style="padding:.6rem 1.2rem 0;background:var(--bg2);border-top:1px solid var(--border2);">
+        <div class="quick-prompts">
+          <div class="qp" onclick="quickSend('Generate CHW priority queue for patients 592903, 12724, 88234')">CHW Queue →</div>
+          <div class="qp" onclick="quickSend('Check medication adherence for patient 592903')">Med Adherence →</div>
+          <div class="qp" onclick="quickSend('Mental health assessment for patient 88234: I feel hopeless and alone')">Mental Health →</div>
+          <div class="qp" onclick="quickSend('Get full patient summary for 12724')">Patient Summary →</div>
+        </div>
+      </div>
+
+      <div class="chat-input-wrap">
+        <textarea class="chat-input" id="chat-input" placeholder="Send a clinical query to Curaiva AI… (SHARP context auto-applied)" rows="1"></textarea>
+        <button class="send-btn" onclick="sendMsg()">Send</button>
+      </div>
+    </div>
+
+    <!-- Inspector panel -->
+    <div class="inspector">
+      <div class="inspector-tabs">
+        <div class="ins-tab active" onclick="switchTab(this,'sharp')">SHARP</div>
+        <div class="ins-tab" onclick="switchTab(this,'tools')">Tools</div>
+        <div class="ins-tab" onclick="switchTab(this,'coin')">COIN</div>
+        <div class="ins-tab" onclick="switchTab(this,'log')">Log</div>
+      </div>
+
+      <!-- SHARP tab -->
+      <div class="ins-body ins-tab-content active" id="tab-sharp">
+        <div class="ins-card">
+          <div class="ins-card-head">
+            <div class="ins-card-title">EHR Session Context</div>
+            <div class="ins-card-badge icb-fhir">SHARP Compliant</div>
+          </div>
+          <div class="ins-card-body">
+            <div class="icr"><div class="ick">fhir_base_url</div><div class="icv">hapi.fhir.org/baseR4</div></div>
+            <div class="icr"><div class="ick">patient_id</div><div class="icv lime">592903</div></div>
+            <div class="icr"><div class="ick">encounter_id</div><div class="icv">ENC-7741</div></div>
+            <div class="icr"><div class="ick">practitioner</div><div class="icv">PRAC-044</div></div>
+            <div class="ic-sep"></div>
+            <div class="icr"><div class="ick">access_token</div><div class="icv" style="color:var(--muted)">Bearer ••••••••</div></div>
+            <div class="icr"><div class="ick">propagated by</div><div class="icv teal">Prompt Opinion</div></div>
+          </div>
+        </div>
+
+        <div class="ins-card">
+          <div class="ins-card-head">
+            <div class="ins-card-title">Last FHIR Fetch</div>
+            <div class="ins-card-badge icb-ok">200 OK</div>
+          </div>
+          <div class="ins-card-body">
+            <div class="icr"><div class="ick">Patient</div><div class="icv teal">592903 · fetched</div></div>
+            <div class="icr"><div class="ick">Condition</div><div class="icv teal">2 active</div></div>
+            <div class="icr"><div class="ick">MedRequest</div><div class="icv teal">3 active</div></div>
+            <div class="icr"><div class="ick">Observation</div><div class="icv teal">8 recent</div></div>
+            <div class="ic-sep"></div>
+            <div class="icr"><div class="ick">latency</div><div class="icv">342 ms</div></div>
+            <div class="icr"><div class="ick">auth</div><div class="icv teal">passed</div></div>
+          </div>
+        </div>
+
+        <div class="ins-card">
+          <div class="ins-card-head">
+            <div class="ins-card-title">Triage Result</div>
+            <div class="ins-card-badge" style="background:rgba(240,96,96,.12);color:var(--red);">Critical</div>
+          </div>
+          <div class="ins-card-body">
+            <div class="icr"><div class="ick">severity</div><div class="icv red">critical</div></div>
+            <div class="icr"><div class="ick">score</div><div class="icv red">9 / 10</div></div>
+            <div class="icr"><div class="ick">escalate</div><div class="icv red">true</div></div>
+            <div class="ic-sep"></div>
+            <div class="icr"><div class="ick">ai_model</div><div class="icv">claude-opus-4-6</div></div>
+            <div class="icr"><div class="ick">fhir_used</div><div class="icv teal">true</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tools tab -->
+      <div class="ins-body ins-tab-content" id="tab-tools">
+        <div class="tool-list">
+          <div class="tool-item called">
+            <div class="ti-name">triage_patient()</div>
+            <div class="ti-desc">Severity scoring with FHIR patient history. Returns 1–10 score + escalation flag.</div>
+            <div class="ti-fhir"><span class="ti-tag">Patient</span><span class="ti-tag">Condition</span><span class="ti-tag">Observation</span></div>
+            <div class="ti-calls">Called today: <span>3×</span> · last: <span>09:14:22</span></div>
+          </div>
+          <div class="tool-item called">
+            <div class="ti-name">get_patient_summary()</div>
+            <div class="ti-desc">Full FHIR resource fetch → Claude AI summary. Types: brief / full / consultation.</div>
+            <div class="ti-fhir"><span class="ti-tag">Patient</span><span class="ti-tag">Condition</span><span class="ti-tag">MedRequest</span><span class="ti-tag">Encounter</span></div>
+            <div class="ti-calls">Called today: <span>2×</span> · last: <span>09:14:31</span></div>
+          </div>
+          <div class="tool-item called">
+            <div class="ti-name">create_consultation_brief()</div>
+            <div class="ti-desc">Physician-ready pre-consult document from FHIR data and triage context.</div>
+            <div class="ti-fhir"><span class="ti-tag">Patient</span><span class="ti-tag">Condition</span><span class="ti-tag">MedRequest</span><span class="ti-tag">Observation</span></div>
+            <div class="ti-calls">Called today: <span>2×</span> · last: <span>09:14:35</span></div>
+          </div>
+          <div class="tool-item">
+            <div class="ti-name">check_medication_adherence()</div>
+            <div class="ti-desc">Analyses MedicationRequest resources, scores adherence risk 0–100, CHW alerts.</div>
+            <div class="ti-fhir"><span class="ti-tag">Patient</span><span class="ti-tag">MedicationRequest</span></div>
+            <div class="ti-calls">Called today: <span>0×</span></div>
+          </div>
+          <div class="tool-item">
+            <div class="ti-name">mental_health_assessment()</div>
+            <div class="ti-desc">Crisis detection + CBT recommendations. crisis_flag: true triggers escalation.</div>
+            <div class="ti-fhir"><span class="ti-tag">Patient</span><span class="ti-tag">Observation</span></div>
+            <div class="ti-calls">Called today: <span>0×</span></div>
+          </div>
+          <div class="tool-item">
+            <div class="ti-name">generate_chw_priority_queue()</div>
+            <div class="ti-desc">Parallel-fetches up to 20 patients, AI-ranks by urgency score.</div>
+            <div class="ti-fhir"><span class="ti-tag">Patient</span><span class="ti-tag">Condition</span><span class="ti-tag">MedRequest</span><span class="ti-tag">Observation</span></div>
+            <div class="ti-calls">Called today: <span>0×</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COIN tab -->
+      <div class="ins-body ins-tab-content" id="tab-coin">
+        <div class="coin-event">
+          <div class="ce-head"><span class="ce-intent">triage_result</span><span class="ce-dir ce-emit">emitted</span><span class="ce-time">09:14:23</span></div>
+          <div class="ce-body">severity: <span style="color:var(--red)">critical</span><br>patient_id: <span>592903</span><br>escalate: <span style="color:var(--red)">true</span><br>→ <span>available to all A2A agents</span></div>
+        </div>
+        <div class="coin-event">
+          <div class="ce-head"><span class="ce-intent">clinical_brief_ready</span><span class="ce-dir ce-emit">emitted</span><span class="ce-time">09:14:36</span></div>
+          <div class="ce-body">patient_id: <span>592903</span><br>type: <span>urgent consultation</span><br>→ <span>physician agents can consume</span></div>
+        </div>
+        <div style="margin-top:.5rem;padding:.6rem .8rem;background:var(--bg3);border:1px solid var(--border);border-radius:9px;">
+          <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--muted);margin-bottom:.5rem;">CONFIGURED ACCEPTS</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--light);display:flex;flex-direction:column;gap:.3rem;">
+            <div><span style="color:var(--purple)">triage_request</span> — symptoms + patient_id</div>
+            <div><span style="color:var(--purple)">consultation_prep</span> — patient_id</div>
+            <div><span style="color:var(--purple)">medication_review</span> — patient_id</div>
+            <div><span style="color:var(--purple)">mental_health_check</span> — session_notes</div>
+            <div><span style="color:var(--purple)">chw_briefing</span> — patient_ids[]</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log tab -->
+      <div class="ins-body ins-tab-content" id="tab-log" id="tool-log-tab">
+        <div id="tool-log-entries">
+          <div class="log-entry">
+            <div class="le-head"><span class="le-fn">create_consultation_brief()</span><span class="le-status le-ok">200</span><span class="le-time">09:14:35</span></div>
+            <div class="le-body">patient: <span>592903</span> · type: <span>urgent</span><br>fhir_resources: <span>4 types fetched</span><br>output: <span>847 tokens</span></div>
+            <div class="le-latency">↳ 1.92s total · FHIR: 342ms · Claude: 1.58s</div>
+          </div>
+          <div class="log-entry">
+            <div class="le-head"><span class="le-fn">get_patient_summary()</span><span class="le-status le-ok">200</span><span class="le-time">09:14:31</span></div>
+            <div class="le-body">patient: <span>592903</span> · type: <span>consultation</span><br>fhir_resources: <span>Patient, Condition, MedRequest, Observation, Encounter</span></div>
+            <div class="le-latency">↳ 2.11s total · FHIR: 521ms · Claude: 1.59s</div>
+          </div>
+          <div class="log-entry">
+            <div class="le-head"><span class="le-fn">triage_patient()</span><span class="le-status le-ok">200</span><span class="le-time">09:14:22</span></div>
+            <div class="le-body">patient: <span>592903</span> · symptoms: <span>chest pain, left arm radiation</span><br>result: <span style="color:var(--red)">critical · 9/10 · escalate: true</span></div>
+            <div class="le-latency">↳ 1.84s total · FHIR: 298ms · Claude: 1.54s</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end inspector -->
+  </div><!-- end workspace -->
+</div><!-- end main -->
+
+<script>
+/* NAV */
+function setNav(el) {
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* Inspector tabs */
+function switchTab(el, id) {
+  document.querySelectorAll('.ins-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.ins-tab-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+/* Quick send */
+function quickSend(msg) {
+  document.getElementById('chat-input').value = msg;
+  sendMsg();
+}
+
+/* Tool call responses */
+const toolResponses = {
+  queue: {
+    tools: [
+      { fn:'generate_chw_priority_queue()', status:'200 OK', time:'live',
+        params:'patient_ids: [592903, 12724, 88234] · parallel FHIR fetch',
+        result:'3 patients assessed · ranked by AI urgency score' }
+    ],
+    reply: `<strong>CHW Priority Queue — 3 patients ranked:</strong><br><br>
+    <strong style="color:var(--red)">1. Patient 592903 · Score 87</strong> — Critical BP + missed meds (visit today)<br>
+    <strong style="color:var(--amber)">2. Patient 88234 · Score 54</strong> — Mental health flag, low mood 4 days<br>
+    <strong style="color:var(--teal)">3. Patient 12724 · Score 22</strong> — Stable, routine check-in<br><br>
+    <span style="color:var(--muted);font-size:.7rem;">COIN intent emitted: chw_queue_ready → available to scheduling agents</span>`,
+    coinIntent: { intent:'chw_queue_ready', dir:'emit', data:'patients: 3 · urgent: 1 · chw notified' },
+    logFn: 'generate_chw_priority_queue()', logResult: '3 patients · FHIR parallel fetch · 2.34s'
+  },
+  adherence: {
+    tools: [
+      { fn:'check_medication_adherence()', status:'200 OK', time:'live',
+        params:'patient_id: 592903 · MedicationRequest: 3 active',
+        result:'risk: high · score: 74/100 · chw_alert: recommended' }
+    ],
+    reply: `<strong>Medication Adherence — Patient 592903</strong><br><br>
+    <strong style="color:var(--red)">Risk: HIGH (74/100)</strong><br>
+    3 active medications — Metformin, Lisinopril, Atorvastatin.<br>
+    Complexity flag triggered: multiple medications requiring consistent timing.<br><br>
+    <strong>CHW alert recommended</strong> — particularly Metformin which requires strict dosing for T2DM management.<br>
+    <span style="color:var(--muted);font-size:.7rem;">FHIR: MedicationRequest · 3 resources · SHARP context used</span>`,
+    coinIntent: { intent:'adherence_alert', dir:'emit', data:'patient: 592903 · risk: high · chw: notify' },
+    logFn: 'check_medication_adherence()', logResult: 'risk: high · score: 74 · 1.67s'
+  },
+  mental: {
+    tools: [
+      { fn:'mental_health_assessment()', status:'200 OK', time:'live',
+        params:'patient_id: 88234 · session_notes: processed',
+        result:'crisis_flag: TRUE · escalation: emergency_referral' }
+    ],
+    reply: `<strong>⚠ CRISIS DETECTED — Patient 88234</strong><br><br>
+    <strong style="color:var(--red)">crisis_flag: true</strong><br>
+    Phrases detected: "hopeless", "alone" — consistent with active suicidal ideation risk.<br><br>
+    <strong>Escalation action: emergency_referral</strong><br>
+    Emergency resources included in response. CHW notified immediately.<br><br>
+    <span style="color:var(--teal);font-size:.72rem;">Crisis helpline: SURPIN Nigeria — 0800-787746-1</span>`,
+    coinIntent: { intent:'crisis_alert', dir:'emit', data:'patient: 88234 · crisis: true · escalate: emergency' },
+    logFn: 'mental_health_assessment()', logResult: 'crisis_flag: true · escalation: emergency · 1.91s'
+  },
+  summary: {
+    tools: [
+      { fn:'get_patient_summary()', status:'200 OK', time:'live',
+        params:'patient_id: 12724 · summary_type: full',
+        result:'5 FHIR resource types · full summary generated' }
+    ],
+    reply: `<strong>Full Patient Summary — Patient 12724</strong><br><br>
+    FHIR resources fetched: Patient · Condition · MedicationRequest · Observation · Encounter<br><br>
+    <strong style="color:var(--teal)">Conditions:</strong> Asthma (controlled), Seasonal allergies<br>
+    <strong style="color:var(--teal)">Medications:</strong> Salbutamol PRN · Cetirizine 10mg OD<br>
+    <strong style="color:var(--teal)">Last encounter:</strong> 14 days ago (GP review)<br>
+    <strong style="color:var(--teal)">Observations:</strong> O2 Sat 97% · Peak Flow within target range<br><br>
+    <span style="color:var(--muted);font-size:.7rem;">FHIR: Patient/12724 · SHARP context applied</span>`,
+    coinIntent: { intent:'clinical_brief_ready', dir:'emit', data:'patient: 12724 · type: full summary' },
+    logFn: 'get_patient_summary()', logResult: 'full summary · 5 resource types · 2.08s'
+  },
+};
+
+function getKey(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('queue') || m.includes('chw') || m.includes('priority')) return 'queue';
+  if (m.includes('adherence') || m.includes('medication') || m.includes('med')) return 'adherence';
+  if (m.includes('mental') || m.includes('hopeless') || m.includes('alone') || m.includes('health assess')) return 'mental';
+  if (m.includes('summary') || m.includes('12724')) return 'summary';
+  return null;
+}
+
+function addMsg(type, role, html) {
+  const chat = document.getElementById('chat');
+  const el = document.createElement('div');
+  el.className = 'cm ' + type;
+  if (type === 'system') {
+    el.innerHTML = `<div class="cm-bubble">${html}</div>`;
+  } else {
+    el.innerHTML = `<div class="cm-role">${role}</div><div class="cm-bubble">${html}</div>`;
+  }
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addToolEmbed(t) {
+  const chat = document.getElementById('chat');
+  const time = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const el = document.createElement('div');
+  el.className = 'tool-embed';
+  el.innerHTML = `
+    <div class="te-head"><span class="te-fn">${t.fn}</span><span class="te-status te-ok">${t.status}</span><span class="te-time">${time}</span></div>
+    <div class="te-param">${t.params}</div>
+    <div class="te-result">${t.result}</div>`;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addCoinEvent(c) {
+  const tab = document.getElementById('tab-coin');
+  const time = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const el = document.createElement('div');
+  el.className = 'coin-event';
+  el.innerHTML = `
+    <div class="ce-head"><span class="ce-intent">${c.intent}</span><span class="ce-dir ce-emit">${c.dir}</span><span class="ce-time">${time}</span></div>
+    <div class="ce-body">${c.data.replace(/·/g,'<br>')}</div>`;
+  tab.insertBefore(el, tab.firstChild);
+
+  // Update COIN tab tool call tally
+  const toolsTab = document.getElementById('tab-tools');
+  const toolItems = toolsTab.querySelectorAll('.tool-item');
+  toolItems.forEach(item => {
+    const name = item.querySelector('.ti-name').textContent;
+    if (name === c.logFn) item.classList.add('called');
+  });
+}
+
+function addLogEntry(fn, result) {
+  const logTab = document.getElementById('tool-log-entries');
+  const time = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  const lat = (.8 + Math.random() * 1.5).toFixed(2);
+  el.innerHTML = `
+    <div class="le-head"><span class="le-fn">${fn}</span><span class="le-status le-ok">200</span><span class="le-time">${time}</span></div>
+    <div class="le-body">${result}</div>
+    <div class="le-latency">↳ ${lat}s total</div>`;
+  logTab.insertBefore(el, logTab.firstChild);
+}
+
+function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+
+  addMsg('user', 'Clinician · Dr. Emeka Nwosu', val);
+
+  const key = getKey(val);
+
+  // Typing
+  const chat = document.getElementById('chat');
+  const typing = document.createElement('div');
+  typing.className = 'cm agent';
+  typing.innerHTML = `<div class="cm-role">Curaiva AI</div><div class="cm-bubble" style="display:flex;gap:.35rem;align-items:center;"><div style="width:5px;height:5px;border-radius:50%;background:var(--muted);animation:bounce 1.3s infinite;"></div><div style="width:5px;height:5px;border-radius:50%;background:var(--muted);animation:bounce 1.3s .2s infinite;"></div><div style="width:5px;height:5px;border-radius:50%;background:var(--muted);animation:bounce 1.3s .4s infinite;"></div></div>`;
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+
+  setTimeout(() => {
+    chat.removeChild(typing);
+
+    if (!key) {
+      addMsg('agent', 'Curaiva AI', 'I can run clinical intelligence tools for you. Try asking me to triage a patient, generate a CHW priority queue, check medication adherence, run a mental health assessment, or prepare a consultation brief. Use the quick prompts below or type a query with a patient ID.');
+      return;
+    }
+
+    const res = toolResponses[key];
+
+    // Tool embeds
+    res.tools.forEach((t, i) => {
+      setTimeout(() => addToolEmbed(t), i * 400);
+    });
+
+    // Agent reply
+    setTimeout(() => {
+      addMsg('agent', 'Curaiva AI', res.reply);
+
+      // System COIN message
+      setTimeout(() => {
+        addMsg('system', '', `— COIN intent emitted: ${res.coinIntent.intent} → available to other A2A agents —`);
+        // Update COIN tab
+        addCoinEvent({...res.coinIntent, logFn: res.logFn});
+        // Update log
+        addLogEntry(res.logFn, res.logResult);
+        // Switch inspector to log tab to show new entry
+        document.querySelectorAll('.ins-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.ins-tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector('.ins-tab:nth-child(4)').classList.add('active');
+        document.getElementById('tab-log').classList.add('active');
+      }, 400);
+    }, res.tools.length * 400 + 600);
+
+  }, 1200);
+}
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+</script>
+</body>
+</html>

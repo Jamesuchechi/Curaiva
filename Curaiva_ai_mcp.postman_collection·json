@@ -1,0 +1,165 @@
+{
+  "info": {
+    "name": "Curaiva AI — MCP Server",
+    "description": "Complete test collection for all 6 Curaiva AI MCP tools.\n\nSetup:\n1. Set the `base_url` variable to your deployed Railway URL\n2. Optionally set `patient_id` to a real FHIR patient ID\n3. Run the Health Check first to verify server is up\n4. Test each tool in order\n\nDefault FHIR server: https://hapi.fhir.org/baseR4",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "curaiva-ai-mcp-v1"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://curaiva-ai-mcp.railway.app", "type": "string", "description": "Your deployed MCP server URL. Change to http://localhost:3001 for local testing." },
+    { "key": "patient_id", "value": "592903", "type": "string", "description": "FHIR Patient resource ID on HAPI FHIR public server" },
+    { "key": "fhir_base_url", "value": "https://hapi.fhir.org/baseR4", "type": "string", "description": "FHIR R4 server base URL" }
+  ],
+  "item": [
+    {
+      "name": "🏥 Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] },
+        "description": "Verify the MCP server is running. Should return all 6 tool names, FHIR default URL, and SHARP compliance flag."
+      },
+      "response": []
+    },
+    {
+      "name": "🤖 Tool 1 — triage_patient (Critical)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"triage_patient\",\n    \"arguments\": {\n      \"symptoms\": \"I have severe chest pain radiating to my left arm. Started 30 minutes ago. I am also very short of breath and feel dizzy.\",\n      \"patient_id\": \"{{patient_id}}\",\n      \"include_history\": true\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Expected: severity=critical, severity_score 8-10, escalate_to_doctor=true, FHIR data fetched from HAPI server."
+      },
+      "response": []
+    },
+    {
+      "name": "🤖 Tool 1 — triage_patient (Low)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"triage_patient\",\n    \"arguments\": {\n      \"symptoms\": \"I have a mild headache and a slightly runny nose since this morning. No fever.\",\n      \"patient_id\": \"{{patient_id}}\",\n      \"include_history\": false\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Expected: severity=low, escalate_to_doctor=false, self-care tips returned."
+      },
+      "response": []
+    },
+    {
+      "name": "📋 Tool 2 — get_patient_summary (Consultation)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_patient_summary\",\n    \"arguments\": {\n      \"patient_id\": \"{{patient_id}}\",\n      \"summary_type\": \"consultation\"\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Expected: Structured physician brief with Chief Data Points, Active Problems, Current Medications, Recent Observations, Clinical Considerations."
+      },
+      "response": []
+    },
+    {
+      "name": "📋 Tool 2 — get_patient_summary (Brief)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_patient_summary\",\n    \"arguments\": {\n      \"patient_id\": \"{{patient_id}}\",\n      \"summary_type\": \"brief\"\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Expected: 2-3 sentence summary a busy clinician can read in 10 seconds."
+      },
+      "response": []
+    },
+    {
+      "name": "💊 Tool 3 — check_medication_adherence",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"check_medication_adherence\",\n    \"arguments\": {\n      \"patient_id\": \"{{patient_id}}\",\n      \"flag_threshold\": 3\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Expected: adherence_risk score, medication_count, complexity_factors, chw_alert_recommended, monitoring_priority."
+      },
+      "response": []
+    },
+    {
+      "name": "🧠 Tool 4 — mental_health_assessment (Stable)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"mental_health_assessment\",\n    \"arguments\": {\n      \"patient_id\": \"{{patient_id}}\",\n      \"session_notes\": \"I have been feeling a bit stressed with work lately but overall I am okay. I slept well last night and had a good meal today.\",\n      \"check_fhir_history\": true\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Expected: mood_category=stable, crisis_flag=false, CBT recommendations."
+      },
+      "response": []
+    },
+    {
+      "name": "🧠 Tool 4 — mental_health_assessment (CRISIS ⚠)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"mental_health_assessment\",\n    \"arguments\": {\n      \"patient_id\": \"{{patient_id}}\",\n      \"session_notes\": \"I feel like there is no point anymore. I have been thinking it would be easier if I was not here. I cannot see a way forward.\",\n      \"check_fhir_history\": true\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "IMPORTANT: Use this in your demo. Expected: crisis_flag=TRUE, escalation_action=emergency_referral, emergency resources included in response."
+      },
+      "response": []
+    },
+    {
+      "name": "🌍 Tool 5 — generate_chw_priority_queue",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"generate_chw_priority_queue\",\n    \"arguments\": {\n      \"patient_ids\": [\"{{patient_id}}\", \"12724\", \"88234\", \"45611\"],\n      \"chw_id\": \"CHW-FATIMA-001\",\n      \"max_results\": 4\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"practitioner_id\": \"CHW-FATIMA-001\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Expected: Patients ranked 0-100 by urgency. Each has priority_tier, visit_recommendation, primary_concern, action_items."
+      },
+      "response": []
+    },
+    {
+      "name": "📝 Tool 6 — create_consultation_brief (Critical)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"create_consultation_brief\",\n    \"arguments\": {\n      \"patient_id\": \"{{patient_id}}\",\n      \"chief_complaint\": \"Severe chest pain and shortness of breath\",\n      \"triage_severity\": \"critical\",\n      \"consultation_type\": \"urgent\"\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\",\n    \"encounter_id\": \"ENC-DEMO-001\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Use in doctor demo. Expected: Markdown brief with PATIENT OVERVIEW, CHIEF COMPLAINT, ACTIVE PROBLEMS, CURRENT MEDICATIONS, RECENT OBSERVATIONS, CLINICAL CONSIDERATIONS, SUGGESTED FOCUS AREAS."
+      },
+      "response": []
+    },
+    {
+      "name": "📝 Tool 6 — create_consultation_brief (Follow-up)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"create_consultation_brief\",\n    \"arguments\": {\n      \"patient_id\": \"{{patient_id}}\",\n      \"chief_complaint\": \"BP check follow-up — results uploaded\",\n      \"consultation_type\": \"follow_up\"\n    }\n  },\n  \"sharp_context\": {\n    \"fhir_base_url\": \"{{fhir_base_url}}\",\n    \"patient_id\": \"{{patient_id}}\"\n  }\n}"
+        },
+        "url": { "raw": "{{base_url}}/mcp", "host": ["{{base_url}}"], "path": ["mcp"] },
+        "description": "Expected: Calmer clinical brief appropriate for a routine follow-up consultation."
+      },
+      "response": []
+    }
+  ]
+}

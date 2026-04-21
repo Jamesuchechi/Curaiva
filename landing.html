@@ -3,695 +3,836 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Curaiva AI — Healthcare Intelligence for Every Community</title>
-<meta name="description" content="AI-powered platform connecting patients, doctors, and community health workers. Triage. Consult. Monitor. Heal.">
+<title>Curaiva AI — MCP + A2A Healthcare Agent | Agents Assemble</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;0,900;1,300;1,700&family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;0,900;1,400&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --ink: #0b0f0e;
-  --ink2: #131918;
-  --green: #1a6b5a;
-  --green-mid: #227060;
-  --green-bright: #2d9574;
+  --bg: #0b0f0e;
+  --bg2: #111715;
+  --bg3: #161d1b;
+  --surface: #1c2422;
+  --green: #2d9574;
+  --green2: #1e6651;
   --lime: #c8f04e;
-  --sage: #a8c5b8;
-  --cream: #f5f0e8;
-  --cream2: #ede8df;
-  --warm-white: #faf8f4;
-  --text-muted: #6b7875;
-  --text-light: #94a89f;
-  --border-dark: rgba(255,255,255,0.07);
-  --border-light: rgba(11,15,14,0.1);
-  --card-dark: rgba(255,255,255,0.03);
-  --radius: 16px;
+  --lime-dim: rgba(200,240,78,.1);
+  --teal: #5dc4a8;
+  --coral: #f4845f;
+  --amber: #f5b944;
+  --red: #f06060;
+  --white: #faf8f4;
+  --muted: #5a706b;
+  --light: #8aa39c;
+  --border: rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.04);
+  --radius: 14px;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{background:var(--ink);color:var(--warm-white);font-family:'Instrument Sans',sans-serif;font-weight:400;overflow-x:hidden;-webkit-font-smoothing:antialiased;cursor:none;}
-a,button{cursor:none;}
-
-/* CURSOR */
-#cur-dot{position:fixed;z-index:9999;pointer-events:none;width:8px;height:8px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);mix-blend-mode:difference;top:0;left:0;}
-#cur-ring{position:fixed;z-index:9998;pointer-events:none;width:42px;height:42px;border:1px solid rgba(200,240,78,.5);border-radius:50%;transform:translate(-50%,-50%);transition:width .3s,height .3s,border-color .3s;top:0;left:0;}
+body{background:var(--bg);color:var(--white);font-family:'Instrument Sans',sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 3rem;transition:all .4s;}
-nav.scrolled{background:rgba(11,15,14,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border-dark);}
-.logo{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:700;letter-spacing:-.02em;color:var(--warm-white);text-decoration:none;display:flex;align-items:center;gap:.5rem;}
-.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--lime);animation:breathe 3s ease-in-out infinite;}
-@keyframes breathe{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
-.nav-center{display:flex;align-items:center;gap:2.5rem;}
-.nav-center a{font-size:.82rem;font-weight:500;letter-spacing:.05em;color:var(--text-muted);text-decoration:none;transition:color .2s;text-transform:uppercase;}
-.nav-center a:hover{color:var(--warm-white);}
-.nav-right{display:flex;align-items:center;gap:1rem;}
-.btn-nav-ghost{font-size:.82rem;font-weight:500;color:var(--text-muted);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
-.btn-nav-ghost:hover{color:var(--warm-white);}
-.btn-nav{background:var(--lime);color:var(--ink);font-family:'Instrument Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:.52rem 1.35rem;border-radius:100px;text-decoration:none;transition:all .25s;display:inline-block;}
-.btn-nav:hover{background:#d4f55c;transform:translateY(-1px);box-shadow:0 8px 24px rgba(200,240,78,.25);}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.1rem 2.5rem;display:flex;align-items:center;justify-content:space-between;transition:all .3s;}
+nav.scrolled{background:rgba(11,15,14,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--white);}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--lime);animation:pulse 2.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+.nav-links{display:flex;align-items:center;gap:2rem;}
+.nav-links a{font-size:.82rem;font-weight:500;letter-spacing:.04em;color:var(--muted);text-decoration:none;text-transform:uppercase;transition:color .2s;}
+.nav-links a:hover{color:var(--white);}
+.nav-cta{background:var(--lime);color:var(--bg);font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.48rem 1.2rem;border-radius:100px;text-decoration:none;transition:all .2s;}
+.nav-cta:hover{background:#d4f55c;transform:translateY(-1px);}
 
 /* HERO */
-#hero{min-height:100vh;position:relative;display:grid;grid-template-rows:1fr auto;padding-top:7rem;overflow:hidden;}
+#hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:7rem 2rem 3rem;position:relative;overflow:hidden;}
 #hero-canvas{position:absolute;inset:0;z-index:0;pointer-events:none;}
-.hero-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem 2rem;}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:.75rem;background:rgba(200,240,78,.08);border:1px solid rgba(200,240,78,.2);color:var(--lime);font-size:.7rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;padding:.45rem 1.1rem;border-radius:100px;margin-bottom:2.5rem;animation:fadeUp .7s .1s both;}
-.eyebrow-line{width:18px;height:1px;background:var(--lime);opacity:.6;}
-.hero-h1{font-family:'Fraunces',serif;font-size:clamp(3.5rem,8.5vw,7.8rem);font-weight:900;line-height:1;letter-spacing:-.04em;max-width:900px;animation:fadeUp .7s .25s both;}
-.hero-h1 .italic{font-style:italic;font-weight:300;color:var(--green-bright);}
-.hero-h1 .block{display:block;}
-.hero-sub{font-size:clamp(.95rem,1.5vw,1.12rem);color:var(--text-muted);line-height:1.85;max-width:520px;margin:2rem auto 3rem;animation:fadeUp .7s .4s both;}
-.hero-actions{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;justify-content:center;animation:fadeUp .7s .55s both;}
-.btn-primary{background:var(--lime);color:var(--ink);font-family:'Instrument Sans',sans-serif;font-size:.9rem;font-weight:600;letter-spacing:.04em;padding:.85rem 2.2rem;border-radius:100px;text-decoration:none;border:none;transition:all .25s;display:inline-block;}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 48px rgba(200,240,78,.3);background:#d4f55c;}
-.btn-outline{font-size:.9rem;font-weight:500;color:var(--warm-white);padding:.85rem 2.2rem;border-radius:100px;border:1px solid rgba(255,255,255,.12);text-decoration:none;transition:all .25s;display:inline-block;}
-.btn-outline:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.04);transform:translateY(-2px);}
-.hero-ticker{position:relative;z-index:2;border-top:1px solid var(--border-dark);padding:1.5rem 3rem;display:flex;align-items:center;justify-content:space-between;animation:fadeUp .7s .7s both;}
-.ticker-item{display:flex;align-items:baseline;gap:.6rem;}
-.ticker-num{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:700;color:var(--warm-white);letter-spacing:-.03em;}
-.ticker-label{font-size:.75rem;color:var(--text-muted);letter-spacing:.03em;max-width:130px;line-height:1.4;}
-.ticker-div{width:1px;height:36px;background:var(--border-dark);}
+.hero-inner{position:relative;z-index:1;}
 
-/* MARQUEE */
-.marquee-wrap{overflow:hidden;background:var(--lime);padding:.72rem 0;position:relative;z-index:2;}
-.marquee-track{display:flex;gap:3rem;animation:marquee 28s linear infinite;width:max-content;}
-.marquee-track span{font-family:'Fraunces',serif;font-size:.88rem;font-weight:700;font-style:italic;color:var(--ink);white-space:nowrap;letter-spacing:.02em;}
-.marquee-track .dot{color:var(--green);font-style:normal;}
-@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.hackathon-badge{display:inline-flex;align-items:center;gap:.6rem;background:rgba(200,240,78,.08);border:1px solid rgba(200,240,78,.18);color:var(--lime);font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:.42rem 1rem;border-radius:100px;margin-bottom:2.2rem;font-family:'DM Mono',monospace;}
+.hb-dot{width:5px;height:5px;border-radius:50%;background:var(--lime);animation:pulse 2.5s ease-in-out infinite;}
 
-/* UTILS */
-.container{max-width:1240px;margin:0 auto;padding:0 2.5rem;}
-.section-label{font-size:.68rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--lime);opacity:.7;margin-bottom:.9rem;}
-.section-heading{font-family:'Fraunces',serif;font-size:clamp(2.1rem,4vw,3.6rem);font-weight:700;line-height:1.1;letter-spacing:-.03em;}
-.section-heading em{font-style:italic;font-weight:300;color:var(--green-bright);}
-@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
-.reveal{opacity:0;transform:translateY(36px);transition:opacity .75s ease,transform .75s ease;}
+h1{font-family:'Fraunces',serif;font-size:clamp(2.8rem,7vw,6.2rem);font-weight:900;line-height:1.05;letter-spacing:-.04em;margin-bottom:1.5rem;}
+h1 em{font-style:italic;font-weight:300;color:var(--green);display:block;}
+
+.hero-desc{font-size:clamp(.95rem,1.5vw,1.1rem);color:var(--light);line-height:1.85;max-width:560px;margin:0 auto 2.5rem;}
+
+/* Path badges */
+.paths{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:2.5rem;flex-wrap:wrap;}
+.path-badge{display:flex;align-items:center;gap:.6rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:.7rem 1.2rem;}
+.path-icon{font-size:1.2rem;}
+.path-text{}
+.path-label{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.path-name{font-size:.88rem;font-weight:600;margin-top:.1rem;}
+.path-badge.option1 .path-name{color:var(--teal);}
+.path-badge.option2 .path-name{color:var(--coral);}
+.plus-sep{font-size:1.2rem;color:var(--muted);}
+
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;}
+.btn-primary{background:var(--lime);color:var(--bg);font-size:.88rem;font-weight:700;padding:.8rem 2rem;border-radius:100px;text-decoration:none;transition:all .2s;display:inline-block;}
+.btn-primary:hover{background:#d4f55c;transform:translateY(-2px);box-shadow:0 12px 40px rgba(200,240,78,.25);}
+.btn-outline{font-size:.88rem;font-weight:500;color:var(--light);padding:.8rem 2rem;border-radius:100px;border:1px solid var(--border);text-decoration:none;transition:all .2s;display:inline-block;}
+.btn-outline:hover{border-color:rgba(255,255,255,.2);color:var(--white);}
+
+/* SECTION UTILS */
+.section{padding:6rem 2.5rem;position:relative;}
+.container{max-width:1100px;margin:0 auto;}
+.label{font-family:'DM Mono',monospace;font-size:.65rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--lime);opacity:.7;margin-bottom:.8rem;}
+h2{font-family:'Fraunces',serif;font-size:clamp(1.9rem,3.5vw,3rem);font-weight:700;line-height:1.1;letter-spacing:-.03em;margin-bottom:1rem;}
+h2 em{font-style:italic;font-weight:300;color:var(--green);}
+.section-desc{color:var(--light);font-size:1rem;line-height:1.8;max-width:560px;}
+
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease;}
 .reveal.in{opacity:1;transform:none;}
-.r1{transition-delay:.05s}.r2{transition-delay:.12s}.r3{transition-delay:.19s}.r4{transition-delay:.26s}.r5{transition-delay:.33s}
+.d1{transition-delay:.06s}.d2{transition-delay:.13s}.d3{transition-delay:.2s}.d4{transition-delay:.27s}
 
-/* PROBLEM */
-#problem{padding:9rem 0;background:var(--ink2);position:relative;overflow:hidden;}
-#problem::before{content:'';position:absolute;top:-1px;left:0;right:0;height:1px;background:var(--border-dark);}
-.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;}
-.problem-text .section-heading{margin:1rem 0 1.5rem;}
-.problem-text p{color:var(--text-muted);line-height:1.85;font-size:1.03rem;margin-bottom:1rem;}
-.problem-cards{display:flex;flex-direction:column;gap:.75rem;}
-.pcard{background:var(--card-dark);border:1px solid var(--border-dark);border-radius:var(--radius);padding:1.4rem 1.6rem;display:flex;align-items:flex-start;gap:1.2rem;transition:border-color .3s,background .3s;position:relative;overflow:hidden;}
-.pcard:hover{border-color:rgba(200,240,78,.2);background:rgba(200,240,78,.03);}
-.pcard-icon{font-size:1.4rem;flex-shrink:0;margin-top:.1rem;}
-.pcard-text h4{font-size:.93rem;font-weight:600;margin-bottom:.25rem;}
-.pcard-text p{font-size:.82rem;color:var(--text-muted);line-height:1.5;}
-.pcard-num{position:absolute;right:1.4rem;top:50%;transform:translateY(-50%);font-family:'Fraunces',serif;font-size:2.4rem;font-weight:900;color:rgba(255,255,255,.04);line-height:1;}
+/* ARCHITECTURE SECTION */
+#arch{background:var(--bg2);}
+.arch-diagram{margin-top:3.5rem;position:relative;}
 
-/* PLATFORM */
-#platform{padding:9rem 0;}
-.platform-header{text-align:center;max-width:680px;margin:0 auto 5rem;}
-.platform-header p{color:var(--text-muted);font-size:1.03rem;line-height:1.8;margin-top:1.2rem;}
-.feat-layout{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border-dark);border:1px solid var(--border-dark);border-radius:24px;overflow:hidden;}
-.feat-main{grid-column:span 2;background:var(--ink2);padding:3.5rem;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;position:relative;overflow:hidden;}
-.feat-main::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;right:-100px;top:-100px;background:radial-gradient(circle,rgba(45,149,116,.1) 0%,transparent 70%);pointer-events:none;}
-.feat-main-tag{display:inline-flex;align-items:center;gap:.5rem;background:rgba(45,149,116,.1);border:1px solid rgba(45,149,116,.22);color:#5dc4a8;font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.33rem .9rem;border-radius:100px;margin-bottom:1.5rem;}
-.feat-main-text h3{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;letter-spacing:-.03em;line-height:1.15;margin-bottom:1rem;}
-.feat-main-text p{color:var(--text-muted);line-height:1.8;font-size:.97rem;margin-bottom:1.5rem;}
-.triage-mock{background:rgba(255,255,255,.04);border:1px solid var(--border-dark);border-radius:18px;padding:1.5rem;font-size:.8rem;}
-.mock-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem;}
-.mock-dot{width:8px;height:8px;border-radius:50%;}
-.mock-dot.red{background:#ff5f57}.mock-dot.amber{background:#ffbd2e}.mock-dot.grn{background:#27c93f}
-.mock-input{background:rgba(255,255,255,.05);border:1px solid var(--border-dark);border-radius:10px;padding:.9rem 1rem;color:var(--text-muted);font-size:.78rem;margin-bottom:1rem;font-style:italic;line-height:1.5;}
-.mock-severity{display:flex;gap:.5rem;margin-bottom:1rem;}
-.sev-pill{flex:1;padding:.5rem;border-radius:8px;text-align:center;font-size:.68rem;font-weight:600;letter-spacing:.06em;}
-.sev-low{background:rgba(39,201,63,.1);color:#27c93f;border:1px solid rgba(39,201,63,.2);}
-.sev-mod{background:rgba(255,189,46,.1);color:#ffbd2e;border:1px solid rgba(255,189,46,.2);}
-.sev-crit{background:rgba(255,95,87,.13);color:#ff5f57;border:1px solid rgba(255,95,87,.25);font-weight:800;}
-.mock-result{background:rgba(45,149,116,.08);border:1px solid rgba(45,149,116,.2);border-radius:10px;padding:.9rem 1rem;}
-.mock-result-label{font-size:.62rem;color:#5dc4a8;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem;}
-.mock-result-text{font-size:.77rem;color:var(--warm-white);line-height:1.55;}
-.mock-escalate{margin-top:.9rem;background:var(--lime);color:var(--ink);border:none;border-radius:8px;padding:.55rem 1rem;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;width:100%;cursor:none;transition:all .25s;}
-.mock-escalate:hover{background:#d4f55c;}
-.feat-card{background:var(--ink2);padding:2.5rem;transition:background .3s;position:relative;overflow:hidden;}
-.feat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--lime),transparent);opacity:0;transition:opacity .3s;}
-.feat-card:hover{background:rgba(255,255,255,.025);}
-.feat-card:hover::before{opacity:.35;}
-.fc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:1.5rem;}
-.fc-coral{background:rgba(235,120,60,.1);}
-.fc-purple{background:rgba(130,80,220,.1);}
-.fc-amber{background:rgba(240,170,30,.1);}
-.fc-teal{background:rgba(45,149,116,.1);}
-.feat-card h3{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.6rem;}
-.feat-card p{color:var(--text-muted);font-size:.87rem;line-height:1.7;}
+/* Platform box */
+.platform-box{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:2rem;position:relative;overflow:hidden;}
+.platform-box::before{content:'Prompt Opinion Platform';position:absolute;top:.7rem;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.platform-label-box{display:flex;justify-content:center;margin-bottom:1.5rem;}
+.plat-badge{background:rgba(200,240,78,.06);border:1px solid rgba(200,240,78,.15);color:var(--lime);font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;padding:.3rem .8rem;border-radius:100px;}
 
-/* HOW IT WORKS */
-#how{padding:9rem 0;background:var(--cream);color:var(--ink);position:relative;overflow:hidden;}
-#how .section-label{color:var(--green);opacity:1;}
-#how .section-heading{color:var(--ink);}
-#how .section-heading em{color:var(--green-mid);}
-.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;margin-top:4rem;}
-.how-steps{display:flex;flex-direction:column;}
-.how-step{display:flex;gap:1.8rem;padding:2rem 0 2rem 1.8rem;border-left:1.5px solid var(--border-light);position:relative;cursor:default;transition:border-color .3s;}
-.how-step:hover{border-color:var(--green);}
-.how-step-num{position:absolute;left:-18px;top:2rem;width:34px;height:34px;border-radius:50%;background:var(--cream);border:1.5px solid var(--border-light);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:.9rem;font-weight:700;color:var(--green);transition:all .3s;flex-shrink:0;}
-.how-step:hover .how-step-num{background:var(--green);border-color:var(--green);color:#fff;}
-.how-step-body h4{font-size:1.03rem;font-weight:600;color:var(--ink);margin-bottom:.4rem;}
-.how-step-body p{font-size:.87rem;color:#6b7875;line-height:1.7;}
-.how-visual-wrap{position:relative;height:480px;}
-#flow-canvas{width:100%;height:100%;border-radius:20px;background:rgba(11,15,14,.04);border:1px solid var(--border-light);}
+.arch-row{display:flex;align-items:stretch;gap:1rem;}
+.arch-node{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.4rem;text-align:center;position:relative;}
+.arch-node.highlight{border-color:rgba(200,240,78,.3);background:var(--lime-dim);}
+.an-icon{font-size:1.6rem;margin-bottom:.7rem;}
+.an-title{font-size:.85rem;font-weight:700;margin-bottom:.3rem;}
+.an-title.lime{color:var(--lime);}
+.an-title.teal{color:var(--teal);}
+.an-title.coral{color:var(--coral);}
+.an-desc{font-size:.72rem;color:var(--muted);line-height:1.5;}
 
-/* PROOF */
-#proof{padding:9rem 0;background:var(--ink2);}
-.proof-header{text-align:center;margin-bottom:4rem;}
-.proof-header p{color:var(--text-muted);font-size:1rem;margin-top:1rem;}
-.testimonials{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
-.tcard{background:var(--card-dark);border:1px solid var(--border-dark);border-radius:var(--radius);padding:2rem;transition:transform .3s,border-color .3s;}
-.tcard:hover{transform:translateY(-4px);border-color:rgba(200,240,78,.15);}
-.tcard-quote{font-family:'Instrument Serif',serif;font-style:italic;font-size:1.03rem;line-height:1.75;color:var(--warm-white);margin-bottom:1.5rem;}
-.tcard-author{display:flex;align-items:center;gap:.9rem;}
-.tcard-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;background:var(--border-dark);}
-.tcard-name{font-size:.87rem;font-weight:600;}
-.tcard-role{font-size:.74rem;color:var(--text-muted);margin-top:.1rem;}
+.arch-connector{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 .3rem;}
+.conn-line{width:1px;flex:1;background:linear-gradient(to bottom,transparent,var(--green),transparent);}
+.conn-label{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted);writing-mode:vertical-lr;letter-spacing:.08em;padding:.3rem 0;}
 
-/* ROLES */
-#roles{padding:9rem 0;}
-.roles-header{margin-bottom:5rem;}
-.role-row{display:grid;grid-template-columns:5fr 7fr;gap:5rem;align-items:center;padding:4rem 0;border-top:1px solid var(--border-dark);}
-.role-row:last-child{border-bottom:1px solid var(--border-dark);}
-.role-row.flip{direction:rtl;}
-.role-row.flip>*{direction:ltr;}
-.role-badge{display:inline-flex;align-items:center;gap:.5rem;font-size:.67rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.33rem .9rem;border-radius:100px;margin-bottom:1.5rem;}
-.rb-patient{background:rgba(45,149,116,.1);color:#5dc4a8;border:1px solid rgba(45,149,116,.2);}
-.rb-doctor{background:rgba(235,120,60,.1);color:#f4a06a;border:1px solid rgba(235,120,60,.2);}
-.rb-chw{background:rgba(130,80,220,.1);color:#b99dff;border:1px solid rgba(130,80,220,.2);}
-.role-info h3{font-family:'Fraunces',serif;font-size:1.95rem;font-weight:700;letter-spacing:-.03em;line-height:1.15;margin-bottom:1rem;}
-.role-info p{color:var(--text-muted);line-height:1.85;font-size:.96rem;margin-bottom:1.5rem;}
-.role-features{display:flex;flex-direction:column;gap:.6rem;}
-.role-feat{display:flex;align-items:center;gap:.8rem;font-size:.87rem;color:var(--text-light);}
-.role-feat::before{content:'→';color:var(--lime);font-size:.75rem;flex-shrink:0;}
-.role-visual{background:var(--card-dark);border:1px solid var(--border-dark);border-radius:20px;padding:1.8rem;min-height:260px;display:flex;flex-direction:column;gap:.8rem;position:relative;overflow:hidden;}
-.role-visual::after{content:'';position:absolute;width:180px;height:180px;border-radius:50%;right:-50px;bottom:-50px;pointer-events:none;opacity:.07;}
-.rv-patient::after{background:var(--green-bright);}
-.rv-doctor::after{background:#eb783c;}
-.rv-chw::after{background:#8250dc;}
-.chat-bubble{padding:.75rem 1rem;border-radius:14px;font-size:.79rem;line-height:1.55;max-width:88%;}
-.cb-user{background:rgba(255,255,255,.07);align-self:flex-end;color:var(--warm-white);border-radius:14px 14px 4px 14px;}
-.cb-ai{background:rgba(45,149,116,.12);border:1px solid rgba(45,149,116,.2);color:#a8e8d8;border-radius:14px 14px 14px 4px;}
-.chat-items{display:flex;flex-direction:column;gap:.65rem;}
-.chat-typing{display:flex;align-items:center;gap:.3rem;padding:.5rem 1rem;}
-.typing-dot{width:5px;height:5px;border-radius:50%;background:var(--text-muted);animation:typingBounce 1.4s infinite;}
-.typing-dot:nth-child(2){animation-delay:.2s}.typing-dot:nth-child(3){animation-delay:.4s}
-@keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-.inbox-item{display:flex;align-items:center;gap:.85rem;padding:.72rem;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--border-dark);transition:background .2s;}
-.inbox-item.urgent{border-color:rgba(255,95,87,.25);background:rgba(255,95,87,.04);}
-.inbox-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;background:var(--border-dark);}
-.inbox-text{flex:1;}
-.inbox-name{font-size:.8rem;font-weight:600;}
-.inbox-preview{font-size:.7rem;color:var(--text-muted);margin-top:.1rem;line-height:1.4;}
-.inbox-badge{font-size:.62rem;font-weight:700;padding:.2rem .55rem;border-radius:100px;white-space:nowrap;}
-.ib-crit{background:rgba(255,95,87,.15);color:#ff5f57;}
-.ib-norm{background:rgba(45,149,116,.12);color:#5dc4a8;}
-.ib-ai{background:rgba(200,240,78,.1);color:var(--lime);}
-.queue-item{display:flex;align-items:center;gap:.8rem;padding:.7rem .8rem;border-radius:10px;background:rgba(255,255,255,.03);border-left:3px solid transparent;}
-.qi-crit{border-color:#ff5f57;}.qi-warn{border-color:#ffbd2e;}.qi-ok{border-color:#27c93f;}
-.qi-score{font-family:'Fraunces',serif;font-size:1.25rem;font-weight:700;min-width:2.8rem;}
-.qi-crit .qi-score{color:#ff5f57;}.qi-warn .qi-score{color:#ffbd2e;}.qi-ok .qi-score{color:#27c93f;}
-.qi-info{flex:1;}.qi-name{font-size:.8rem;font-weight:600;}.qi-reason{font-size:.68rem;color:var(--text-muted);margin-top:.1rem;}
-.qi-action{font-size:.66rem;font-weight:600;color:var(--lime);border:1px solid rgba(200,240,78,.3);padding:.23rem .58rem;border-radius:6px;white-space:nowrap;}
+.arch-arrow-row{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.8rem 0;}
+.arr-line{flex:1;height:1px;background:linear-gradient(to right,transparent,var(--green),transparent);}
+.arr-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--teal);letter-spacing:.08em;white-space:nowrap;padding:0 .5rem;}
 
-/* TECH */
-#tech{padding:9rem 0;background:var(--ink2);}
-.tech-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4rem;}
-.tech-header p{color:var(--text-muted);font-size:.95rem;max-width:360px;line-height:1.7;}
-.tech-table{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border-dark);border:1px solid var(--border-dark);border-radius:20px;overflow:hidden;}
-.tech-row{background:var(--ink2);padding:1.7rem 2rem;display:flex;align-items:center;gap:1.4rem;transition:background .3s;}
-.tech-row:hover{background:rgba(200,240,78,.03);}
-.tech-icon-wrap{font-size:1.5rem;width:40px;text-align:center;flex-shrink:0;}
-.tech-name{font-size:.93rem;font-weight:600;margin-bottom:.2rem;}
-.tech-desc{font-size:.77rem;color:var(--text-muted);}
-.tech-tag{margin-left:auto;font-size:.63rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.28rem .75rem;border-radius:100px;background:rgba(200,240,78,.08);color:var(--lime);white-space:nowrap;}
+/* External boxes */
+.arch-external{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;}
+.ext-node{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1rem;display:flex;align-items:center;gap:.8rem;}
+.ext-icon{font-size:1.3rem;flex-shrink:0;}
+.ext-text{}
+.ext-name{font-size:.82rem;font-weight:600;}
+.ext-sub{font-size:.68rem;color:var(--muted);margin-top:.1rem;}
 
-/* CTA */
-#cta{padding:9rem 0;position:relative;overflow:hidden;}
-#cta-canvas{position:absolute;inset:0;z-index:0;pointer-events:none;}
-.cta-inner{position:relative;z-index:1;text-align:center;}
-.cta-kicker{font-family:'Fraunces',serif;font-size:clamp(2.8rem,7vw,6.2rem);font-weight:900;letter-spacing:-.04em;line-height:1.05;margin:2rem 0;}
-.cta-kicker em{font-style:italic;font-weight:300;color:var(--green-bright);display:block;}
-.cta-sub{color:var(--text-muted);font-size:1.05rem;line-height:1.8;max-width:480px;margin:0 auto 3rem;}
+/* TOOLS SECTION */
+#tools{background:var(--bg);}
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-top:3rem;}
+.tool-card{background:var(--bg2);padding:1.8rem;transition:background .2s;position:relative;overflow:hidden;cursor:default;}
+.tool-card:hover{background:var(--surface);}
+.tool-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--lime),transparent);opacity:0;transition:opacity .3s;}
+.tool-card:hover::after{opacity:.4;}
+.tc-num{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--muted);margin-bottom:.8rem;letter-spacing:.08em;}
+.tc-name{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--lime);margin-bottom:.5rem;}
+.tc-desc{font-size:.8rem;color:var(--light);line-height:1.6;margin-bottom:.8rem;}
+.tc-fhir{display:flex;flex-wrap:wrap;gap:.3rem;}
+.fhir-tag{font-family:'DM Mono',monospace;font-size:.6rem;background:rgba(45,149,116,.1);border:1px solid rgba(45,149,116,.2);color:var(--teal);padding:.15rem .5rem;border-radius:4px;}
+
+/* AGENT DEMO SECTION — this is the key section */
+#demo{background:var(--bg2);}
+.demo-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:1.5rem;margin-top:3rem;}
+
+/* Prompt Opinion agent window mock */
+.po-window{background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.po-topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;align-items:center;gap:.7rem;}
+.po-dots{display:flex;gap:.35rem;}
+.po-dot{width:10px;height:10px;border-radius:50%;}
+.po-title{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);flex:1;text-align:center;}
+.po-status{font-size:.62rem;color:var(--teal);font-family:'DM Mono',monospace;display:flex;align-items:center;gap:.3rem;}
+.po-live{width:5px;height:5px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite;}
+
+.po-body{padding:1rem;display:flex;flex-direction:column;gap:.7rem;height:520px;overflow-y:auto;}
+.po-body::-webkit-scrollbar{width:3px;}
+.po-body::-webkit-scrollbar-thumb{background:var(--surface);}
+
+/* Agent conversation bubbles */
+.msg{display:flex;flex-direction:column;gap:.2rem;animation:msgIn .3s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg-role{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;padding-left:.1rem;}
+.msg-bubble{padding:.7rem .9rem;border-radius:12px;font-size:.78rem;line-height:1.6;}
+.msg.user .msg-bubble{background:rgba(200,240,78,.08);border:1px solid rgba(200,240,78,.15);color:var(--white);border-radius:12px 12px 4px 12px;}
+.msg.user .msg-role{text-align:right;}
+.msg.user{align-items:flex-end;}
+.msg.agent .msg-bubble{background:var(--surface);border:1px solid var(--border);color:var(--light);border-radius:12px 12px 12px 4px;}
+
+/* Tool call block inside conversation */
+.tool-call-block{background:var(--bg);border:1px solid rgba(45,149,116,.25);border-radius:10px;padding:.7rem .9rem;font-family:'DM Mono',monospace;font-size:.68rem;margin:.2rem 0;}
+.tcb-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;}
+.tcb-fn{color:var(--lime);}
+.tcb-status{font-size:.58rem;background:rgba(93,196,168,.1);color:var(--teal);padding:.1rem .4rem;border-radius:100px;}
+.tcb-time{margin-left:auto;color:var(--muted);font-size:.6rem;}
+.tcb-line{color:var(--muted);}
+.tcb-line span{color:var(--light);}
+.tcb-result{color:var(--teal);margin-top:.3rem;}
+
+.typing-indicator{display:flex;align-items:center;gap:.4rem;padding:.5rem .9rem;color:var(--muted);font-size:.72rem;}
+.t-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:bounce 1.3s infinite;}
+.t-dot:nth-child(2){animation-delay:.2s}.t-dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* Right panel: tool inspector */
+.inspector{display:flex;flex-direction:column;gap:1rem;}
+.inspector-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.ic-header{padding:.75rem 1rem;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ic-title{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);letter-spacing:.06em;}
+.ic-badge{font-size:.58rem;font-weight:600;padding:.15rem .45rem;border-radius:100px;}
+.ic-ok{background:rgba(93,196,168,.1);color:var(--teal);}
+.ic-fhir{background:rgba(200,240,78,.08);color:var(--lime);}
+.ic-body{padding:.85rem 1rem;font-family:'DM Mono',monospace;font-size:.7rem;display:flex;flex-direction:column;gap:.35rem;}
+.ic-row{display:flex;gap:.5rem;}
+.ic-key{color:var(--muted);min-width:100px;flex-shrink:0;}
+.ic-val{color:var(--light);}
+.ic-val.critical{color:var(--red);}
+.ic-val.ok{color:var(--teal);}
+.ic-val.lime{color:var(--lime);}
+.ic-sep{height:1px;background:var(--border2);margin:.2rem 0;}
+
+/* FHIR section */
+#fhir{background:var(--bg);}
+.fhir-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem;align-items:center;}
+.sharp-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.72rem;line-height:1.8;}
+.sb-comment{color:var(--muted);}
+.sb-key{color:var(--teal);}
+.sb-val{color:var(--lime);}
+.sb-str{color:var(--coral);}
+.sb-bracket{color:var(--light);}
+.fhir-points{display:flex;flex-direction:column;gap:.9rem;}
+.fp{display:flex;gap:.9rem;align-items:flex-start;}
+.fp-icon{font-size:1.1rem;flex-shrink:0;margin-top:.1rem;}
+.fp-text h4{font-size:.88rem;font-weight:600;margin-bottom:.25rem;}
+.fp-text p{font-size:.78rem;color:var(--light);line-height:1.6;}
+
+/* PRIZE */
+#prize{background:var(--bg2);}
+.prize-inner{text-align:center;}
+.prize-amount{font-family:'Fraunces',serif;font-size:5rem;font-weight:900;letter-spacing:-.05em;color:var(--lime);line-height:1;}
+.prize-label{font-size:.78rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:.3rem;font-family:'DM Mono',monospace;}
+.prize-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:3rem 0;}
+.prize-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:1.4rem;text-align:center;}
+.pc-check{font-size:1.2rem;margin-bottom:.6rem;}
+.pc-title{font-size:.85rem;font-weight:600;margin-bottom:.3rem;}
+.pc-desc{font-size:.74rem;color:var(--muted);line-height:1.5;}
 
 /* FOOTER */
-footer{background:var(--ink2);border-top:1px solid var(--border-dark);padding:3.5rem 0 2.5rem;}
-.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:3rem;}
-.footer-brand .logo{font-size:1.2rem;margin-bottom:1rem;display:inline-flex;}
-.footer-brand p{font-size:.84rem;color:var(--text-muted);line-height:1.7;max-width:280px;}
-.footer-col h5{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1.2rem;}
-.footer-col a{display:block;font-size:.84rem;color:var(--text-light);text-decoration:none;margin-bottom:.65rem;transition:color .2s;}
-.footer-col a:hover{color:var(--warm-white);}
-.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:2rem;border-top:1px solid var(--border-dark);}
-.footer-copy{font-size:.77rem;color:var(--text-muted);}
-.footer-legal{display:flex;gap:1.5rem;}
-.footer-legal a{font-size:.77rem;color:var(--text-muted);text-decoration:none;transition:color .2s;}
-.footer-legal a:hover{color:var(--warm-white);}
+footer{background:var(--bg3);border-top:1px solid var(--border);padding:2rem 2.5rem;display:flex;align-items:center;justify-content:space-between;}
+.footer-logo{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;}
+.footer-logo span{color:var(--lime);}
+.footer-copy{font-size:.75rem;color:var(--muted);}
+.footer-built{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted);}
 
-/* RESPONSIVE */
-@media(max-width:960px){
-  nav{padding:1rem 1.5rem;}
-  .nav-center{display:none;}
-  .hero-ticker{flex-direction:column;gap:1.5rem;text-align:center;}
-  .ticker-div{width:40px;height:1px;}
-  .problem-grid,.how-grid{grid-template-columns:1fr;gap:2.5rem;}
-  .role-row{grid-template-columns:1fr;gap:2rem;}
-  .role-row.flip{direction:ltr;}
-  .feat-layout{grid-template-columns:1fr;}
-  .feat-main{grid-template-columns:1fr;}
-  .testimonials{grid-template-columns:1fr;}
-  .tech-table{grid-template-columns:1fr;}
-  .tech-header{flex-direction:column;align-items:flex-start;gap:1rem;}
-  .footer-top{grid-template-columns:1fr 1fr;}
-  .footer-bottom{flex-direction:column;gap:1rem;text-align:center;}
-  .how-visual-wrap{height:300px;}
+@media(max-width:900px){
+  .nav-links{display:none;}
+  .demo-grid,.fhir-grid,.prize-grid{grid-template-columns:1fr;}
+  .tools-grid{grid-template-columns:1fr;}
+  .arch-row{flex-direction:column;}
+  .arch-external{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
 
-<div id="cur-dot"></div>
-<div id="cur-ring"></div>
 <canvas id="hero-canvas"></canvas>
 
-<!-- NAV -->
 <nav id="nav">
   <a href="#" class="logo"><span class="logo-dot"></span>Curaiva AI</a>
-  <div class="nav-center">
-    <a href="#problem">Problem</a>
-    <a href="#platform">Platform</a>
-    <a href="#how">How It Works</a>
-    <a href="#roles">Who It's For</a>
-    <a href="#tech">Tech</a>
+  <div class="nav-links">
+    <a href="#arch">Architecture</a>
+    <a href="#tools">MCP Tools</a>
+    <a href="#demo">Agent Demo</a>
+    <a href="#fhir">FHIR + SHARP</a>
   </div>
-  <div class="nav-right">
-    <a href="#" class="btn-nav-ghost">Sign In</a>
-    <a href="#cta" class="btn-nav">Request Access</a>
-  </div>
+  <a href="https://promptopinion.com" class="nav-cta" target="_blank">View on Prompt Opinion →</a>
 </nav>
 
-<!-- HERO -->
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════════ -->
 <section id="hero">
-  <div class="hero-content">
-    <div class="hero-eyebrow"><span class="eyebrow-line"></span>AI-Powered Health Platform<span class="eyebrow-line"></span></div>
-    <h1 class="hero-h1">
-      <span class="block">Healthcare that</span>
-      <span class="block italic">reaches everyone.</span>
+  <div class="hero-inner">
+    <div class="hackathon-badge">
+      <span class="hb-dot"></span>
+      Agents Assemble · Healthcare AI Endgame · $25,000 Prize Pool
+    </div>
+
+    <h1>
+      Healthcare AI tools<br>
+      <em>any agent can use.</em>
     </h1>
-    <p class="hero-sub">Curaiva AI connects patients, doctors, and community health workers through intelligent triage, real-time consultation, and proactive monitoring — in one unified platform.</p>
-    <div class="hero-actions">
-      <a href="#platform" class="btn-primary">Explore the Platform</a>
-      <a href="#how" class="btn-outline">See How It Works</a>
-    </div>
-  </div>
-  <div class="hero-ticker">
-    <div class="ticker-item"><span class="ticker-num" data-count="4.5" data-suffix="B">0</span><span class="ticker-label">people without adequate healthcare access globally</span></div>
-    <div class="ticker-div"></div>
-    <div class="ticker-item"><span class="ticker-num" data-count="659" data-prefix="$" data-suffix="B">0</span><span class="ticker-label">digital health market opportunity</span></div>
-    <div class="ticker-div"></div>
-    <div class="ticker-item"><span class="ticker-num" data-count="70" data-suffix="%">0</span><span class="ticker-label">of costs preventable with early detection</span></div>
-    <div class="ticker-div"></div>
-    <div class="ticker-item"><span class="ticker-num" data-count="3" data-suffix="x">0</span><span class="ticker-label">faster clinical triage with AI assistance</span></div>
-  </div>
-</section>
 
-<!-- MARQUEE -->
-<div class="marquee-wrap" aria-hidden="true">
-  <div class="marquee-track">
-    <span>AI Triage</span><span class="dot">◆</span><span>Doctor Connect</span><span class="dot">◆</span><span>Mental Health Companion</span><span class="dot">◆</span><span>Medication Adherence</span><span class="dot">◆</span><span>CHW Dashboard</span><span class="dot">◆</span><span>Community Health Intelligence</span><span class="dot">◆</span><span>Real-Time Monitoring</span><span class="dot">◆</span><span>Crisis Escalation</span><span class="dot">◆</span>
-    <span>AI Triage</span><span class="dot">◆</span><span>Doctor Connect</span><span class="dot">◆</span><span>Mental Health Companion</span><span class="dot">◆</span><span>Medication Adherence</span><span class="dot">◆</span><span>CHW Dashboard</span><span class="dot">◆</span><span>Community Health Intelligence</span><span class="dot">◆</span><span>Real-Time Monitoring</span><span class="dot">◆</span><span>Crisis Escalation</span><span class="dot">◆</span>
-  </div>
-</div>
+    <p class="hero-desc">
+      Curaiva AI is a FHIR-powered MCP server + A2A agent on Prompt Opinion. Six clinical intelligence tools — triage, patient summaries, medication analysis, mental health assessment — invokable by any agent in the ecosystem.
+    </p>
 
-<!-- PROBLEM -->
-<section id="problem">
-  <div class="container">
-    <div class="problem-grid">
-      <div class="problem-text reveal">
-        <div class="section-label">The Problem</div>
-        <h2 class="section-heading">Four gaps.<br><em>One platform.</em></h2>
-        <p>Communities across the world are failing their people — not from lack of care, but lack of connection. Between patient, clinic, and health worker, critical information and time are lost every single day.</p>
-        <p>Curaiva AI was built to close every one of these gaps — not just one.</p>
-      </div>
-      <div class="problem-cards reveal r2">
-        <div class="pcard"><div class="pcard-icon">🌍</div><div class="pcard-text"><h4>No Access to Doctors</h4><p>Rural and remote communities have little to no reliable access to healthcare professionals.</p></div><div class="pcard-num">01</div></div>
-        <div class="pcard"><div class="pcard-icon">🔬</div><div class="pcard-text"><h4>Late Diagnosis</h4><p>Without early screening, diseases reach critical stages before anyone notices.</p></div><div class="pcard-num">02</div></div>
-        <div class="pcard"><div class="pcard-icon">🧠</div><div class="pcard-text"><h4>Mental Health Neglect</h4><p>Mental health is stigmatized and underserved. People suffer in silence with no support.</p></div><div class="pcard-num">03</div></div>
-        <div class="pcard"><div class="pcard-icon">💊</div><div class="pcard-text"><h4>Poor Medication Adherence</h4><p>Patients discontinue treatments, leading to preventable complications and readmissions.</p></div><div class="pcard-num">04</div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- PLATFORM -->
-<section id="platform">
-  <div class="container">
-    <div class="platform-header reveal">
-      <div class="section-label">The Platform</div>
-      <h2 class="section-heading">Intelligent healthcare,<br><em>for every role.</em></h2>
-      <p>Five deeply integrated features. One coherent experience. Built for the patient in a rural village and the clinician in a city hospital.</p>
-    </div>
-    <div class="feat-layout reveal">
-      <div class="feat-main">
-        <div class="feat-main-text">
-          <div class="feat-main-tag">⚡ Core Engine</div>
-          <h3>AI Symptom Triage &amp; Routing</h3>
-          <p>Patients describe what they're feeling — in plain language or by voice. Claude AI processes their input, cross-references their history, and assigns a severity score in seconds. Critical cases escalate automatically. No delay.</p>
-          <a href="#roles" class="btn-outline" style="display:inline-block;padding:.65rem 1.5rem;font-size:.85rem;">See patient experience →</a>
+    <div class="paths">
+      <div class="path-badge option1">
+        <div class="path-icon">🔧</div>
+        <div class="path-text">
+          <div class="path-label">Option 1</div>
+          <div class="path-name">MCP Superpower</div>
         </div>
-        <div>
-          <div class="triage-mock">
-            <div class="mock-header"><div class="mock-dot red"></div><div class="mock-dot amber"></div><div class="mock-dot grn"></div><span style="font-size:.7rem;color:var(--text-muted);margin-left:.5rem;">AI Triage · Curaiva</span></div>
-            <div class="mock-input">"I've had a severe headache and fever for 3 days, with neck stiffness…"</div>
-            <div class="mock-severity"><div class="sev-pill sev-low">Low</div><div class="sev-pill sev-mod">Moderate</div><div class="sev-pill sev-crit">Critical ▲</div></div>
-            <div class="mock-result"><div class="mock-result-label">AI Assessment</div><div class="mock-result-text">Symptom cluster consistent with possible bacterial meningitis. Immediate evaluation recommended. Escalating to available physician now.</div></div>
-            <button class="mock-escalate" id="triage-btn">Connect to Doctor Now →</button>
+      </div>
+      <div class="plus-sep">+</div>
+      <div class="path-badge option2">
+        <div class="path-icon">🤖</div>
+        <div class="path-text">
+          <div class="path-label">Option 2</div>
+          <div class="path-name">A2A Agent</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <a href="#demo" class="btn-primary">See the Agent in Action</a>
+      <a href="#tools" class="btn-outline">Explore MCP Tools</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ARCHITECTURE ════════════════════════════════════════════════════════════ -->
+<section class="section" id="arch">
+  <div class="container">
+    <div class="label reveal">Architecture</div>
+    <h2 class="reveal">How it fits into<br><em>Prompt Opinion.</em></h2>
+    <p class="section-desc reveal">Curaiva AI lives entirely within the Prompt Opinion ecosystem — not a standalone app. Our MCP server exposes tools. Our A2A agent orchestrates them.</p>
+
+    <div class="arch-diagram reveal d1">
+      <div class="platform-box">
+        <div class="platform-label-box">
+          <div class="plat-badge">Prompt Opinion Platform</div>
+        </div>
+
+        <div class="arch-row">
+          <div class="arch-node highlight">
+            <div class="an-icon">🤖</div>
+            <div class="an-title lime">Curaiva A2A Agent</div>
+            <div class="an-desc">Healthcare intelligence orchestrator. Receives clinical intents via COIN protocol. Orchestrates MCP tools. Emits structured results to other agents.</div>
+          </div>
+          <div class="arch-connector">
+            <div class="conn-line"></div>
+            <div class="conn-label">MCP calls</div>
+            <div class="conn-line"></div>
+          </div>
+          <div class="arch-node highlight">
+            <div class="an-icon">🔧</div>
+            <div class="an-title teal">Curaiva MCP Server</div>
+            <div class="an-desc">6 FHIR-powered clinical tools exposed via Model Context Protocol. Deployed on Railway. Discoverable by any agent on the platform.</div>
+          </div>
+        </div>
+
+        <div class="arch-arrow-row">
+          <div class="arr-line"></div>
+          <div class="arr-label">SHARP context · fhir_base_url · fhir_access_token · patient_id</div>
+          <div class="arr-line"></div>
+        </div>
+
+        <div class="arch-external">
+          <div class="ext-node">
+            <div class="ext-icon">🏥</div>
+            <div class="ext-text">
+              <div class="ext-name">FHIR R4 Server</div>
+              <div class="ext-sub">Patient · Condition · MedicationRequest · Observation · Encounter</div>
+            </div>
+          </div>
+          <div class="ext-node">
+            <div class="ext-icon">🧠</div>
+            <div class="ext-text">
+              <div class="ext-name">Claude AI (Anthropic)</div>
+              <div class="ext-sub">Triage scoring · clinical summarization · mental health assessment</div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="feat-card"><div class="fc-icon fc-coral">👨‍⚕️</div><h3>Doctor Connect</h3><p>Clinicians receive AI-generated patient briefs before every consultation. No cold reads. Async messaging with smart prioritization keeps response times low at scale.</p></div>
-      <div class="feat-card"><div class="fc-icon fc-purple">🧠</div><h3>Mental Health Companion</h3><p>A daily AI companion tracking mood, guiding CBT exercises, and detecting crisis language. Automatic escalation to human counselors when it matters most.</p></div>
-      <div class="feat-card"><div class="fc-icon fc-amber">💊</div><h3>Medication Tracker</h3><p>Patients log once. Smart reminders handle the rest. Missed doses trigger alerts to their assigned Community Health Worker — closing the adherence loop.</p></div>
-      <div class="feat-card"><div class="fc-icon fc-teal">🌍</div><h3>CHW Intelligence Dashboard</h3><p>Community health workers see their entire patient community in one AI-ranked watchlist. Urgency scores surface who needs a visit today — not tomorrow.</p></div>
     </div>
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section id="how">
+<!-- ══ MCP TOOLS ══════════════════════════════════════════════════════════════ -->
+<section class="section" id="tools">
   <div class="container">
-    <div class="section-label reveal">How It Works</div>
-    <h2 class="section-heading reveal">From symptom to solution<br><em>in minutes, not days.</em></h2>
-    <div class="how-grid">
-      <div class="how-steps">
-        <div class="how-step reveal r1"><div class="how-step-num">01</div><div class="how-step-body"><h4>Patient describes symptoms</h4><p>Text or voice — in any language the patient is comfortable with. No medical jargon needed. The AI understands context, not just keywords.</p></div></div>
-        <div class="how-step reveal r2"><div class="how-step-num">02</div><div class="how-step-body"><h4>AI assesses &amp; routes</h4><p>Claude analyses symptom history, scores severity, suggests likely conditions, and decides — self-care or doctor escalation. Instantly.</p></div></div>
-        <div class="how-step reveal r3"><div class="how-step-num">03</div><div class="how-step-body"><h4>Doctor receives AI brief</h4><p>The assigned clinician opens a pre-prepared summary. They know the patient's history, chief complaint, and urgency score before typing a single word.</p></div></div>
-        <div class="how-step reveal r4"><div class="how-step-num">04</div><div class="how-step-body"><h4>CHW monitors &amp; follows up</h4><p>The patient's health worker sees their updated priority score in real time. If a home visit is needed, they know before the patient calls.</p></div></div>
+    <div class="label reveal">MCP Superpower — Option 1</div>
+    <h2 class="reveal">Six clinical tools.<br><em>Any agent can call them.</em></h2>
+    <p class="section-desc reveal">Each tool fetches real patient data from a FHIR R4 server via SHARP context, processes it through Claude AI, and returns structured clinical JSON.</p>
+
+    <div class="tools-grid reveal d1">
+      <div class="tool-card">
+        <div class="tc-num">Tool 01</div>
+        <div class="tc-name">triage_patient()</div>
+        <div class="tc-desc">Assess symptoms against FHIR patient history. Returns severity score (1–10), likely conditions, self-care steps, and escalation flag.</div>
+        <div class="tc-fhir">
+          <span class="fhir-tag">Patient</span>
+          <span class="fhir-tag">Condition</span>
+          <span class="fhir-tag">Observation</span>
+        </div>
       </div>
-      <div class="how-visual-wrap reveal r2"><canvas id="flow-canvas"></canvas></div>
+      <div class="tool-card">
+        <div class="tc-num">Tool 02</div>
+        <div class="tc-name">get_patient_summary()</div>
+        <div class="tc-desc">Fetches all FHIR resources for a patient and generates a brief, full, or pre-consultation clinical summary via Claude.</div>
+        <div class="tc-fhir">
+          <span class="fhir-tag">Patient</span>
+          <span class="fhir-tag">Condition</span>
+          <span class="fhir-tag">MedRequest</span>
+          <span class="fhir-tag">Encounter</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-num">Tool 03</div>
+        <div class="tc-name">check_medication_adherence()</div>
+        <div class="tc-desc">Analyses active MedicationRequest resources. Scores adherence risk 0–100. Recommends CHW alert when risk is high.</div>
+        <div class="tc-fhir">
+          <span class="fhir-tag">Patient</span>
+          <span class="fhir-tag">MedicationRequest</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-num">Tool 04</div>
+        <div class="tc-name">mental_health_assessment()</div>
+        <div class="tc-desc">Detects mood patterns and crisis indicators from session notes. Returns crisis_flag: true with emergency escalation if needed.</div>
+        <div class="tc-fhir">
+          <span class="fhir-tag">Patient</span>
+          <span class="fhir-tag">Observation (survey)</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-num">Tool 05</div>
+        <div class="tc-name">generate_chw_priority_queue()</div>
+        <div class="tc-desc">Fetches up to 20 patients in parallel, scores each by urgency, and returns a ranked watchlist for Community Health Workers.</div>
+        <div class="tc-fhir">
+          <span class="fhir-tag">Patient</span>
+          <span class="fhir-tag">Condition</span>
+          <span class="fhir-tag">MedRequest</span>
+          <span class="fhir-tag">Observation</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tc-num">Tool 06</div>
+        <div class="tc-name">create_consultation_brief()</div>
+        <div class="tc-desc">Builds a physician-ready pre-consultation document from FHIR data. Includes chief complaint, active problems, meds, vitals, and focus areas.</div>
+        <div class="tc-fhir">
+          <span class="fhir-tag">Patient</span>
+          <span class="fhir-tag">Condition</span>
+          <span class="fhir-tag">MedRequest</span>
+          <span class="fhir-tag">Observation</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- PROOF -->
-<section id="proof">
+<!-- ══ AGENT DEMO ══════════════════════════════════════════════════════════════ -->
+<section class="section" id="demo">
   <div class="container">
-    <div class="proof-header reveal">
-      <div class="section-label">Perspectives</div>
-      <h2 class="section-heading">What the people who matter most say.</h2>
-      <p>Real voices from the communities Curaiva AI is built to serve.</p>
-    </div>
-    <div class="testimonials">
-      <div class="tcard reveal r1"><div class="tcard-quote">"I live three hours from the nearest hospital. Curaiva let me talk to a doctor the same day I felt something was wrong. That has never happened to me before."</div><div class="tcard-author"><div class="tcard-avatar">👩🏾</div><div><div class="tcard-name">Amara Osei</div><div class="tcard-role">Patient, Tamale, Ghana</div></div></div></div>
-      <div class="tcard reveal r2"><div class="tcard-quote">"The AI patient brief saves me ten minutes per consultation. I can see twenty more patients a week. That's twenty more lives I'm actually able to reach."</div><div class="tcard-author"><div class="tcard-avatar">👨🏽‍⚕️</div><div><div class="tcard-name">Dr. Emeka Nwosu</div><div class="tcard-role">General Physician, Lagos</div></div></div></div>
-      <div class="tcard reveal r3"><div class="tcard-quote">"Before Curaiva, I was guessing who to visit each morning. Now the dashboard tells me exactly who needs help today. My work finally feels ahead of the problem."</div><div class="tcard-author"><div class="tcard-avatar">👩🏿</div><div><div class="tcard-name">Fatima Bello</div><div class="tcard-role">Community Health Worker, Kano</div></div></div></div>
+    <div class="label reveal">A2A Agent — Option 2</div>
+    <h2 class="reveal">The agent on<br><em>Prompt Opinion.</em></h2>
+    <p class="section-desc reveal">Curaiva AI is published to the Prompt Opinion Marketplace. Any clinician or agent in the ecosystem can invoke it. This is what a live session looks like.</p>
+
+    <div class="demo-grid">
+      <!-- Agent conversation window -->
+      <div class="po-window reveal d1">
+        <div class="po-topbar">
+          <div class="po-dots">
+            <div class="po-dot" style="background:#ff5f57"></div>
+            <div class="po-dot" style="background:#ffbd2e"></div>
+            <div class="po-dot" style="background:#27c93f"></div>
+          </div>
+          <div class="po-title">Curaiva AI · Prompt Opinion Workspace</div>
+          <div class="po-status"><div class="po-live"></div>A2A Live</div>
+        </div>
+
+        <div class="po-body" id="agent-chat">
+
+          <div class="msg user">
+            <div class="msg-role">Clinician</div>
+            <div class="msg-bubble">Patient 592903 is reporting severe chest pain radiating to the left arm. Triage immediately.</div>
+          </div>
+
+          <div class="tool-call-block">
+            <div class="tcb-header">
+              <span class="tcb-fn">triage_patient()</span>
+              <span class="tcb-status">200 OK</span>
+              <span class="tcb-time">09:14:22</span>
+            </div>
+            <div class="tcb-line">patient_id: <span>592903</span></div>
+            <div class="tcb-line">fhir_base_url: <span>hapi.fhir.org/baseR4</span></div>
+            <div class="tcb-line">resources fetched: <span>Patient · Condition · Observation</span></div>
+            <div class="tcb-result">→ severity: critical · score: 9/10 · escalate: true</div>
+          </div>
+
+          <div class="msg agent">
+            <div class="msg-role">Curaiva AI</div>
+            <div class="msg-bubble">
+              <strong style="color:var(--red)">⚠ Critical — Score 9/10</strong><br>
+              Symptom pattern is consistent with acute cardiac event. Patient has existing hypertension (FHIR: active). Escalation to physician required immediately.<br><br>
+              <span style="color:var(--muted);font-size:.72rem;">FHIR: Patient/592903 · Condition fetched · SHARP context used</span>
+            </div>
+          </div>
+
+          <div class="msg user">
+            <div class="msg-role">Clinician</div>
+            <div class="msg-bubble">Prepare Dr. Obi's pre-consultation brief for this patient now.</div>
+          </div>
+
+          <div class="tool-call-block">
+            <div class="tcb-header">
+              <span class="tcb-fn">get_patient_summary()</span>
+              <span class="tcb-status">200 OK</span>
+              <span class="tcb-time">09:14:31</span>
+            </div>
+            <div class="tcb-line">summary_type: <span>consultation</span></div>
+            <div class="tcb-line">resources: <span>Patient · Condition · MedRequest · Observation · Encounter</span></div>
+          </div>
+
+          <div class="tool-call-block">
+            <div class="tcb-header">
+              <span class="tcb-fn">create_consultation_brief()</span>
+              <span class="tcb-status">200 OK</span>
+              <span class="tcb-time">09:14:35</span>
+            </div>
+            <div class="tcb-line">type: <span>urgent</span></div>
+            <div class="tcb-line">triage_severity: <span style="color:var(--red)">critical</span></div>
+            <div class="tcb-result">→ brief generated · 847 tokens · ready for physician</div>
+          </div>
+
+          <div class="msg agent">
+            <div class="msg-role">Curaiva AI</div>
+            <div class="msg-bubble">
+              <strong>Patient Brief — Amara Osei · F · 41y</strong><br><br>
+              <strong style="color:var(--teal)">Chief:</strong> Acute chest pain, left arm radiation<br>
+              <strong style="color:var(--teal)">Active:</strong> Hypertension · Type 2 Diabetes<br>
+              <strong style="color:var(--teal)">Meds:</strong> Metformin 500mg · Lisinopril 10mg<br>
+              <strong style="color:var(--teal)">Vitals (FHIR):</strong> BP 158/98 · HR 94bpm<br>
+              <strong style="color:var(--teal)">Focus:</strong> ECG, cardiac enzymes, review Lisinopril
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Input bar -->
+        <div style="border-top:1px solid var(--border);padding:.75rem 1rem;display:flex;gap:.6rem;background:var(--bg2);">
+          <input id="chat-input" placeholder="Send a clinical query to Curaiva AI…" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.5rem .8rem;color:var(--white);font-family:'Instrument Sans',sans-serif;font-size:.78rem;outline:none;" />
+          <button onclick="sendMessage()" style="background:var(--lime);color:var(--bg);border:none;border-radius:8px;padding:.5rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Instrument Sans',sans-serif;">Send</button>
+        </div>
+      </div>
+
+      <!-- Inspector panel -->
+      <div class="inspector reveal d2">
+        <div class="inspector-card">
+          <div class="ic-header">
+            <div class="ic-title">SHARP Context</div>
+            <div class="ic-badge ic-fhir">Propagated by Prompt Opinion</div>
+          </div>
+          <div class="ic-body">
+            <div class="ic-row"><div class="ic-key">fhir_base_url</div><div class="ic-val">hapi.fhir.org/baseR4</div></div>
+            <div class="ic-row"><div class="ic-key">patient_id</div><div class="ic-val lime">592903</div></div>
+            <div class="ic-row"><div class="ic-key">encounter_id</div><div class="ic-val">ENC-7741</div></div>
+            <div class="ic-row"><div class="ic-key">practitioner_id</div><div class="ic-val">PRAC-044</div></div>
+            <div class="ic-sep"></div>
+            <div class="ic-row"><div class="ic-key">fhir_token</div><div class="ic-val" style="color:var(--muted)">Bearer ••••••••</div></div>
+          </div>
+        </div>
+
+        <div class="inspector-card">
+          <div class="ic-header">
+            <div class="ic-title">Last Tool Response</div>
+            <div class="ic-badge ic-ok">triage_patient · 200</div>
+          </div>
+          <div class="ic-body">
+            <div class="ic-row"><div class="ic-key">severity</div><div class="ic-val critical">critical</div></div>
+            <div class="ic-row"><div class="ic-key">severity_score</div><div class="ic-val critical">9 / 10</div></div>
+            <div class="ic-row"><div class="ic-key">escalate</div><div class="ic-val critical">true</div></div>
+            <div class="ic-sep"></div>
+            <div class="ic-row"><div class="ic-key">fhir_context</div><div class="ic-val ok">used</div></div>
+            <div class="ic-row"><div class="ic-key">conditions</div><div class="ic-val">Hypertension, T2DM</div></div>
+            <div class="ic-row"><div class="ic-key">ai_model</div><div class="ic-val">claude-opus-4-6</div></div>
+            <div class="ic-sep"></div>
+            <div class="ic-row"><div class="ic-key">latency</div><div class="ic-val ok">1.84s</div></div>
+            <div class="ic-row"><div class="ic-key">mcp_transport</div><div class="ic-val">HTTP StreamableHTTP</div></div>
+          </div>
+        </div>
+
+        <div class="inspector-card">
+          <div class="ic-header">
+            <div class="ic-title">COIN Intents Emitted</div>
+            <div class="ic-badge ic-ok">A2A Protocol</div>
+          </div>
+          <div class="ic-body">
+            <div class="ic-row"><div class="ic-key">intent</div><div class="ic-val lime">triage_result</div></div>
+            <div class="ic-row"><div class="ic-key">severity</div><div class="ic-val critical">critical</div></div>
+            <div class="ic-row"><div class="ic-key">escalate</div><div class="ic-val critical">true</div></div>
+            <div class="ic-sep"></div>
+            <div class="ic-row"><div class="ic-key">intent</div><div class="ic-val lime">clinical_brief_ready</div></div>
+            <div class="ic-row"><div class="ic-key">patient_id</div><div class="ic-val">592903</div></div>
+            <div class="ic-row"><div class="ic-key">available to</div><div class="ic-val ok">any A2A agent</div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ROLES -->
-<section id="roles">
+<!-- ══ FHIR + SHARP ════════════════════════════════════════════════════════════ -->
+<section class="section" id="fhir">
   <div class="container">
-    <div class="roles-header reveal">
-      <div class="section-label">Built For Every Role</div>
-      <h2 class="section-heading">One platform.<br><em>Three distinct experiences.</em></h2>
-    </div>
-    <!-- Patient -->
-    <div class="role-row reveal">
-      <div class="role-info">
-        <div class="role-badge rb-patient">For Patients</div>
-        <h3>Your health, in your hands — finally.</h3>
-        <p>No appointment. No waiting room. No medical degree needed. Curaiva gives every patient — regardless of location or income — access to intelligent, compassionate healthcare on their phone.</p>
-        <div class="role-features">
-          <div class="role-feat">Describe symptoms in plain language or by voice</div>
-          <div class="role-feat">Instant AI severity scoring and guidance</div>
-          <div class="role-feat">Secure messaging with verified doctors</div>
-          <div class="role-feat">Daily mental health check-ins and CBT tools</div>
-          <div class="role-feat">One-tap medication logging with smart reminders</div>
+    <div class="label reveal">FHIR R4 + SHARP Integration</div>
+    <h2 class="reveal">Real patient data.<br><em>No mock fixtures.</em></h2>
+
+    <div class="fhir-grid">
+      <div class="reveal d1">
+        <div class="sharp-box">
+          <div class="sb-comment">// SHARP context — passed by Prompt Opinion</div>
+          <div class="sb-comment">// on every tool call automatically</div>
+          <br>
+          <div><span class="sb-bracket">{</span></div>
+          <div>&nbsp;&nbsp;<span class="sb-key">"fhir_base_url"</span><span class="sb-bracket">: </span><span class="sb-str">"https://hapi.fhir.org/baseR4"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="sb-key">"fhir_access_token"</span><span class="sb-bracket">: </span><span class="sb-str">"Bearer eyJ..."</span>,</div>
+          <div>&nbsp;&nbsp;<span class="sb-key">"patient_id"</span><span class="sb-bracket">: </span><span class="sb-str">"592903"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="sb-key">"encounter_id"</span><span class="sb-bracket">: </span><span class="sb-str">"ENC-7741"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="sb-key">"practitioner_id"</span><span class="sb-bracket">: </span><span class="sb-str">"PRAC-044"</span></div>
+          <div><span class="sb-bracket">}</span></div>
+          <br>
+          <div class="sb-comment">// Tool extracts context, fetches FHIR,</div>
+          <div class="sb-comment">// passes to Claude, returns JSON</div>
+          <br>
+          <div><span class="sb-val">GET</span> <span class="sb-str">/Patient/592903</span></div>
+          <div><span class="sb-val">GET</span> <span class="sb-str">/Condition?patient=592903</span></div>
+          <div><span class="sb-val">GET</span> <span class="sb-str">/MedicationRequest?patient=592903</span></div>
+          <div><span class="sb-val">GET</span> <span class="sb-str">/Observation?patient=592903</span></div>
         </div>
       </div>
-      <div class="role-visual rv-patient">
-        <div class="chat-items">
-          <div class="chat-bubble cb-user">I've had a heavy chest and shortness of breath since this morning.</div>
-          <div class="chat-bubble cb-ai">Thank you for sharing that. Chest heaviness with breathlessness can sometimes need quick attention. Does the discomfort spread to your arm or jaw at all?</div>
-          <div class="chat-bubble cb-user">No, just the chest. I'm also feeling a bit dizzy.</div>
-          <div class="chat-typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+
+      <div class="fhir-points reveal d2">
+        <div class="fp">
+          <div class="fp-icon">🔌</div>
+          <div class="fp-text">
+            <h4>Zero custom token handling</h4>
+            <p>Prompt Opinion bridges EHR session credentials into SHARP context automatically. Our tools just read the values and use them.</p>
+          </div>
         </div>
-      </div>
-    </div>
-    <!-- Doctor -->
-    <div class="role-row flip reveal">
-      <div class="role-info">
-        <div class="role-badge rb-doctor">For Doctors</div>
-        <h3>See more patients. Know each one better.</h3>
-        <p>Curaiva removes friction from every consultation. AI pre-reads the patient so you don't have to. Every inbox item comes with context, history, and urgency — so your first words are always the right ones.</p>
-        <div class="role-features">
-          <div class="role-feat">AI-generated patient brief before every consult</div>
-          <div class="role-feat">Priority-ranked inbox — critical cases surface first</div>
-          <div class="role-feat">Full patient history at a glance</div>
-          <div class="role-feat">One-click escalation to in-person referral</div>
-          <div class="role-feat">Prescription notes synced to patient med tracker</div>
+        <div class="fp">
+          <div class="fp-icon">📡</div>
+          <div class="fp-text">
+            <h4>Works with any FHIR R4 server</h4>
+            <p>Tested against HAPI FHIR public server. Deployable against any compliant EHR — Epic, Cerner, Smile CDR — via the fhir_base_url in SHARP context.</p>
+          </div>
         </div>
-      </div>
-      <div class="role-visual rv-doctor">
-        <div style="font-size:.68rem;color:var(--text-muted);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.8rem;">Consultation Inbox</div>
-        <div style="display:flex;flex-direction:column;gap:.55rem;">
-          <div class="inbox-item urgent"><div class="inbox-avatar">👩🏾</div><div class="inbox-text"><div class="inbox-name">Amara Osei</div><div class="inbox-preview">AI: Critical — chest pain + dizziness, possible cardiac event</div></div><span class="inbox-badge ib-crit">Critical</span></div>
-          <div class="inbox-item"><div class="inbox-avatar">👦🏿</div><div class="inbox-text"><div class="inbox-name">Kofi Mensah</div><div class="inbox-preview">AI: Moderate — persistent cough 5 days, no fever</div></div><span class="inbox-badge ib-norm">Moderate</span></div>
-          <div class="inbox-item" style="border-color:rgba(200,240,78,.2);"><div class="inbox-avatar">🤖</div><div class="inbox-text"><div class="inbox-name" style="color:var(--lime);">AI Brief Ready</div><div class="inbox-preview">Patient summary generated — tap to review before call</div></div><span class="inbox-badge ib-ai">AI</span></div>
+        <div class="fp">
+          <div class="fp-icon">⚡</div>
+          <div class="fp-text">
+            <h4>Parallel FHIR fetching</h4>
+            <p>Tools like generate_chw_priority_queue fetch up to 20 patients simultaneously using Promise.allSettled — results in under 3 seconds.</p>
+          </div>
         </div>
-      </div>
-    </div>
-    <!-- CHW -->
-    <div class="role-row reveal">
-      <div class="role-info">
-        <div class="role-badge rb-chw">For CHWs</div>
-        <h3>Stop guessing. Start prioritising.</h3>
-        <p>Community health workers carry immense responsibility across large populations. Curaiva gives them an AI co-pilot — surfacing who needs a home visit today, who missed their meds, who flagged distress — before anyone has to ask.</p>
-        <div class="role-features">
-          <div class="role-feat">Live, AI-prioritized patient watchlist</div>
-          <div class="role-feat">Urgency scores updated in real time</div>
-          <div class="role-feat">Missed dose and crisis flag alerts</div>
-          <div class="role-feat">One-click messaging and visit scheduling</div>
-          <div class="role-feat">Community health trend overview</div>
-        </div>
-      </div>
-      <div class="role-visual rv-chw">
-        <div style="font-size:.68rem;color:var(--text-muted);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.8rem;">Priority Queue — Today</div>
-        <div style="display:flex;flex-direction:column;gap:.5rem;">
-          <div class="queue-item qi-crit"><div class="qi-score">94</div><div class="qi-info"><div class="qi-name">Fatima Bello</div><div class="qi-reason">3 missed doses + new critical triage today</div></div><div class="qi-action">Visit Now</div></div>
-          <div class="queue-item qi-warn"><div class="qi-score">61</div><div class="qi-info"><div class="qi-name">Ibrahim Sule</div><div class="qi-reason">Mental health flag — low mood 4 days running</div></div><div class="qi-action">Message</div></div>
-          <div class="queue-item qi-ok"><div class="qi-score">23</div><div class="qi-info"><div class="qi-name">Grace Adekunle</div><div class="qi-reason">Stable — medication adherence 97%</div></div><div class="qi-action">Check In</div></div>
+        <div class="fp">
+          <div class="fp-icon">🔐</div>
+          <div class="fp-text">
+            <h4>No data stored</h4>
+            <p>Curaiva AI fetches FHIR data transiently at query time. Nothing is persisted. Deploying organizations own their data entirely.</p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- TECH -->
-<section id="tech">
+<!-- ══ PRIZE ════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="prize">
   <div class="container">
-    <div class="tech-header">
-      <div><div class="section-label reveal">Technology</div><h2 class="section-heading reveal">Enterprise-grade.<br><em>Community-ready.</em></h2></div>
-      <p class="reveal">Built on a serverless-first stack that scales from a pilot of 100 to a national deployment of 10 million without rewriting a line.</p>
-    </div>
-    <div class="tech-table reveal">
-      <div class="tech-row"><div class="tech-icon-wrap">▲</div><div><div class="tech-name">Next.js 15</div><div class="tech-desc">App Router, SSR, server components for secure AI calls</div></div><div class="tech-tag">Frontend</div></div>
-      <div class="tech-row"><div class="tech-icon-wrap">⚡</div><div><div class="tech-name">Supabase</div><div class="tech-desc">PostgreSQL, Auth, Realtime, Row Level Security, Edge Functions</div></div><div class="tech-tag">Backend</div></div>
-      <div class="tech-row"><div class="tech-icon-wrap">🤖</div><div><div class="tech-name">Claude API (Anthropic)</div><div class="tech-desc">Triage engine, patient summarization, mental health companion</div></div><div class="tech-tag">AI Engine</div></div>
-      <div class="tech-row"><div class="tech-icon-wrap">🎙️</div><div><div class="tech-name">Web Speech API</div><div class="tech-desc">Browser-native voice input — zero extra cost, works offline</div></div><div class="tech-tag">Voice</div></div>
-      <div class="tech-row"><div class="tech-icon-wrap">📡</div><div><div class="tech-name">Supabase Realtime</div><div class="tech-desc">Live inbox updates, CHW dashboard, crisis alerts</div></div><div class="tech-tag">Real-Time</div></div>
-      <div class="tech-row"><div class="tech-icon-wrap">📱</div><div><div class="tech-name">Termii + Resend</div><div class="tech-desc">SMS medication reminders, crisis notifications, email alerts</div></div><div class="tech-tag">Notifications</div></div>
-      <div class="tech-row"><div class="tech-icon-wrap">🔐</div><div><div class="tech-name">Row Level Security</div><div class="tech-desc">Patient data isolated at the database layer — not just app logic</div></div><div class="tech-tag">Security</div></div>
-      <div class="tech-row"><div class="tech-icon-wrap">🌐</div><div><div class="tech-name">Vercel Edge Network</div><div class="tech-desc">Global deployment, sub-50ms response times anywhere</div></div><div class="tech-tag">Infrastructure</div></div>
+    <div class="prize-inner">
+      <div class="label reveal" style="text-align:center;">The Goal</div>
+      <div class="prize-amount reveal">$7,500</div>
+      <div class="prize-label reveal">Grand Prize Target</div>
+
+      <div class="prize-grid reveal d1">
+        <div class="prize-card">
+          <div class="pc-check">🔧</div>
+          <div class="pc-title">MCP Compliant</div>
+          <div class="pc-desc">Full MCP server with HTTP StreamableHTTP transport, Zod-validated schemas, SHARP context extraction on all 6 tools.</div>
+        </div>
+        <div class="prize-card">
+          <div class="pc-check">🤖</div>
+          <div class="pc-title">A2A + COIN</div>
+          <div class="pc-desc">Agent published to Prompt Opinion Marketplace. COIN intents defined. Discoverable and invokable by other ecosystem agents.</div>
+        </div>
+        <div class="prize-card">
+          <div class="pc-check">🏥</div>
+          <div class="pc-title">Real FHIR Data</div>
+          <div class="pc-desc">All tools read live FHIR R4 resources. No mocked fixtures. Tested against HAPI FHIR public server with real patient records.</div>
+        </div>
+      </div>
+
+      <div class="hero-actions reveal">
+        <a href="https://github.com/your-org/curaiva-ai" class="btn-primary" target="_blank">View on GitHub</a>
+        <a href="https://promptopinion.com" class="btn-outline" target="_blank">Open in Prompt Opinion</a>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
-<section id="cta">
-  <canvas id="cta-canvas"></canvas>
-  <div class="container cta-inner">
-    <div class="section-label reveal" style="text-align:center;">Join the Mission</div>
-    <h2 class="cta-kicker reveal">The gap is real.<em>So is the solution.</em></h2>
-    <p class="cta-sub reveal">Curaiva AI is live, operational, and built to scale. Every community deserves healthcare intelligence. Let's make that possible — together.</p>
-    <div class="hero-actions reveal">
-      <a href="#" class="btn-primary">Request Early Access</a>
-      <a href="#" class="btn-outline">View Documentation</a>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
 <footer>
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand"><a href="#" class="logo"><span class="logo-dot"></span>Curaiva AI</a><p>Healthcare intelligence for every community. Connecting patients, doctors, and health workers through AI.</p></div>
-      <div class="footer-col"><h5>Platform</h5><a href="#">AI Triage</a><a href="#">Doctor Connect</a><a href="#">Mental Health</a><a href="#">Medication Tracker</a><a href="#">CHW Dashboard</a></div>
-      <div class="footer-col"><h5>Developers</h5><a href="#">Documentation</a><a href="#">API Reference</a><a href="#">GitHub</a><a href="#">Changelog</a></div>
-      <div class="footer-col"><h5>Company</h5><a href="#">About</a><a href="#">Mission</a><a href="#">Contact</a><a href="#">Press</a></div>
-    </div>
-    <div class="footer-bottom">
-      <div class="footer-copy">© 2025 Curaiva AI. Built to bridge the gap.</div>
-      <div class="footer-legal"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Security</a></div>
-    </div>
-  </div>
+  <div class="footer-logo">Curai<span>va</span> AI</div>
+  <div class="footer-copy">Agents Assemble · Healthcare AI Endgame Challenge · 2025</div>
+  <div class="footer-built">MCP · A2A · FHIR R4 · SHARP · Claude AI</div>
 </footer>
 
 <script>
-/* CURSOR */
-const dot=document.getElementById('cur-dot'),ring=document.getElementById('cur-ring');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
-(function curL(){dot.style.left=mx+'px';dot.style.top=my+'px';rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(curL);})();
-document.querySelectorAll('a,button').forEach(el=>{
-  el.addEventListener('mouseenter',()=>{ring.style.width='60px';ring.style.height='60px';ring.style.borderColor='rgba(200,240,78,.8)';});
-  el.addEventListener('mouseleave',()=>{ring.style.width='42px';ring.style.height='42px';ring.style.borderColor='rgba(200,240,78,.5)';});
-});
-
 /* NAV */
-window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled',scrollY>80));
+window.addEventListener('scroll', () => document.getElementById('nav').classList.toggle('scrolled', scrollY > 60));
 
 /* HERO CANVAS */
 (()=>{
-  const c=document.getElementById('hero-canvas'),ctx=c.getContext('2d');
-  let W,H;
-  const rsz=()=>{W=c.width=innerWidth;H=c.height=innerHeight;};
-  addEventListener('resize',rsz);rsz();
-  const pts=Array.from({length:55},()=>({x:Math.random()*1920,y:Math.random()*1080,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,r:Math.random()*1.1+.3,a:Math.random()*.25+.08}));
-  let mouse={x:null,y:null};
-  addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
-  const waves=[{ph:0,sp:.005,amp:20,fr:.007,y:.38,a:.14},{ph:2.1,sp:.0035,amp:13,fr:.009,y:.58,a:.08},{ph:4.3,sp:.0045,amp:17,fr:.006,y:.74,a:.07}];
-  const loop=()=>{
-    const t=Date.now()*.001;
-    ctx.clearRect(0,0,W,H);
-    // Glow
-    const g=ctx.createRadialGradient(W*.5,H*.2,0,W*.5,H*.2,H*.7);
-    g.addColorStop(0,'rgba(26,107,90,.1)');g.addColorStop(1,'transparent');
-    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-    // Orbs
-    [{x:.12,y:.25,r:.28,c:'26,107,90'},{x:.88,y:.55,r:.22,c:'200,240,78'},{x:.5,y:.85,r:.18,c:'45,149,116'}].forEach(o=>{
-      const ox=o.x*W+Math.sin(t*.25+o.r*2)*50,oy=o.y*H+Math.cos(t*.2+o.r)*35,or=o.r*Math.min(W,H);
-      const og=ctx.createRadialGradient(ox,oy,0,ox,oy,or);
-      og.addColorStop(0,`rgba(${o.c},.055)`);og.addColorStop(1,'transparent');
-      ctx.fillStyle=og;ctx.beginPath();ctx.arc(ox,oy,or,0,Math.PI*2);ctx.fill();
-    });
-    // Waves
-    waves.forEach(w=>{
-      ctx.beginPath();
-      for(let x=0;x<=W;x+=3){const y=H*w.y+Math.sin(x*w.fr+t*w.sp*60)*w.amp+Math.sin(x*w.fr*.65+t*w.sp*45+1)*w.amp*.35;x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-      ctx.strokeStyle=`rgba(45,149,116,${w.a})`;ctx.lineWidth=1.2;ctx.stroke();
-    });
-    // Particles
-    pts.forEach(p=>{
-      if(mouse.x){const dx=p.x-mouse.x,dy=p.y-mouse.y,d=Math.hypot(dx,dy);if(d<90){p.vx+=dx/d*.05;p.vy+=dy/d*.05;}}
-      p.vx*=.985;p.vy*=.985;p.x+=p.vx;p.y+=p.vy;
-      if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
-      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(45,149,116,${p.a})`;ctx.fill();
-    });
-    pts.forEach((a,i)=>pts.forEach((b,j)=>{if(j<=i)return;const d=Math.hypot(a.x-b.x,a.y-b.y);if(d<95){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(45,149,116,${.1*(1-d/95)})`;ctx.lineWidth=.4;ctx.stroke();}}));
-    requestAnimationFrame(loop);
-  };
-  loop();
-})();
+  const c = document.getElementById('hero-canvas');
+  const ctx = c.getContext('2d');
+  let W, H;
+  const rsz = () => { W = c.width = innerWidth; H = c.height = innerHeight; };
+  addEventListener('resize', rsz); rsz();
 
-/* FLOW CANVAS */
-(()=>{
-  const c=document.getElementById('flow-canvas');if(!c)return;
-  const ctx=c.getContext('2d');let W,H;
-  const rsz=()=>{const r=c.parentElement.getBoundingClientRect();W=c.width=r.width;H=c.height=r.height;};
-  new ResizeObserver(rsz).observe(c.parentElement);rsz();
-  const NODES=[
-    {label:'Patient',sub:'Describes symptoms',icon:'🧑',color:'#2d9574',y:.13},
-    {label:'AI Engine',sub:'Triages & routes',icon:'🤖',color:'#c8f04e',y:.37},
-    {label:'Doctor',sub:'Receives AI brief',icon:'👨‍⚕️',color:'#eb783c',y:.62},
-    {label:'CHW',sub:'Monitors & acts',icon:'🌍',color:'#8250dc',y:.86},
-  ];
-  const pkts=[];
-  class Pkt{
-    constructor(fi,ti){this.fi=fi;this.ti=ti;this.p=0;this.sp=.007+Math.random()*.006;this.col=NODES[fi].color;}
-    step(){this.p+=this.sp;return this.p>=1;}
-    draw(){
-      const fy=H*NODES[this.fi].y,ty=H*NODES[this.ti].y,x=W*.5;
-      for(let i=8;i>=0;i--){const yy=fy+(ty-fy)*Math.max(0,this.p-i*.018);ctx.beginPath();ctx.arc(x,yy,4.5-i*.4,0,Math.PI*2);ctx.fillStyle=this.col+Math.round((1-i/9)*150).toString(16).padStart(2,'0');ctx.fill();}
-      const y=fy+(ty-fy)*this.p;ctx.beginPath();ctx.arc(x,y,5.5,0,Math.PI*2);ctx.fillStyle=this.col;ctx.shadowColor=this.col;ctx.shadowBlur=16;ctx.fill();ctx.shadowBlur=0;
-    }
-  }
-  let last=0;
-  const loop=()=>{
-    const t=Date.now();ctx.clearRect(0,0,W,H);
-    if(t-last>950){const pairs=[[0,1],[1,2],[2,3],[1,0],[2,1]],p=pairs[Math.floor(Math.random()*pairs.length)];pkts.push(new Pkt(p[0],p[1]));last=t;}
-    NODES.forEach((n,i)=>{
-      if(i===NODES.length-1)return;
-      const y1=H*n.y,y2=H*NODES[i+1].y;
-      const g=ctx.createLinearGradient(W*.5,y1,W*.5,y2);
-      g.addColorStop(0,n.color+'28');g.addColorStop(1,NODES[i+1].color+'28');
-      ctx.beginPath();ctx.moveTo(W*.5,y1);ctx.lineTo(W*.5,y2);
-      ctx.setLineDash([4,9]);ctx.lineDashOffset=-(t*.055%13);ctx.strokeStyle=g;ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);
-    });
-    for(let i=pkts.length-1;i>=0;i--){pkts[i].draw();if(pkts[i].step())pkts.splice(i,1);}
-    NODES.forEach((n,i)=>{
-      const x=W*.5,y=H*n.y+Math.sin(Date.now()*.001+i*1.5)*4.5;
-      const g=ctx.createRadialGradient(x,y,0,x,y,58);g.addColorStop(0,n.color+'20');g.addColorStop(1,'transparent');
-      ctx.beginPath();ctx.arc(x,y,58,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
-      ctx.beginPath();ctx.arc(x,y,32,0,Math.PI*2);ctx.fillStyle=n.color+'18';ctx.strokeStyle=n.color+'55';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
-      const pulse=32+(Math.sin(Date.now()*.002+i)*9+9);
-      ctx.beginPath();ctx.arc(x,y,pulse,0,Math.PI*2);ctx.strokeStyle=n.color+'12';ctx.lineWidth=1;ctx.stroke();
-      ctx.font='17px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n.icon,x,y);
-      ctx.font='600 11px Instrument Sans,sans-serif';ctx.fillStyle='rgba(250,248,244,.9)';ctx.textAlign='left';ctx.fillText(n.label,x+46,y-5);
-      ctx.font='400 9.5px Instrument Sans,sans-serif';ctx.fillStyle='rgba(148,168,159,.8)';ctx.fillText(n.sub,x+46,y+8);
-    });
-    requestAnimationFrame(loop);
-  };
-  loop();
-})();
+  /* Flowing data lines — representing MCP tool calls */
+  const lines = Array.from({length:18}, (_, i) => ({
+    x: Math.random() * W, y: Math.random() * H,
+    len: 40 + Math.random() * 80,
+    speed: .4 + Math.random() * .8,
+    opacity: .04 + Math.random() * .08,
+    angle: Math.PI * .5 + (Math.random() - .5) * .4,
+  }));
 
-/* CTA CANVAS */
-(()=>{
-  const c=document.getElementById('cta-canvas');if(!c)return;
-  const ctx=c.getContext('2d');let W,H;
-  const rsz=()=>{const r=c.parentElement.getBoundingClientRect();W=c.width=r.width;H=c.height=Math.max(r.height,500);};
-  new ResizeObserver(rsz).observe(c.parentElement);rsz();
-  const loop=()=>{
-    const t=Date.now()*.001;ctx.clearRect(0,0,W,H);
-    const gs=60;
-    for(let x=0;x<W+gs;x+=gs){for(let y=0;y<H+gs;y+=gs){
-      const d=Math.hypot(x-W*.5,y-H*.5),wave=Math.sin(d*.014-t*1.1);
-      ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);
-      ctx.fillStyle=`rgba(45,149,116,${(.5+wave*.5)*.05})`;ctx.fill();
-    }}
-    const g=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,H*.55);
-    g.addColorStop(0,'rgba(45,149,116,.04)');g.addColorStop(1,'transparent');
-    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  /* Particles */
+  const pts = Array.from({length:40}, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    vx: (Math.random()-.5) * .3, vy: (Math.random()-.5) * .3,
+    r: Math.random() * 1.2 + .3, a: Math.random() * .15 + .05,
+  }));
+
+  const loop = () => {
+    ctx.clearRect(0, 0, W, H);
+
+    /* Radial glow */
+    const g = ctx.createRadialGradient(W*.5, H*.4, 0, W*.5, H*.4, H*.6);
+    g.addColorStop(0, 'rgba(26,107,90,.08)');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    /* Data flow lines */
+    lines.forEach(l => {
+      l.y -= l.speed;
+      if (l.y + l.len < 0) { l.y = H + l.len; l.x = Math.random() * W; }
+      const ex = l.x + Math.cos(l.angle) * l.len, ey = l.y + Math.sin(l.angle) * l.len;
+      const lg = ctx.createLinearGradient(l.x, l.y, ex, ey);
+      lg.addColorStop(0, `rgba(200,240,78,0)`);
+      lg.addColorStop(.5, `rgba(200,240,78,${l.opacity})`);
+      lg.addColorStop(1, `rgba(45,149,116,0)`);
+      ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(ex, ey);
+      ctx.strokeStyle = lg; ctx.lineWidth = 1; ctx.stroke();
+    });
+
+    /* Particles */
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(45,149,116,${p.a})`; ctx.fill();
+    });
+
     requestAnimationFrame(loop);
   };
   loop();
 })();
 
 /* SCROLL REVEAL */
-new IntersectionObserver(e=>e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('in');}),{threshold:.1}).observe.bind(
-  new IntersectionObserver(e=>e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('in');}),{threshold:.1})
-);
-const obs=new IntersectionObserver(e=>e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('in');}),{threshold:.1});
-document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+const obs = new IntersectionObserver(e => e.forEach(en => { if(en.isIntersecting) en.target.classList.add('in'); }), {threshold:.1});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-/* STAT COUNTERS */
-const cobs=new IntersectionObserver(e=>e.forEach(en=>{
-  if(!en.isIntersecting)return;
-  const el=en.target,target=parseFloat(el.dataset.count),pre=el.dataset.prefix||'',suf=el.dataset.suffix||'',dur=2200,s0=performance.now();
-  const tick=n=>{const p=Math.min((n-s0)/dur,1),e=1-Math.pow(1-p,4),v=target*e;el.textContent=pre+(Number.isInteger(target)?Math.round(v):v.toFixed(1))+suf;if(p<1)requestAnimationFrame(tick);};
-  requestAnimationFrame(tick);cobs.unobserve(el);
-}),{threshold:.5});
-document.querySelectorAll('[data-count]').forEach(el=>cobs.observe(el));
+/* AGENT CHAT DEMO */
+const responses = {
+  default: [
+    { role:'agent', text:'I can help with clinical intelligence tasks. Try asking me to triage a patient, prepare a pre-consultation brief, generate a CHW priority queue, or run a medication adherence check.' },
+  ],
+  triage: [
+    { role:'tool', fn:'triage_patient()', status:'200 OK', time:'live', args:'patient_id: 592903 · symptoms: processed', result:'severity: moderate · score: 6/10 · escalate: false' },
+    { role:'agent', text:'Triage complete — Moderate severity (6/10). No immediate escalation required. Recommend monitoring and booking a clinical review within 48 hours. FHIR context used: Patient/592903, Condition (hypertension active).' },
+  ],
+  summary: [
+    { role:'tool', fn:'get_patient_summary()', status:'200 OK', time:'live', args:'patient_id: 592903 · type: consultation', result:'5 FHIR resources fetched · summary generated' },
+    { role:'agent', text:'Summary ready for Patient 592903 — Amara Osei, 41F. Active conditions: Hypertension, T2DM. Current medications: Metformin 500mg BD, Lisinopril 10mg OD. Latest BP: 158/98 (elevated). Suggested focus: BP management and medication compliance review.' },
+  ],
+  queue: [
+    { role:'tool', fn:'generate_chw_priority_queue()', status:'200 OK', time:'live', args:'patient_ids: [592903, 12724, 88234] · parallel fetch', result:'3 patients assessed · ranked by urgency score' },
+    { role:'agent', text:'Priority queue generated:\n1. Patient 592903 — Score 87 (critical BP + missed meds)\n2. Patient 88234 — Score 54 (mental health flag)\n3. Patient 12724 — Score 22 (stable, routine check)' },
+  ],
+  medication: [
+    { role:'tool', fn:'check_medication_adherence()', status:'200 OK', time:'live', args:'patient_id: 592903 · MedicationRequest fetched', result:'risk: high · score: 74 · chw_alert: recommended' },
+    { role:'agent', text:'Medication adherence risk: HIGH (score 74/100). Patient is on 3 active medications. Complexity flag triggered. CHW alert recommended — particularly for Metformin which requires consistent timing for T2DM management.' },
+  ],
+};
 
-/* TRIAGE BUTTON */
-document.getElementById('triage-btn').addEventListener('click',function(){
-  this.textContent='✓ Connecting to Dr. Nwosu...';this.style.background='#27c93f';
-  setTimeout(()=>{this.textContent='Connect to Doctor Now →';this.style.background='';},2200);
-});
+function getResponseKey(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('triage') || m.includes('symptom') || m.includes('pain') || m.includes('chest')) return 'triage';
+  if (m.includes('summary') || m.includes('brief') || m.includes('consult')) return 'summary';
+  if (m.includes('queue') || m.includes('chw') || m.includes('priority') || m.includes('visit')) return 'queue';
+  if (m.includes('medication') || m.includes('adherence') || m.includes('med') || m.includes('drug')) return 'medication';
+  return 'default';
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+
+  const chat = document.getElementById('agent-chat');
+
+  // User message
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg user';
+  userMsg.innerHTML = `<div class="msg-role">Clinician</div><div class="msg-bubble">${val}</div>`;
+  chat.appendChild(userMsg);
+
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = `<span style="color:var(--muted);font-size:.72rem;">Curaiva AI is calling MCP tools</span><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>`;
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+
+  const key = getResponseKey(val);
+  const resps = responses[key] || responses.default;
+
+  setTimeout(() => {
+    chat.removeChild(typing);
+    resps.forEach((r, i) => {
+      setTimeout(() => {
+        let el;
+        if (r.role === 'tool') {
+          el = document.createElement('div');
+          el.className = 'tool-call-block';
+          const t = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+          el.innerHTML = `
+            <div class="tcb-header">
+              <span class="tcb-fn">${r.fn}</span>
+              <span class="tcb-status">${r.status}</span>
+              <span class="tcb-time">${t}</span>
+            </div>
+            <div class="tcb-line"><span>${r.args}</span></div>
+            <div class="tcb-result">→ ${r.result}</div>`;
+        } else {
+          el = document.createElement('div');
+          el.className = 'msg agent';
+          el.innerHTML = `<div class="msg-role">Curaiva AI</div><div class="msg-bubble">${r.text.replace(/\n/g,'<br>')}</div>`;
+        }
+        chat.appendChild(el);
+        chat.scrollTop = chat.scrollHeight;
+      }, i * 600);
+    });
+  }, 1400);
+}
+
+document.getElementById('chat-input').addEventListener('keydown', e => { if(e.key === 'Enter') sendMessage(); });
 </script>
 </body>
 </html>
