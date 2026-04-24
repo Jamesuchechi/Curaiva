@@ -93,12 +93,12 @@ mcp_servers:
 
 sharp_context:
   required_fields:
-    - fhir_base_url        # The FHIR server endpoint for this EHR session
+    - fhir_base_url # The FHIR server endpoint for this EHR session
   optional_fields:
-    - fhir_access_token    # Bearer token for protected FHIR servers
-    - patient_id           # Current patient in context
-    - encounter_id         # Active encounter
-    - practitioner_id      # Clinician invoking the agent
+    - fhir_access_token # Bearer token for protected FHIR servers
+    - patient_id # Current patient in context
+    - encounter_id # Active encounter
+    - practitioner_id # Clinician invoking the agent
 
 ## ══════════════════════════════════════════════════════════════════
 ## COIN (CONVERSATIONAL INTEROPERABILITY) CONFIG
@@ -163,7 +163,6 @@ coin:
 ## ══════════════════════════════════════════════════════════════════
 
 example_interactions:
-
   - title: "Emergency Triage"
     user: "Patient 12724 is reporting severe chest pain and shortness of breath. Triage now."
     expected_tools: ["triage_patient"]
@@ -209,7 +208,7 @@ marketplace:
     - "Other A2A agents in the ecosystem"
   data_requirements:
     - "FHIR R4 server access (read permissions on Patient, Condition, MedicationRequest, Observation)"
-    - "Anthropic API key (provided by deployer)"
+    - "MISTRAL/GROQ API key (provided by deployer)"
   hipaa_note: |
     This agent does not store patient data. All FHIR data is fetched at query time
     and processed transiently. Deploying organizations are responsible for ensuring

@@ -1,5 +1,7 @@
 # Curaiva AI — Full Build TODO
+
 ## Agents Assemble: Healthcare AI Endgame Challenge
+
 ### Target: $7,500 Grand Prize
 
 > **Strategy: Ship a real product. Real FHIR data. Real UI. Both MCP + A2A. Win.**
@@ -8,34 +10,38 @@
 
 ## TEAM SPLIT (Read This First)
 
-| Developer | Primary Ownership |
-|---|---|
-| **Dev 1 — Backend** | Phase 1 (MCP Server), Phase 3 (Deploy + Prompt Opinion) |
-| **Dev 2 — Frontend** | Phase 2 (Design System), Phase 4 (Patient UI), Phase 5 (Doctor UI) |
-| **Dev 3 — Full-stack** | Phase 4 (Auth + Supabase), Phase 6 (CHW UI), Phase 7 (A2A Agent) |
+| Developer              | Primary Ownership                                                  |
+| ---------------------- | ------------------------------------------------------------------ |
+| **Dev 1 — Backend**    | Phase 1 (MCP Server), Phase 3 (Deploy + Prompt Opinion)            |
+| **Dev 2 — Frontend**   | Phase 2 (Design System), Phase 4 (Patient UI), Phase 5 (Doctor UI) |
+| **Dev 3 — Full-stack** | Phase 4 (Auth + Supabase), Phase 6 (CHW UI), Phase 7 (A2A Agent)   |
 
 **Parallel tracks:** Dev 1 builds the backend while Dev 2 builds the design system and pages. They merge at Phase 4 when the frontend hooks into real MCP tool calls.
 
 **Critical path:**
+
 ```
-Phase 0 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Phase 5 ∥ Phase 6] → Phase 7 → Phase 8 → Phase 9 → Phase 10
+Phase 0 → Phase 0.1 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Phase 5 ∥ Phase 6] → Phase 7 → Phase 8 → Phase 9 → Phase 10
 ```
 
 ---
 
 ## PHASE 0 — Setup & Accounts
+
 **Est. 2 hrs · Everyone**
 
 ### Accounts (do before anything else)
+
 - [ ] Create **Prompt Opinion** account → promptopinion.com
 - [ ] Watch Getting Started video → https://youtu.be/Qvs_QK4meHc
 - [ ] Register on **hackathon website**
-- [ ] Get **Anthropic API key** → console.anthropic.com
+- [ ] Get **MISTRAL/GROQ API key** → console.MISTRAL/GROQ.com
 - [ ] Create **Railway** account → railway.app (free tier)
 - [ ] Create **Supabase** project → supabase.com (free tier)
 - [ ] Create **Vercel** account → vercel.com (free tier)
 
 ### Repository
+
 - [ ] Create GitHub repo: `curaiva-ai` (set to **public**)
 - [ ] Create monorepo structure:
   ```
@@ -49,6 +55,7 @@ Phase 0 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Phase 5 ∥ Phase
 - [ ] All team members have push access ✅
 
 ### Test FHIR connectivity
+
 - [ ] Run this — confirm real patient data comes back:
   ```bash
   curl https://hapi.fhir.org/baseR4/Patient/592903
@@ -59,39 +66,66 @@ Phase 0 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Phase 5 ∥ Phase
 
 ---
 
-## PHASE 1 — MCP Server (Backend)
+## PHASE 0.1 — Repository Restructure & Tooling
+
+**Est. 1 hr · Everyone**
+
+> Aligning existing code with the planned monorepo structure.
+
+- [x] Move `sever.ts` to `mcp-server/src/server.ts` (and fix spelling to `server.ts`)
+- [x] Move `agent.config.yaml` to `a2a-agent/`
+- [x] Move `001_initial.sql` to `supabase/migrations/`
+- [x] Move all `.md` files (except README) to `docs/`
+- [x] Move `fhir_seed.js` and Postman collection to `scripts/`
+- [x] Initialize `mcp-server/package.json` with required MCP/MISTRAL/GROQ deps
+- [x] Setup `web/` with Next.js 15 (Phase 2)
+- [ ] Add `.cursorrules` or `.editorconfig` for team consistency
+
+**✅ Phase 0.1 done when:** Root is clean, sub-packages are initialized, and server.ts is in its new home.
+
+---
+
+## PHASE 1 — MCP Server (Backend) ✅
 **Est. 8 hrs · Dev 1**
 > Build the Superpower — 6 FHIR-powered clinical tools
 
 ### Init & Run
-- [ ] `cd mcp-server && npm install`
-- [ ] Copy `.env.example` → `.env`, fill in `ANTHROPIC_API_KEY`
-- [ ] `npm run dev` — server starts on port 3001
-- [ ] `GET /health` returns all 6 tools ✅
+- [x] `cd mcp-server && npm install` ✅
+- [x] Copy `.env.example` → `.env`, fill in `GROQ_API_KEY` ✅
+- [x] `npm run dev` — server starts on port 3001 ✅
+- [x] `GET /health` returns all 6 tools ✅
 
 ### Test Each Tool with Real FHIR Data
-- [ ] `triage_patient` → `severity: "critical"`, `escalate_to_doctor: true`
-- [ ] `get_patient_summary` → structured markdown brief with FHIR data
-- [ ] `check_medication_adherence` → adherence risk score + CHW alert flag
-- [ ] `mental_health_assessment` → `crisis_flag: true` on crisis language
-- [ ] `generate_chw_priority_queue` → ranked list sorted by urgency score
-- [ ] `create_consultation_brief` → physician-ready pre-consult document
+- [x] `triage_patient` → `severity: "critical"`, `escalate_to_doctor: true` ✅
+- [x] `get_patient_summary` → structured markdown brief with FHIR data ✅
+- [x] `check_medication_adherence` → adherence risk score + CHW alert flag ✅
+- [x] `mental_health_assessment` → `crisis_flag: true` on crisis language ✅
+- [x] `generate_chw_priority_queue` → ranked list sorted by urgency score ✅
+- [x] `create_consultation_brief` → physician-ready pre-consult document ✅
+
+### MCP Hardening & SHARP Validation
+- [x] **SHARP Mocking**: Create `scripts/test-mcp-local.sh` to test with mock `sharp_context` ✅
+- [x] **FHIR Error Boundaries**: Ensure tools don't crash if optional FHIR resources (e.g. Observations) are missing ✅
+- [x] **Provenance Metadata**: Ensure every tool response includes `fhir_resources_used[]` for the UI to display ✅
 
 ### Error Handling
-- [ ] FHIR 404 → graceful error message, no crash
-- [ ] FHIR auth error → clear message returned
-- [ ] Claude API timeout → safe fallback response with escalation
-- [ ] Invalid patient ID → Zod catches it, returns 400
+- [x] FHIR 404 → graceful error message, no crash ✅
+- [x] FHIR auth error → clear message returned ✅
+- [x] Claude API timeout → safe fallback response with escalation ✅
+- [x] Invalid patient ID → Zod catches it, returns 400 ✅
 
 **✅ Phase 1 done when:** All 6 tools return valid JSON with real FHIR data locally.
 
 ---
 
 ## PHASE 2 — Design System & Project Setup
+
 **Est. 4 hrs · Dev 2**
+
 > Build the foundation FIRST. Every page sits on top of this. Do not skip.
 
 ### Next.js Init
+
 - [ ] `npx create-next-app@latest web --typescript --tailwind --app`
 - [ ] Install deps:
   ```bash
@@ -101,7 +135,9 @@ Phase 0 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Phase 5 ∥ Phase
 - [ ] Create `.env.local` with Supabase + MCP server URL
 
 ### Design Tokens — `app/globals.css`
+
 Define these CSS variables. All components reference them — never hardcode a colour.
+
 - [ ] Background layers: `--bg`, `--bg2`, `--bg3`
 - [ ] Surface layers: `--surface`, `--surface2`
 - [ ] Brand: `--green`, `--green-dim`, `--lime`, `--lime-dim`
@@ -109,14 +145,19 @@ Define these CSS variables. All components reference them — never hardcode a c
 - [ ] Text: `--white`, `--muted`, `--light`
 - [ ] Borders: `--border`, `--border2`
 - [ ] Shape: `--radius: 14px`, `--radius-sm: 9px`, `--sidebar: 240px`
+- [ ] **Glassmorphism**: `--glass-bg`, `--glass-border`, `--glass-blur`
+- [ ] **Glow System**: `--glow-green`, `--glow-red`, `--glow-amber`
 
 ### Typography
+
 - [ ] Import `Fraunces` (display headings), `Instrument Sans` (body), `DM Mono` (data/code) from Google Fonts
 - [ ] Apply via CSS variables in `globals.css`
 - [ ] Verify: headings use Fraunces, body uses Instrument Sans, numbers/IDs use DM Mono
 
 ### Shared Component Library — `components/ui/`
+
 Build these before touching any page. Pages consume them.
+
 - [ ] `<Card>` — base card with border, background, optional padding variant
 - [ ] `<Badge>` — severity/status pill: `critical` (red), `moderate` (amber), `low` (teal), `stable` (green), `new` (purple)
 - [ ] `<Button>` — variants: `primary` (lime), `ghost` (border only), `danger` (red), `icon` (square)
@@ -130,6 +171,7 @@ Build these before touching any page. Pages consume them.
 - [ ] `<Toast>` — success (teal), error (red), warning (amber) notification
 
 ### Layout Shell — `app/(dashboard)/layout.tsx`
+
 - [ ] Sidebar: Curaiva logo, nav sections, nav items with icons + badges, user card at bottom
 - [ ] Role-aware nav: Patient nav / Doctor nav / CHW nav switch based on `profile.role`
 - [ ] Topbar: page title, status pill ("FHIR Connected"), context CTA button
@@ -142,16 +184,19 @@ Build these before touching any page. Pages consume them.
 ---
 
 ## PHASE 3 — MCP Deploy + Prompt Opinion
+
 **Est. 3 hrs · Dev 1**
 
 ### Deploy to Railway
+
 - [ ] `npm install -g @railway/cli && railway login`
 - [ ] `cd mcp-server && railway init && railway up`
-- [ ] Add env vars in Railway dashboard: `ANTHROPIC_API_KEY`, `DEFAULT_FHIR_BASE_URL`, `NODE_ENV`
+- [ ] Add env vars in Railway dashboard: `MISTRAL/GROQ_API_KEY`, `DEFAULT_FHIR_BASE_URL`, `NODE_ENV`
 - [ ] `curl https://curaiva-ai-mcp.railway.app/health` → 200 with all 6 tools ✅
 - [ ] Share the live URL with Dev 2 + 3 — they need it for API routes
 
 ### Connect to Prompt Opinion
+
 - [ ] Prompt Opinion → Tools → Add MCP Server → paste Railway URL
 - [ ] All 6 tools auto-discovered and listed ✅
 - [ ] Test `triage_patient` from Prompt Opinion tool tester ✅
@@ -165,12 +210,15 @@ Build these before touching any page. Pages consume them.
 ---
 
 ## PHASE 4 — Auth Pages + Patient Dashboard
+
 **Est. 6 hrs · Dev 2 + Dev 3**
+
 > Patient is the primary end-user. This is the heart of the product.
 
 ### Auth Pages (Dev 3)
 
 **`/login` page:**
+
 - [ ] Centred card layout on dark background
 - [ ] Curaiva logo + tagline at top
 - [ ] Email + password fields with focus states
@@ -181,6 +229,7 @@ Build these before touching any page. Pages consume them.
 - [ ] On success → redirect to correct dashboard by role
 
 **`/register` page:**
+
 - [ ] Same centred layout
 - [ ] Name, email, password fields
 - [ ] **Role selector** — three clickable cards side by side:
@@ -192,6 +241,7 @@ Build these before touching any page. Pages consume them.
 - [ ] On success → redirect to role dashboard
 
 **`middleware.ts`:**
+
 - [ ] Protect all `/dashboard/*` routes
 - [ ] Redirect unauthenticated users to `/login`
 - [ ] Redirect wrong-role users to `/unauthorized`
@@ -199,17 +249,19 @@ Build these before touching any page. Pages consume them.
 ### Patient Dashboard Page (Dev 2) — `/dashboard/patient`
 
 **Metric strip (4 cards):**
+
 - [ ] Health Score — large number in teal, trend arrow
 - [ ] Medication Adherence — percentage in amber, "↓ missed X doses"
 - [ ] Today's Mood — score/10 in purple, emoji
 - [ ] Open Consultations — count in green, "X awaiting reply"
 
 **AI Triage panel:**
-- [ ] `<textarea>` — placeholder: *"Describe how you're feeling… (e.g. chest pain since this morning)"*
+
+- [ ] `<textarea>` — placeholder: _"Describe how you're feeling… (e.g. chest pain since this morning)"_
 - [ ] Character counter below textarea
 - [ ] 🎙 Voice Input button — uses Web Speech API, pulses red while recording, fills textarea on stop
 - [ ] "Assess Symptoms" button — disabled when textarea is empty
-- [ ] On submit: show `<Spinner>` + *"Analysing via FHIR context…"*
+- [ ] On submit: show `<Spinner>` + _"Analysing via FHIR context…"_
 - [ ] **Wire to MCP:** `POST /api/triage` → server calls `triage_patient` tool → returns assessment
 - [ ] Result renders below (animated slide-in):
   - `<Badge>` with severity
@@ -218,9 +270,10 @@ Build these before touching any page. Pages consume them.
   - Self-care steps as a `<ul>`
   - Red flags section — only shows if `red_flags.length > 0`
   - "Connect to Doctor →" primary button — only shows if `escalate_to_doctor: true`
-  - Footer: *"Assessed using FHIR Patient 592903 · Claude Opus via MCP"*
+  - Footer: _"Assessed using FHIR Patient 592903 · Claude Opus via MCP"_
 
 **Mood tracker:**
+
 - [ ] 7-column grid: Mon → Today
 - [ ] Each column: day label (small, muted), emoji, score (DM Mono, coloured)
 - [ ] Today's column: lime border + lime-dim background highlight
@@ -231,6 +284,7 @@ Build these before touching any page. Pages consume them.
   - "Save" button → inserts into `mental_health_sessions`
 
 **Today's Medications:**
+
 - [ ] Fetch active medications from Supabase
 - [ ] Each row: pill emoji, medication name (bold), dosage, schedule
 - [ ] Dose dots: teal = taken, red = missed, grey = pending
@@ -240,6 +294,7 @@ Build these before touching any page. Pages consume them.
 - [ ] Adherence streak banner if 5+ days in a row: "🔥 6-day streak!"
 
 **Recent Activity feed:**
+
 - [ ] Chronological list of events (triage, doctor replies, missed doses, mental health flags)
 - [ ] Each: coloured icon in rounded square, description, relative timestamp
 - [ ] Show 5 items max → "View all →" link
@@ -249,18 +304,22 @@ Build these before touching any page. Pages consume them.
 ---
 
 ## PHASE 5 — Doctor Workspace UI
+
 **Est. 6 hrs · Dev 2**
+
 > Speed and signal. A busy doctor must read the most important thing in 5 seconds.
 
 ### Doctor Dashboard Page — `/dashboard/doctor`
 
 **Metric strip (4 cards):**
+
 - [ ] Open Consultations — count in coral, "X critical" warning sub-text
 - [ ] Avg Response Time — minutes in amber, trend down = good
 - [ ] Patients Seen This Week — count in teal
 - [ ] AI Briefs Ready — count in lime
 
 **Consultation Inbox (left ~55% of content area):**
+
 - [ ] Filter tabs: All / Critical / Moderate / Resolved — updates list
 - [ ] **Supabase Realtime** subscription on `consultations` table filtered by `doctor_id`
   - New consultations slide in from top automatically — no refresh needed
@@ -276,6 +335,7 @@ Build these before touching any page. Pages consume them.
 - [ ] Clicking a row → loads the AI Brief panel (no navigation, stays on same page)
 
 **AI Brief Panel (right ~45% of content area):**
+
 - [ ] Default: centred `<EmptyState>` — "Select a consultation to load the AI brief"
 - [ ] Loading: `<Skeleton>` shimmer on all text sections
 - [ ] **Wire to MCP:** clicking a row calls `POST /api/brief` → `create_consultation_brief` tool
@@ -293,6 +353,7 @@ Build these before touching any page. Pages consume them.
 - [ ] Reply → opens inline text editor below, "Send" posts message to `messages` table
 
 **MCP Tool Call Log (below brief panel):**
+
 - [ ] Live log of every MCP call made this session
 - [ ] Each entry (DM Mono font):
   - Tool name in lime
@@ -303,6 +364,7 @@ Build these before touching any page. Pages consume them.
 - [ ] Shows judges exactly how MCP integration works — keep it visible during demo
 
 **Analytics cards (bottom row, 3 cards):**
+
 - [ ] Consults This Week — `<Sparkline>` bar chart Mon–Fri
 - [ ] Severity Distribution — canvas donut chart (critical / moderate / low)
 - [ ] FHIR Resource Usage — horizontal bar per resource type (Patient, Condition, MedicationRequest, Observation)
@@ -312,18 +374,22 @@ Build these before touching any page. Pages consume them.
 ---
 
 ## PHASE 6 — CHW Command Centre UI
+
 **Est. 5 hrs · Dev 3**
+
 > The priority queue is the "wow" moment in the demo. Make it undeniable.
 
 ### CHW Dashboard Page — `/dashboard/chw`
 
 **Metric strip (4 cards):**
+
 - [ ] My Patients — total count in purple
 - [ ] Urgent Visits — count in red
 - [ ] Missed Doses Across Community — count in amber
 - [ ] Visits Done This Week — count in teal + progress indicator
 
 **AI Priority Queue (main section, ~65% width):**
+
 - [ ] Section header: "AI Priority Queue" + "Generated HH:MM · FHIR R4" badge
 - [ ] **Wire to MCP:** on page load → `POST /api/queue` → `generate_chw_priority_queue` with CHW's patient IDs
 - [ ] Loading: `<Skeleton>` shimmer on 5 rows
@@ -340,6 +406,7 @@ Build these before touching any page. Pages consume them.
 - [ ] "Refresh Queue" button → re-calls MCP tool, animates row reordering
 
 **Patient Detail Drawer:**
+
 - [ ] Clicking any queue row opens a right-side drawer (slides in 300ms)
 - [ ] Drawer shows:
   - Patient name, age, gender, FHIR ID
@@ -351,6 +418,7 @@ Build these before touching any page. Pages consume them.
 - [ ] Drawer closes on Escape key or clicking the backdrop overlay
 
 **Live Alerts panel (right ~35%):**
+
 - [ ] **Supabase Realtime** on `crisis_alerts` + `medication_logs` tables
 - [ ] Each alert: coloured dot (red = crisis, amber = missed dose, teal = doctor reply), description, relative time
 - [ ] Crisis alerts: full red background band — impossible to miss
@@ -358,6 +426,7 @@ Build these before touching any page. Pages consume them.
 - [ ] Empty state: "✓ No active alerts"
 
 **Community Health summary card:**
+
 - [ ] Avg medication adherence % (DM Mono, coloured)
 - [ ] Active conditions count
 - [ ] Critical patients count (red)
@@ -368,9 +437,11 @@ Build these before touching any page. Pages consume them.
 ---
 
 ## PHASE 7 — A2A Agent + API Routes
+
 **Est. 4 hrs · Dev 3**
 
 ### A2A Agent on Prompt Opinion
+
 - [ ] Prompt Opinion → Agents → Create New Agent → name: "Curaiva AI"
 - [ ] Paste system prompt from `a2a-agent/agent-config.yaml`
 - [ ] Connect MCP server, configure COIN intents, set SHARP context fields
@@ -380,7 +451,9 @@ Build these before touching any page. Pages consume them.
 - [ ] 📸 Screenshot: Agent listed in Prompt Opinion Marketplace
 
 ### Next.js API Routes (wire UI → MCP securely)
+
 All routes: check Supabase session first, then call MCP. API key never exposed to browser.
+
 - [ ] `POST /api/triage` → `triage_patient`
 - [ ] `POST /api/summary` → `get_patient_summary`
 - [ ] `POST /api/brief` → `create_consultation_brief`
@@ -391,6 +464,7 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 - [ ] `POST /api/messages` → insert into `messages` in Supabase
 
 ### Supabase Tables
+
 - [ ] `profiles` — id, full_name, role, fhir_patient_id
 - [ ] `consultations` — patient_id, doctor_id, status, ai_summary, priority, created_at
 - [ ] `messages` — consultation_id, sender_id, content, created_at
@@ -404,16 +478,20 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 ---
 
 ## PHASE 8 — UI Polish & QA
+
 **Est. 4 hrs · Everyone**
+
 > This is what separates a winner from a participant.
 
 ### Loading States (every page, every AI call)
+
 - [ ] `<Skeleton>` shimmer on all data that loads async
 - [ ] `<Spinner>` inside buttons while submitting
 - [ ] Graceful error states on all MCP calls: "Unable to load — try again"
 - [ ] Empty states on all list views
 
 ### Micro-interactions
+
 - [ ] Sidebar nav: hover tint + active lime highlight + 3px left border
 - [ ] Critical `<Badge>`: subtle pulse animation
 - [ ] `<MetricCard>`: hover lifts `translateY(-1px)` + deeper shadow
@@ -425,6 +503,7 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 - [ ] MCP log entries: `slideIn` from top on each new entry
 
 ### Responsive Check
+
 - [ ] 1440px (primary design target) — looks great ✅
 - [ ] 1024px (laptop) — still readable ✅
 - [ ] 768px (tablet) — sidebar collapses ✅
@@ -432,6 +511,7 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 ### Full End-to-End QA
 
 **Patient flow:**
+
 - [ ] Register as Patient → Patient Dashboard ✅
 - [ ] Type chest pain symptoms → Critical triage via MCP ✅
 - [ ] "Connect to Doctor" → consultation created ✅
@@ -439,6 +519,7 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 - [ ] Log mood 7/10 → sparkline updates ✅
 
 **Doctor flow:**
+
 - [ ] Log in as Doctor → Doctor Workspace ✅
 - [ ] New consultation appears in inbox (Realtime) ✅
 - [ ] Click → AI brief loads via `create_consultation_brief` MCP call ✅
@@ -446,40 +527,52 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 - [ ] Reply to patient → message saved ✅
 
 **CHW flow:**
+
 - [ ] Log in as CHW → CHW Command Centre ✅
 - [ ] Priority queue loads from `generate_chw_priority_queue` MCP call ✅
 - [ ] Crisis alert visible in live alerts panel ✅
 - [ ] Click patient row → drawer slides in ✅
 - [ ] Send message → saved in Supabase ✅
 
-**✅ Phase 8 done when:** All 3 roles work end-to-end, no broken states, UI is polished and demo-ready.
+### The "Winner's Circle" Features (Phase 8 Extensions)
+
+- [ ] **AI Thought Trace**: UI component showing real-time MCP tool calls and FHIR resource access
+- [ ] **Data Provenance Badges**: Small hoverable badges on all AI text showing "Source: FHIR Observation/Condition"
+- [ ] **A11y Audit**: Pass WCAG 2.1 contrast checks on all severity badges
+- [ ] **Micro-animations**: Staggered list entries and pulse effects on critical alerts
+
+**✅ Phase 8 done when:** All 3 roles work end-to-end, no broken states, UI is polished and demo-ready with high-end aesthetics.
 
 ---
 
 ## PHASE 9 — Deploy Frontend + Demo Video
+
 **Est. 4 hrs · Dev 2 + Dev 3**
 
 ### Deploy to Vercel
+
 - [ ] `cd web && vercel --prod`
 - [ ] Add env vars in Vercel dashboard:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`
-  - `ANTHROPIC_API_KEY`
+  - `MISTRAL/GROQ_API_KEY`
   - `MCP_SERVER_URL=https://curaiva-ai-mcp.railway.app`
 - [ ] Test live URL — all 3 roles work end-to-end ✅
 
 ### Seed Demo Accounts
+
 - [ ] Demo patient → email: patient@curaiva.ai, FHIR ID: 592903
 - [ ] Demo doctor → email: doctor@curaiva.ai, assigned to demo patient
 - [ ] Demo CHW → email: chw@curaiva.ai, assigned 4 demo patients
 - [ ] Verify all 3 logins work cleanly before recording ✅
 
 ### Demo Video Script (3 min MAXIMUM)
+
 Rehearse this 3 times. Every second counts.
 
 - [ ] **0:00–0:12** — Hook:
-  *"4.5 billion people lack healthcare access. Curaiva AI fixes that — with MCP, A2A, and real FHIR data."*
+      _"4.5 billion people lack healthcare access. Curaiva AI fixes that — with MCP, A2A, and real FHIR data."_
 
 - [ ] **0:12–0:40** — The Superpower:
   - Show `https://curaiva-ai-mcp.railway.app/health` → 6 tools in JSON
@@ -495,7 +588,7 @@ Rehearse this 3 times. Every second counts.
   - Log in as doctor@curaiva.ai
   - New consultation appears in inbox (real-time)
   - Click it → AI brief generates (point to MCP tool log)
-  - Say: *"This brief was generated by calling `create_consultation_brief` against real FHIR data — Patient 592903"*
+  - Say: _"This brief was generated by calling `create_consultation_brief` against real FHIR data — Patient 592903"_
   - Reply to patient
 
 - [ ] **2:00–2:40** — CHW Command Centre + A2A:
@@ -505,7 +598,7 @@ Rehearse this 3 times. Every second counts.
   - Show Marketplace listing (both MCP + Agent)
 
 - [ ] **2:40–3:00** — Close:
-  *"Curaiva AI — FHIR R4 native, SHARP compliant, three real dashboards, live on Prompt Opinion. Built for the Endgame."*
+      _"Curaiva AI — FHIR R4 native, SHARP compliant, three real dashboards, live on Prompt Opinion. Built for the Endgame."_
 
 - [ ] Record with Loom
 - [ ] Under 3:00 exactly ✅
@@ -515,6 +608,7 @@ Rehearse this 3 times. Every second counts.
 ---
 
 ## PHASE 10 — Submission
+
 **Est. 1 hr · Anyone**
 
 - [ ] GitHub repo is public ✅
@@ -525,6 +619,7 @@ Rehearse this 3 times. Every second counts.
 - [ ] Demo video on Loom (anyone with link) ✅
 
 **Submit with:**
+
 - [ ] Title: `Curaiva AI — Healthcare Intelligence Superpower + Orchestrator`
 - [ ] Prompt Opinion MCP Marketplace URL
 - [ ] Prompt Opinion A2A Agent Marketplace URL
@@ -536,19 +631,19 @@ Rehearse this 3 times. Every second counts.
 
 ## UI PAGES TRACKER
 
-| Page | Route | Owner | Phase | Done? |
-|---|---|---|---|---|
-| Login | `/login` | Dev 3 | 4 | [ ] |
-| Register | `/register` | Dev 3 | 4 | [ ] |
-| Patient Dashboard | `/dashboard/patient` | Dev 2 | 4 | [ ] |
-| Patient — Mental Health | `/dashboard/patient/mental-health` | Dev 2 | 5 | [ ] |
-| Patient — Medications | `/dashboard/patient/medications` | Dev 2 | 4 | [ ] |
-| Patient — Consultations | `/dashboard/patient/consultations` | Dev 2 | 5 | [ ] |
-| Doctor — Workspace | `/dashboard/doctor` | Dev 2 | 5 | [ ] |
-| Doctor — Consult Detail | `/dashboard/doctor/consultation/[id]` | Dev 2 | 5 | [ ] |
-| CHW — Command Centre | `/dashboard/chw` | Dev 3 | 6 | [ ] |
-| CHW — Patient Drawer | (component, not page) | Dev 3 | 6 | [ ] |
-| Unauthorized | `/unauthorized` | Dev 3 | 4 | [ ] |
+| Page                    | Route                                 | Owner | Phase | Done? |
+| ----------------------- | ------------------------------------- | ----- | ----- | ----- |
+| Login                   | `/login`                              | Dev 3 | 4     | [ ]   |
+| Register                | `/register`                           | Dev 3 | 4     | [ ]   |
+| Patient Dashboard       | `/dashboard/patient`                  | Dev 2 | 4     | [ ]   |
+| Patient — Mental Health | `/dashboard/patient/mental-health`    | Dev 2 | 5     | [ ]   |
+| Patient — Medications   | `/dashboard/patient/medications`      | Dev 2 | 4     | [ ]   |
+| Patient — Consultations | `/dashboard/patient/consultations`    | Dev 2 | 5     | [ ]   |
+| Doctor — Workspace      | `/dashboard/doctor`                   | Dev 2 | 5     | [ ]   |
+| Doctor — Consult Detail | `/dashboard/doctor/consultation/[id]` | Dev 2 | 5     | [ ]   |
+| CHW — Command Centre    | `/dashboard/chw`                      | Dev 3 | 6     | [ ]   |
+| CHW — Patient Drawer    | (component, not page)                 | Dev 3 | 6     | [ ]   |
+| Unauthorized            | `/unauthorized`                       | Dev 3 | 4     | [ ]   |
 
 ---
 
@@ -563,4 +658,4 @@ Rehearse this 3 times. Every second counts.
 
 ---
 
-*Curaiva AI · Agents Assemble Challenge · $7,500 Grand Prize · Built to win.*
+_Curaiva AI · Agents Assemble Challenge · $7,500 Grand Prize · Built to win._

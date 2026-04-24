@@ -1,4 +1,5 @@
 # 🏥 Curaiva AI
+
 ### Agents Assemble: The Healthcare AI Endgame Challenge
 
 > **A Healthcare Superpower (MCP) + Intelligence Orchestrator (A2A)**
@@ -8,7 +9,7 @@
 [![A2A](https://img.shields.io/badge/A2A-Agent-7c3aed)](https://promptopinion.com)
 [![FHIR R4](https://img.shields.io/badge/FHIR-R4-e85d2e)](https://hl7.org/fhir/R4/)
 [![SHARP](https://img.shields.io/badge/SHARP-Compliant-0891b2)](https://docs.promptopinion.com/sharp)
-[![Claude](https://img.shields.io/badge/Claude-Opus-d97706)](https://anthropic.com)
+[![Claude](https://img.shields.io/badge/Claude-Opus-d97706)](https://MISTRAL/GROQ.com)
 
 ---
 
@@ -16,10 +17,10 @@
 
 Curaiva AI is a **dual-path hackathon submission** for the Agents Assemble challenge:
 
-| Path | What We Built | Prize Target |
-|---|---|---|
-| **Option 1 — Superpower** | MCP Server with 6 FHIR-powered clinical tools | Grand Prize |
-| **Option 2 — Agent** | A2A healthcare orchestrator on Prompt Opinion | Grand Prize |
+| Path                      | What We Built                                 | Prize Target |
+| ------------------------- | --------------------------------------------- | ------------ |
+| **Option 1 — Superpower** | MCP Server with 6 FHIR-powered clinical tools | Grand Prize  |
+| **Option 2 — Agent**      | A2A healthcare orchestrator on Prompt Opinion | Grand Prize  |
 
 Together they form a complete, interoperable healthcare AI system — discoverable and invokable by any agent in the Prompt Opinion ecosystem.
 
@@ -56,14 +57,14 @@ Together they form a complete, interoperable healthcare AI system — discoverab
 
 ## The 6 MCP Tools (The Superpower)
 
-| Tool | What It Does | FHIR Resources Used |
-|---|---|---|
-| `triage_patient` | AI severity scoring (low/moderate/critical) + escalation routing | Patient, Condition, Observation |
-| `get_patient_summary` | FHIR-powered clinical brief for any summary type | Patient, Condition, MedicationRequest, Observation, Encounter |
-| `check_medication_adherence` | Adherence risk scoring + CHW alert recommendations | Patient, MedicationRequest |
-| `mental_health_assessment` | Mood tracking, CBT guidance, crisis detection + escalation | Patient, Observation (survey) |
-| `generate_chw_priority_queue` | AI-ranked patient watchlist for Community Health Workers | Patient, Condition, MedicationRequest, Observation |
-| `create_consultation_brief` | Pre-consult physician documentation with clinical focus areas | Patient, Condition, MedicationRequest, Observation |
+| Tool                          | What It Does                                                     | FHIR Resources Used                                           |
+| ----------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| `triage_patient`              | AI severity scoring (low/moderate/critical) + escalation routing | Patient, Condition, Observation                               |
+| `get_patient_summary`         | FHIR-powered clinical brief for any summary type                 | Patient, Condition, MedicationRequest, Observation, Encounter |
+| `check_medication_adherence`  | Adherence risk scoring + CHW alert recommendations               | Patient, MedicationRequest                                    |
+| `mental_health_assessment`    | Mood tracking, CBT guidance, crisis detection + escalation       | Patient, Observation (survey)                                 |
+| `generate_chw_priority_queue` | AI-ranked patient watchlist for Community Health Workers         | Patient, Condition, MedicationRequest, Observation            |
+| `create_consultation_brief`   | Pre-consult physician documentation with clinical focus areas    | Patient, Condition, MedicationRequest, Observation            |
 
 ---
 
@@ -81,7 +82,7 @@ npm install
 
 ```bash
 cp .env.example .env
-# Fill in ANTHROPIC_API_KEY and optionally DEFAULT_FHIR_BASE_URL
+# Fill in MISTRAL/GROQ_API_KEY and optionally DEFAULT_FHIR_BASE_URL
 ```
 
 ### 3. Run the MCP Server
@@ -95,6 +96,7 @@ npm run build && npm start
 ```
 
 Server starts at `http://localhost:3001`
+
 - Health check: `GET /health`
 - MCP endpoint: `POST /mcp` (Prompt Opinion connects here)
 
@@ -110,7 +112,7 @@ railway init
 railway up
 ```
 
-Add `ANTHROPIC_API_KEY` in Railway dashboard → Variables.
+Add `MISTRAL/GROQ_API_KEY` in Railway dashboard → Variables.
 
 Your MCP server URL will be: `https://your-app.railway.app/mcp`
 
@@ -151,11 +153,11 @@ No token handling needed — Prompt Opinion bridges EHR session credentials auto
 
 During development, use these free public FHIR R4 servers:
 
-| Server | URL | Notes |
-|---|---|---|
-| HAPI FHIR | `https://hapi.fhir.org/baseR4` | Public, no auth, rich test data |
-| NLM Lforms | `https://lforms-fhir.nlm.nih.gov/baseR4` | US NLM maintained |
-| Aidbox | Your sandbox URL | Free tier available |
+| Server     | URL                                      | Notes                           |
+| ---------- | ---------------------------------------- | ------------------------------- |
+| HAPI FHIR  | `https://hapi.fhir.org/baseR4`           | Public, no auth, rich test data |
+| NLM Lforms | `https://lforms-fhir.nlm.nih.gov/baseR4` | US NLM maintained               |
+| Aidbox     | Your sandbox URL                         | Free tier available             |
 
 Sample patient IDs on HAPI FHIR to test with: `592903`, `12724`, `88234`
 
@@ -166,6 +168,7 @@ Sample patient IDs on HAPI FHIR to test with: `592903`, `12724`, `88234`
 The Curaiva AI agent on Prompt Opinion can:
 
 **Receive** intents from other agents:
+
 - `triage_request` — another agent sends patient symptoms for assessment
 - `consultation_prep` — another agent requests a pre-consult brief
 - `medication_review` — pharmacy agent requests adherence analysis
@@ -173,6 +176,7 @@ The Curaiva AI agent on Prompt Opinion can:
 - `chw_briefing` — scheduling agent requests today's priority queue
 
 **Emit** results to other agents:
+
 - `triage_result` — severity + escalation flag
 - `clinical_brief_ready` — structured physician document
 - `crisis_alert` — immediate escalation with emergency resources
@@ -185,6 +189,7 @@ The Curaiva AI agent on Prompt Opinion can:
 Follow this exact sequence for the submission video:
 
 ### Minute 1 — The Superpower
+
 1. Open `https://your-app.railway.app/health` — show 6 tools live
 2. On Prompt Opinion, show MCP server connected with all tools visible
 3. Invoke `triage_patient` directly:
@@ -193,12 +198,14 @@ Follow this exact sequence for the submission video:
    - Show: Critical severity, FHIR data fetched, escalate_to_doctor: true
 
 ### Minute 2 — The Agent in Action
+
 4. Open the Curaiva AI agent chat on Prompt Opinion
 5. Type: "Dr. Obi has a consult with patient 592903 in 5 minutes. What do they need to know?"
 6. Agent calls `get_patient_summary` + `create_consultation_brief` via MCP
 7. Show the structured physician brief generated from real FHIR data
 
 ### Minute 3 — The Ecosystem
+
 8. Type: "Generate today's priority queue for CHW Fatima — patients 101, 204, 387, 512."
 9. Agent calls `generate_chw_priority_queue`, show ranked results
 10. Show Marketplace listing — agent is discoverable by other agents in ecosystem
@@ -234,15 +241,15 @@ curaiva-ai/
 
 ## Why This Wins
 
-| Judging Criterion | Curaiva AI |
-|---|---|
-| **MCP Compliance** | ✅ Full MCP server, HTTP/SSE transport, Zod-validated schemas |
-| **A2A Integration** | ✅ COIN-compliant agent, published to Prompt Opinion Marketplace |
-| **FHIR Integration** | ✅ Reads real FHIR R4 data — Patient, Condition, MedicationRequest, Observation |
-| **SHARP Compliance** | ✅ Extracts fhir_base_url, fhir_access_token, patient_id from SHARP context |
-| **Real Healthcare Value** | ✅ Solves 4 critical gaps: access, diagnosis, mental health, adherence |
-| **Marketplace Ready** | ✅ Discoverable and invokable by other platform agents |
-| **Demo Quality** | ✅ Live FHIR data, real AI responses, 3-minute video |
+| Judging Criterion         | Curaiva AI                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| **MCP Compliance**        | ✅ Full MCP server, HTTP/SSE transport, Zod-validated schemas                   |
+| **A2A Integration**       | ✅ COIN-compliant agent, published to Prompt Opinion Marketplace                |
+| **FHIR Integration**      | ✅ Reads real FHIR R4 data — Patient, Condition, MedicationRequest, Observation |
+| **SHARP Compliance**      | ✅ Extracts fhir_base_url, fhir_access_token, patient_id from SHARP context     |
+| **Real Healthcare Value** | ✅ Solves 4 critical gaps: access, diagnosis, mental health, adherence          |
+| **Marketplace Ready**     | ✅ Discoverable and invokable by other platform agents                          |
+| **Demo Quality**          | ✅ Live FHIR data, real AI responses, 3-minute video                            |
 
 ---
 

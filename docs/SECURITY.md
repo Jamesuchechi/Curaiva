@@ -14,29 +14,31 @@ Every FHIR query is made at request time, processed transiently in memory, and d
 
 ## Data Classification
 
-| Data Type | Where Stored | Who Can Access | Encrypted |
-|---|---|---|---|
-| User credentials | Supabase Auth | User only | ✅ (Supabase managed) |
-| Profile (name, role, phone) | Supabase `profiles` | User + assigned clinicians (RLS) | ✅ at rest |
-| FHIR health records | **Not stored** — fetched per-request | N/A | N/A |
-| Triage session results | Supabase `triage_sessions` | Patient + assigned doctor (RLS) | ✅ at rest |
-| Consultation messages | Supabase `messages` | Patient + doctor in consultation (RLS) | ✅ at rest |
-| Mood/mental health logs | Supabase `mental_health_sessions` | Patient + CHW if crisis (RLS) | ✅ at rest |
-| Medication logs | Supabase `medication_logs` | Patient + assigned CHW (RLS) | ✅ at rest |
-| FHIR access tokens | **Not stored** — transient per-request via SHARP | N/A | N/A |
-| API keys | Server-side env vars only | Deployment environment | ✅ |
+| Data Type                   | Where Stored                                     | Who Can Access                         | Encrypted             |
+| --------------------------- | ------------------------------------------------ | -------------------------------------- | --------------------- |
+| User credentials            | Supabase Auth                                    | User only                              | ✅ (Supabase managed) |
+| Profile (name, role, phone) | Supabase `profiles`                              | User + assigned clinicians (RLS)       | ✅ at rest            |
+| FHIR health records         | **Not stored** — fetched per-request             | N/A                                    | N/A                   |
+| Triage session results      | Supabase `triage_sessions`                       | Patient + assigned doctor (RLS)        | ✅ at rest            |
+| Consultation messages       | Supabase `messages`                              | Patient + doctor in consultation (RLS) | ✅ at rest            |
+| Mood/mental health logs     | Supabase `mental_health_sessions`                | Patient + CHW if crisis (RLS)          | ✅ at rest            |
+| Medication logs             | Supabase `medication_logs`                       | Patient + assigned CHW (RLS)           | ✅ at rest            |
+| FHIR access tokens          | **Not stored** — transient per-request via SHARP | N/A                                    | N/A                   |
+| API keys                    | Server-side env vars only                        | Deployment environment                 | ✅                    |
 
 ---
 
 ## Authentication & Authorization
 
 ### User Authentication
+
 - All authentication is handled by **Supabase Auth** (industry-standard, SOC 2 certified)
 - Passwords are hashed and never stored in plain text
 - Sessions use short-lived JWTs with automatic refresh
 - All API routes validate the Supabase session server-side before executing
 
 ### Role-Based Access Control
+
 Three roles exist: `patient`, `doctor`, `chw`. Each role sees only what it needs:
 
 - **Patients** can only read and write their own records
@@ -45,6 +47,7 @@ Three roles exist: `patient`, `doctor`, `chw`. Each role sees only what it needs
 - **No cross-role data leakage** is possible — enforced at the database layer, not just the application layer
 
 ### Row Level Security (RLS)
+
 Every table in the Curaiva database has RLS enabled. This means even if an API bug existed, a user's database query would never return another user's data — PostgreSQL enforces this at the query level:
 
 ```sql
@@ -60,14 +63,14 @@ RLS is enabled on: `profiles`, `patient_assignments`, `consultations`, `messages
 
 ## API Key Management
 
-| Key | Location | Accessible To |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Server environment variable | Next.js server-side only, Railway server-side only |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server environment variable | Next.js server-side only |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-accessible | Browser (this key has RLS enforced) |
-| FHIR access tokens | Passed per-request via SHARP context | MCP server only, discarded after response |
+| Key                             | Location                             | Accessible To                                      |
+| ------------------------------- | ------------------------------------ | -------------------------------------------------- |
+| `MISTRAL/GROQ_API_KEY`          | Server environment variable          | Next.js server-side only, Railway server-side only |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Server environment variable          | Next.js server-side only                           |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-accessible                    | Browser (this key has RLS enforced)                |
+| FHIR access tokens              | Passed per-request via SHARP context | MCP server only, discarded after response          |
 
-**The Anthropic API key is never included in the client-side JavaScript bundle.** All Claude AI calls are made through Next.js API routes (server-side) or the MCP server (server-side). The browser never has direct access to Claude.
+**The MISTRAL/GROQ API key is never included in the client-side JavaScript bundle.** All Claude AI calls are made through Next.js API routes (server-side) or the MCP server (server-side). The browser never has direct access to Claude.
 
 ---
 
@@ -95,10 +98,12 @@ Next.js API Route
 Client Dashboard
 ```
 
-**At no point is raw FHIR data written to the Curaiva database.** We store the *AI assessment output* (e.g., severity score, recommended action), not the raw patient health record.
+**At no point is raw FHIR data written to the Curaiva database.** We store the _AI assessment output_ (e.g., severity score, recommended action), not the raw patient health record.
 
 ### SHARP Context Security
+
 FHIR access tokens are provided by Prompt Opinion's SHARP context propagation mechanism. These tokens:
+
 - Come from the connected EHR system's OAuth session
 - Are valid only for the duration of the SHARP session
 - Are never logged, stored, or written to disk by Curaiva
@@ -136,7 +141,7 @@ Curaiva AI includes automatic crisis detection in the mental health assessment t
 
 Curaiva AI is an AI tool designed to assist healthcare workflows. Deploying organisations are responsible for:
 
-1. **HIPAA compliance** (US): Executing a Business Associate Agreement (BAA) with Supabase and Anthropic before processing real PHI in production
+1. **HIPAA compliance** (US): Executing a Business Associate Agreement (BAA) with Supabase and MISTRAL/GROQ before processing real PHI in production
 2. **NDPA compliance** (Nigeria): Ensuring patient data handling complies with the Nigeria Data Protection Act 2023
 3. **GDPR compliance** (EU/UK): Ensuring appropriate data processing agreements and user consent mechanisms are in place
 4. **EHR integration security**: Ensuring FHIR server credentials (access tokens) are provisioned with the minimum required scopes (read-only on Patient, Condition, MedicationRequest, Observation)
@@ -150,7 +155,7 @@ Curaiva AI is an AI tool designed to assist healthcare workflows. Deploying orga
 
 If you discover a security vulnerability in Curaiva AI, please report it responsibly:
 
-- **Email:** security@curaiva.ai *(set up before going to production)*
+- **Email:** security@curaiva.ai _(set up before going to production)_
 - **Do not** open a public GitHub issue for security vulnerabilities
 - **Include:** Description of the vulnerability, steps to reproduce, potential impact
 - **Response time:** We aim to acknowledge all reports within 48 hours
@@ -161,8 +166,8 @@ If you discover a security vulnerability in Curaiva AI, please report it respons
 
 - Dependencies are audited with `npm audit` before every deployment
 - No dependencies with known high/critical vulnerabilities are permitted in production
-- Supabase, Anthropic SDK, and MCP SDK are actively maintained packages from reputable publishers
+- Supabase, MISTRAL/GROQ SDK, and MCP SDK are actively maintained packages from reputable publishers
 
 ---
 
-*Last updated: 2025 — Curaiva AI v1.0.0*
+_Last updated: 2025 — Curaiva AI v1.0.0_

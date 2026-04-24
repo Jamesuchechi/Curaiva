@@ -51,7 +51,7 @@
 ║              │ FHIR R4 calls (SHARP context)                             ║
 ║              │                                                           ║
 ║   ┌──────────▼──────────────────────────┐                               ║
-║   │  CLAUDE API (Anthropic)             │                               ║
+║   │  CLAUDE API (MISTRAL/GROQ)             │                               ║
 ║   │  claude-opus-4-6                    │                               ║
 ║   │                                     │                               ║
 ║   │  Triage · Summarisation             │                               ║
@@ -83,14 +83,14 @@
 
 ## Services & Infrastructure
 
-| Service | Provider | Purpose | URL Pattern |
-|---|---|---|---|
-| Web App | Vercel | Next.js frontend, API routes, SSR | `curaiva-ai.vercel.app` |
-| MCP Server | Railway | 6 FHIR-powered clinical tools | `curaiva-ai-mcp.railway.app` |
-| Database | Supabase | PostgreSQL + Auth + Realtime | Supabase project URL |
-| AI Engine | Anthropic | Claude Opus — all AI inference | `api.anthropic.com` |
-| FHIR Server | HAPI / EHR | Patient health records (R4) | `hapi.fhir.org/baseR4` |
-| MCP Registry | Prompt Opinion | Tool + Agent marketplace | `promptopinion.com` |
+| Service      | Provider       | Purpose                           | URL Pattern                  |
+| ------------ | -------------- | --------------------------------- | ---------------------------- |
+| Web App      | Vercel         | Next.js frontend, API routes, SSR | `curaiva-ai.vercel.app`      |
+| MCP Server   | Railway        | 6 FHIR-powered clinical tools     | `curaiva-ai-mcp.railway.app` |
+| Database     | Supabase       | PostgreSQL + Auth + Realtime      | Supabase project URL         |
+| AI Engine    | MISTRAL/GROQ   | Claude Opus — all AI inference    | `api.MISTRAL/GROQ.com`       |
+| FHIR Server  | HAPI / EHR     | Patient health records (R4)       | `hapi.fhir.org/baseR4`       |
+| MCP Registry | Prompt Opinion | Tool + Agent marketplace          | `promptopinion.com`          |
 
 ---
 
@@ -220,7 +220,7 @@ DATABASE LAYER (Row Level Security)
   └── Crisis alerts: visible only to the assigned CHW
 
 API KEY LAYER
-  └── ANTHROPIC_API_KEY: server-side only, never in browser bundle
+  └── MISTRAL/GROQ_API_KEY: server-side only, never in browser bundle
   └── SUPABASE_SERVICE_ROLE_KEY: server-side only
   └── FHIR access tokens: passed per-request via SHARP context, never stored
 ```
@@ -229,15 +229,15 @@ API KEY LAYER
 
 ## Technology Versions
 
-| Package | Version | Notes |
-|---|---|---|
-| Next.js | 15.x | App Router, Server Components |
-| TypeScript | 5.7.x | Strict mode |
-| `@modelcontextprotocol/sdk` | 1.15.x | MCP server + transport |
-| `@anthropic-ai/sdk` | 0.52.x | Claude API client |
-| `@supabase/supabase-js` | 2.x | DB + Auth + Realtime |
-| `zod` | 3.24.x | Schema validation on all tool inputs |
-| `express` | 4.21.x | HTTP server for MCP transport |
+| Package                     | Version | Notes                                |
+| --------------------------- | ------- | ------------------------------------ |
+| Next.js                     | 15.x    | App Router, Server Components        |
+| TypeScript                  | 5.7.x   | Strict mode                          |
+| `@modelcontextprotocol/sdk` | 1.15.x  | MCP server + transport               |
+| `@MISTRAL/GROQ-ai/sdk`      | 0.52.x  | Claude API client                    |
+| `@supabase/supabase-js`     | 2.x     | DB + Auth + Realtime                 |
+| `zod`                       | 3.24.x  | Schema validation on all tool inputs |
+| `express`                   | 4.21.x  | HTTP server for MCP transport        |
 
 ---
 

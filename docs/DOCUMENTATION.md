@@ -62,7 +62,7 @@ Curaiva AI follows a **role-based, serverless-first** architecture optimized for
 ### Key Design Decisions
 
 **Why Next.js App Router?**
-Server Components allow AI API calls to happen server-side, keeping the Anthropic API key secure and reducing client bundle size significantly.
+Server Components allow AI API calls to happen server-side, keeping the MISTRAL/GROQ API key secure and reducing client bundle size significantly.
 
 **Why Supabase?**
 Supabase provides auth, a relational database, realtime subscriptions, and edge functions in one managed service — ideal for a hackathon where velocity matters. Row Level Security (RLS) enforces data isolation at the database layer, not just the application layer.
@@ -77,6 +77,7 @@ Claude's long context window and instruction-following quality make it ideal for
 All tables live in Supabase PostgreSQL. Row Level Security is enabled on every table.
 
 ### `profiles`
+
 Extends Supabase `auth.users`. Created automatically on user registration via a trigger.
 
 ```sql
@@ -93,6 +94,7 @@ CREATE TABLE profiles (
 ```
 
 ### `patients`
+
 Extended profile data for users with `role = 'patient'`.
 
 ```sql
@@ -109,6 +111,7 @@ CREATE TABLE patients (
 ```
 
 ### `triage_sessions`
+
 Stores each patient symptom check and AI response.
 
 ```sql
@@ -124,6 +127,7 @@ CREATE TABLE triage_sessions (
 ```
 
 **`ai_assessment` JSONB shape:**
+
 ```json
 {
   "likely_conditions": ["string"],
@@ -136,6 +140,7 @@ CREATE TABLE triage_sessions (
 ```
 
 ### `consultations`
+
 Doctor-patient messaging threads, each linked to a triage session.
 
 ```sql
@@ -153,6 +158,7 @@ CREATE TABLE consultations (
 ```
 
 ### `messages`
+
 Individual messages within a consultation.
 
 ```sql
@@ -167,6 +173,7 @@ CREATE TABLE messages (
 ```
 
 ### `mental_health_sessions`
+
 Mental health companion chat history and mood tracking.
 
 ```sql
@@ -182,6 +189,7 @@ CREATE TABLE mental_health_sessions (
 ```
 
 ### `mental_health_messages`
+
 Individual messages within a mental health companion session.
 
 ```sql
@@ -195,6 +203,7 @@ CREATE TABLE mental_health_messages (
 ```
 
 ### `medications`
+
 Prescriptions tracked per patient.
 
 ```sql
@@ -214,6 +223,7 @@ CREATE TABLE medications (
 ```
 
 ### `medication_logs`
+
 Individual dose records for adherence tracking.
 
 ```sql
@@ -274,27 +284,29 @@ User verifies → redirected to role dashboard
 // middleware.ts
 export async function middleware(request: NextRequest) {
   const supabase = createMiddlewareClient({ req: request, res: response });
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   if (!session) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', session.user.id)
+    .from("profiles")
+    .select("role")
+    .eq("id", session.user.id)
     .single();
 
   const role = profile?.role;
   const path = request.nextUrl.pathname;
 
   // Enforce role-based path access
-  if (path.startsWith('/dashboard/doctor') && role !== 'doctor') {
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
+  if (path.startsWith("/dashboard/doctor") && role !== "doctor") {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
-  if (path.startsWith('/dashboard/chw') && role !== 'chw') {
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
+  if (path.startsWith("/dashboard/chw") && role !== "chw") {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 }
 ```
@@ -341,22 +353,24 @@ Guidelines:
 export async function POST(request: Request) {
   const { symptoms, patientHistory } = await request.json();
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
+  const response = await fetch("https://api.MISTRAL/GROQ.com/v1/messages", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY!,
-      'anthropic-version': '2023-06-01',
+      "Content-Type": "application/json",
+      "x-api-key": process.env.MISTRAL / GROQ_API_KEY!,
+      "MISTRAL/GROQ-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: 'claude-opus-4-6',
+      model: "claude-opus-4-6",
       max_tokens: 1024,
       system: TRIAGE_SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: `Patient symptoms: ${symptoms}\n\nRelevant history: ${patientHistory || 'None provided'}`
-      }]
-    })
+      messages: [
+        {
+          role: "user",
+          content: `Patient symptoms: ${symptoms}\n\nRelevant history: ${patientHistory || "None provided"}`,
+        },
+      ],
+    }),
   });
 
   const data = await response.json();
@@ -364,13 +378,13 @@ export async function POST(request: Request) {
 
   // Persist to Supabase
   const { data: session } = await supabase
-    .from('triage_sessions')
+    .from("triage_sessions")
     .insert({
       patient_id: patientId,
       symptoms_raw: symptoms,
       severity: assessment.severity,
       ai_assessment: assessment,
-      escalated: assessment.escalate_to_doctor
+      escalated: assessment.escalate_to_doctor,
     })
     .select()
     .single();
@@ -431,9 +445,11 @@ Respond in JSON: { "message": string, "crisis_flag": boolean, "suggested_exercis
 All API routes are under `/app/api/`.
 
 ### `POST /api/triage`
+
 Submit symptoms for AI triage.
 
 **Request body:**
+
 ```json
 {
   "symptoms": "I have had a severe headache and fever for 3 days, with neck stiffness",
@@ -442,13 +458,17 @@ Submit symptoms for AI triage.
 ```
 
 **Response:**
+
 ```json
 {
   "session_id": "uuid",
   "assessment": {
     "severity": "critical",
     "severity_score": 9,
-    "likely_conditions": ["Bacterial meningitis (possible)", "Viral meningitis"],
+    "likely_conditions": [
+      "Bacterial meningitis (possible)",
+      "Viral meningitis"
+    ],
     "recommended_action": "Seek emergency care immediately",
     "self_care_tips": [],
     "red_flags": ["Neck stiffness with fever is a medical emergency"],
@@ -461,18 +481,24 @@ Submit symptoms for AI triage.
 ---
 
 ### `POST /api/mental-health/chat`
+
 Send a message to the mental health companion.
 
 **Request body:**
+
 ```json
 {
   "session_id": "uuid",
   "message": "I've been feeling really anxious and can't sleep",
-  "history": [{ "role": "user", "content": "..." }, { "role": "assistant", "content": "..." }]
+  "history": [
+    { "role": "user", "content": "..." },
+    { "role": "assistant", "content": "..." }
+  ]
 }
 ```
 
 **Response:**
+
 ```json
 {
   "message": "I hear you — anxiety that disrupts sleep can be exhausting...",
@@ -484,9 +510,11 @@ Send a message to the mental health companion.
 ---
 
 ### `POST /api/summarize`
+
 Generate a patient brief for a doctor (called when a consultation is opened).
 
 **Request body:**
+
 ```json
 {
   "consultation_id": "uuid"
@@ -494,6 +522,7 @@ Generate a patient brief for a doctor (called when a consultation is opened).
 ```
 
 **Response:**
+
 ```json
 {
   "summary": "Patient presents with a 3-day history of severe headache..."
@@ -503,9 +532,11 @@ Generate a patient brief for a doctor (called when a consultation is opened).
 ---
 
 ### `POST /api/medications/log`
+
 Log a medication dose as taken or missed.
 
 **Request body:**
+
 ```json
 {
   "medication_log_id": "uuid",
@@ -517,9 +548,11 @@ Log a medication dose as taken or missed.
 ---
 
 ### `GET /api/chw/priority-queue`
+
 Returns the CHW's patient list, AI-prioritized by urgency.
 
 **Response:**
+
 ```json
 {
   "patients": [
@@ -535,8 +568,9 @@ Returns the CHW's patient list, AI-prioritized by urgency.
 ```
 
 **Priority Scoring Algorithm:**
+
 ```
-priority_score = 
+priority_score =
   (missed_doses_last_7_days × 10) +
   (triage_severity_score × 8) +
   (days_since_last_contact × 3) +
@@ -548,29 +582,34 @@ priority_score =
 ## 6. Supabase Edge Functions
 
 ### `send-medication-reminders`
+
 Runs on a cron schedule every hour. Checks `medication_logs` for upcoming doses and sends notifications.
 
 ```typescript
 // supabase/functions/send-medication-reminders/index.ts
 Deno.serve(async () => {
   const upcoming = await supabase
-    .from('medication_logs')
-    .select('*, medications(*), patients(*, profiles(*))')
-    .eq('status', 'pending')
-    .gte('scheduled_at', new Date().toISOString())
-    .lte('scheduled_at', new Date(Date.now() + 30 * 60 * 1000).toISOString());  // Next 30 min
+    .from("medication_logs")
+    .select("*, medications(*), patients(*, profiles(*))")
+    .eq("status", "pending")
+    .gte("scheduled_at", new Date().toISOString())
+    .lte("scheduled_at", new Date(Date.now() + 30 * 60 * 1000).toISOString()); // Next 30 min
 
   for (const log of upcoming.data) {
-    await sendSMS(log.patients.profiles.phone, 
-      `Reminder: Time to take your ${log.medications.name} (${log.medications.dosage})`);
+    await sendSMS(
+      log.patients.profiles.phone,
+      `Reminder: Time to take your ${log.medications.name} (${log.medications.dosage})`,
+    );
   }
 });
 ```
 
 ### `check-missed-doses`
+
 Runs every 2 hours. Marks overdue pending logs as `missed` and alerts the patient's CHW if 2+ consecutive doses are missed.
 
 ### `escalate-crisis`
+
 Triggered immediately when `mental_health_sessions.crisis_flagged` is set to `true` via a database trigger. Notifies the CHW and sends an emergency SMS.
 
 ---
@@ -580,33 +619,43 @@ Triggered immediately when `mental_health_sessions.crisis_flagged` is set to `tr
 Supabase Realtime is used for two live features:
 
 ### Doctor Inbox (live new consultations)
+
 ```typescript
 const channel = supabase
-  .channel('doctor-inbox')
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'consultations',
-    filter: `doctor_id=eq.${doctorId}`
-  }, (payload) => {
-    // New consultation appears live in inbox
-    setConsultations(prev => [payload.new, ...prev]);
-  })
+  .channel("doctor-inbox")
+  .on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "consultations",
+      filter: `doctor_id=eq.${doctorId}`,
+    },
+    (payload) => {
+      // New consultation appears live in inbox
+      setConsultations((prev) => [payload.new, ...prev]);
+    },
+  )
   .subscribe();
 ```
 
 ### CHW Dashboard (live patient status)
+
 ```typescript
 const channel = supabase
-  .channel('chw-dashboard')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'medication_logs',
-  }, () => {
-    // Re-fetch priority queue on any medication update
-    refetchPriorityQueue();
-  })
+  .channel("chw-dashboard")
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "medication_logs",
+    },
+    () => {
+      // Re-fetch priority queue on any medication update
+      refetchPriorityQueue();
+    },
+  )
   .subscribe();
 ```
 
@@ -647,36 +696,37 @@ app/
 ```
 
 ### State Management
+
 Curaiva AI uses React Server Components for data fetching and `useState`/`useReducer` for client-side state. No external state library is needed for the MVP scope.
 
 ### Key UI Components
 
-| Component | Location | Description |
-|---|---|---|
-| `<SymptomInput>` | `components/triage/` | Voice + text input with loading state |
-| `<TriageResult>` | `components/triage/` | Severity badge, conditions, self-care tips |
-| `<ConsultationThread>` | `components/messaging/` | Real-time message thread |
-| `<MoodTracker>` | `components/mental-health/` | Daily mood score slider |
-| `<CompanionChat>` | `components/mental-health/` | Multi-turn AI chat UI |
-| `<MedCard>` | `components/medication/` | Single medication with dose logging |
-| `<PriorityQueue>` | `components/dashboard/` | CHW patient list sorted by score |
-| `<PatientBrief>` | `components/dashboard/` | AI-generated patient summary card |
+| Component              | Location                    | Description                                |
+| ---------------------- | --------------------------- | ------------------------------------------ |
+| `<SymptomInput>`       | `components/triage/`        | Voice + text input with loading state      |
+| `<TriageResult>`       | `components/triage/`        | Severity badge, conditions, self-care tips |
+| `<ConsultationThread>` | `components/messaging/`     | Real-time message thread                   |
+| `<MoodTracker>`        | `components/mental-health/` | Daily mood score slider                    |
+| `<CompanionChat>`      | `components/mental-health/` | Multi-turn AI chat UI                      |
+| `<MedCard>`            | `components/medication/`    | Single medication with dose logging        |
+| `<PriorityQueue>`      | `components/dashboard/`     | CHW patient list sorted by score           |
+| `<PatientBrief>`       | `components/dashboard/`     | AI-generated patient summary card          |
 
 ---
 
 ## 9. Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase public anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Service role key (server-side only) |
-| `ANTHROPIC_API_KEY` | ✅ | Claude API key |
-| `RESEND_API_KEY` | ⚠️ Optional | For email notifications |
-| `TERMII_API_KEY` | ⚠️ Optional | For SMS notifications (Nigeria-optimized) |
-| `TERMII_SENDER_ID` | ⚠️ Optional | SMS sender name |
+| Variable                        | Required    | Description                               |
+| ------------------------------- | ----------- | ----------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | ✅          | Your Supabase project URL                 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅          | Supabase public anon key                  |
+| `SUPABASE_SERVICE_ROLE_KEY`     | ✅          | Service role key (server-side only)       |
+| `MISTRAL/GROQ_API_KEY`          | ✅          | Claude API key                            |
+| `RESEND_API_KEY`                | ⚠️ Optional | For email notifications                   |
+| `TERMII_API_KEY`                | ⚠️ Optional | For SMS notifications (Nigeria-optimized) |
+| `TERMII_SENDER_ID`              | ⚠️ Optional | SMS sender name                           |
 
-> ⚠️ Never expose `SUPABASE_SERVICE_ROLE_KEY` or `ANTHROPIC_API_KEY` in client-side code. Only use them in Server Components, API Routes, or Edge Functions.
+> ⚠️ Never expose `SUPABASE_SERVICE_ROLE_KEY` or `MISTRAL/GROQ_API_KEY` in client-side code. Only use them in Server Components, API Routes, or Edge Functions.
 
 ---
 
@@ -711,10 +761,10 @@ npx supabase functions deploy
 
 In the Supabase Dashboard → Edge Functions → Schedules:
 
-| Function | Schedule | Description |
-|---|---|---|
-| `send-medication-reminders` | `0 * * * *` | Every hour |
-| `check-missed-doses` | `0 */2 * * *` | Every 2 hours |
+| Function                    | Schedule      | Description   |
+| --------------------------- | ------------- | ------------- |
+| `send-medication-reminders` | `0 * * * *`   | Every hour    |
+| `check-missed-doses`        | `0 */2 * * *` | Every 2 hours |
 
 ---
 
@@ -731,6 +781,7 @@ In the Supabase Dashboard → Edge Functions → Schedules:
 ## 12. Error Handling
 
 ### AI Response Failures
+
 If a Claude API call fails, the triage endpoint returns a safe fallback:
 
 ```typescript
@@ -746,11 +797,13 @@ catch (error) {
 ```
 
 ### Database Errors
+
 Supabase errors are caught, logged to the server console, and a user-friendly message is returned. No raw database errors are exposed to the client.
 
 ### Notification Failures
+
 Email/SMS failures are non-blocking. They are logged to the Edge Function logs but do not cause the parent operation to fail. A retry queue is planned for v2.
 
 ---
 
-*Curaiva AI Technical Documentation — Built for the Hackathon, Designed to Scale*
+_Curaiva AI Technical Documentation — Built for the Hackathon, Designed to Scale_

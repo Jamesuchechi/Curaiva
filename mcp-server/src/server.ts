@@ -12,8 +12,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
-import Anthropic from "@anthropic-ai/sdk";
+import Groq from "groq-sdk";
+import { Mistral } from "@mistralai/mistralai";
 import express from "express";
+import "dotenv/config";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -124,19 +126,46 @@ class FhirClient {
   }
 }
 
-// ─── Claude AI Client ─────────────────────────────────────────────────────────
+// ─── AI Clients ──────────────────────────────────────────────────────────────
 
-const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
 
-async function callClaude(system: string, user: string, maxTokens = 1024): Promise<string> {
-  const msg = await claude.messages.create({
-    model: "claude-opus-4-6",
-    max_tokens: maxTokens,
-    system,
-    messages: [{ role: "user", content: user }],
+/**
+ * callAI — Primary clinical reasoning engine.
+ * Uses Mistral Large for high-accuracy medical triage and assessment.
+ */
+async function callAI(system: string, user: string, maxTokens = 1024): Promise<string> {
+  const response = await mistral.chat.complete({
+    model: "mistral-large-latest",
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    maxTokens,
+    temperature: 0.1,
+    responseFormat: { type: "json_object" },
   });
-  const block = msg.content[0];
-  return block.type === "text" ? block.text : "";
+  
+  return response.choices?.[0]?.message?.content as string || "";
+}
+
+/**
+ * callAIText — High-speed clinical writing engine.
+ * Uses Llama 3.3 via Groq for near-instant brief generation.
+ */
+async function callAIText(system: string, user: string, maxTokens = 2000): Promise<string> {
+  const response = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    max_tokens: maxTokens,
+    temperature: 0.5,
+  });
+  
+  return response.choices[0]?.message?.content || "";
 }
 
 // ─── Helper Utilities ─────────────────────────────────────────────────────────
@@ -231,7 +260,7 @@ FHIR Patient ID: ${pid}
       }
     }
 
-    const assessment = await callClaude(
+    const assessment = await callAI(
       `You are a clinical triage AI assistant integrated into a healthcare platform. 
 Your role is to assess patient symptoms and provide a structured triage decision.
 
@@ -274,6 +303,7 @@ JSON schema:
           fhir_base_url: ctx.fhir_base_url,
           symptoms_received: symptoms,
           assessment: parsed,
+          fhir_resources_used: ["Patient", include_history ? "Condition" : null, include_history ? "Observation" : null].filter(Boolean),
           timestamp: new Date().toISOString(),
         }, null, 2),
       }],
@@ -306,14 +336,22 @@ server.tool(
     }
 
     const fhir = new FhirClient(ctx);
+    let patient, conditions, medications, observations, encounters;
 
-    const [patient, conditions, medications, observations, encounters] = await Promise.all([
-      fhir.getPatient(pid),
-      fhir.getConditions(pid),
-      fhir.getMedications(pid),
-      fhir.getObservations(pid),
-      fhir.getEncounters(pid),
-    ]);
+    try {
+      [patient, conditions, medications, observations, encounters] = await Promise.all([
+        fhir.getPatient(pid),
+        fhir.getConditions(pid),
+        fhir.getMedications(pid),
+        fhir.getObservations(pid),
+        fhir.getEncounters(pid),
+      ]);
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `FHIR data fetch failed for patient ${pid}: ${(err as Error).message}` }) }],
+        isError: true,
+      };
+    }
 
     const age = calculateAge(patient.birthDate);
     const name = patientDisplayName(patient);
@@ -344,7 +382,7 @@ server.tool(
       consultation: "Write a structured pre-consultation brief. Format: Chief Data Points, Active Problems, Current Medications, Recent Observations, Clinical Considerations. Be clinical, factual, and concise. This will be read by a physician immediately before seeing the patient.",
     };
 
-    const summary = await callClaude(
+    const summary = await callAIText(
       `You are a clinical documentation AI. Generate a ${summary_type} patient summary from FHIR data. ` +
       `Be accurate, clinical, and concise. Never fabricate data not present in the FHIR record.`,
       `FHIR Patient Data:\n${JSON.stringify(rawData, null, 2)}\n\nGenerate a ${summary_type} summary.\n\n${prompts[summary_type ?? "consultation"]}`,
@@ -394,15 +432,24 @@ server.tool(
     }
 
     const fhir = new FhirClient(ctx);
-    const [patient, medications] = await Promise.all([
-      fhir.getPatient(pid),
-      fhir.getMedications(pid),
-    ]);
+    let patient, medications;
+
+    try {
+      [patient, medications] = await Promise.all([
+        fhir.getPatient(pid),
+        fhir.getMedications(pid),
+      ]);
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `FHIR medication fetch failed: ${(err as Error).message}` }) }],
+        isError: true,
+      };
+    }
 
     const name = patientDisplayName(patient);
     const activeMeds = medications.filter(m => m.status === "active");
 
-    const analysis = await callClaude(
+    const analysis = await callAI(
       `You are a clinical pharmacist AI analysing medication adherence risk. 
 Respond ONLY in valid JSON with this schema:
 {
@@ -440,6 +487,7 @@ Analyse adherence risk for this patient.`
           patient_id: pid,
           patient_name: name,
           active_medication_count: activeMeds.length,
+          fhir_resources_used: ["Patient", "MedicationRequest"],
           medications: activeMeds.map(m => ({
             name: m.medicationCodeableConcept?.text,
             dosage: m.dosageInstruction?.[0]?.text,
@@ -492,7 +540,7 @@ server.tool(
       }
     }
 
-    const assessment = await callClaude(
+    const assessment = await callAI(
       `You are a mental health support AI assistant integrated into a clinical platform.
       
 CRITICAL SAFETY RULES:
@@ -551,6 +599,7 @@ Perform a mental health assessment.`
             },
           }),
           assessment: parsed,
+          fhir_resources_used: ["Patient", check_fhir_history ? "Observation" : null].filter(Boolean),
           timestamp: new Date().toISOString(),
         }, null, 2),
       }],
@@ -601,7 +650,7 @@ server.tool(
       .filter((r): r is PromiseFulfilledResult<ReturnType<typeof Object.assign>> => r.status === "fulfilled")
       .map(r => r.value);
 
-    const priorityAnalysis = await callClaude(
+    const priorityAnalysis = await callAI(
       `You are a clinical AI system generating a Community Health Worker priority queue.
 Score each patient 0-100 for visit urgency. Higher = needs visit sooner.
 
@@ -648,6 +697,7 @@ Rank top ${max_results} patients by urgency.`
           chw_id: chw_id || ctx.practitioner_id,
           patients_assessed: resolved.length,
           patients_requested: patient_ids.length,
+          fhir_resources_used: ["Patient", "Condition", "MedicationRequest", "Observation"],
           fhir_base_url: ctx.fhir_base_url,
           priority_queue: parsed,
           timestamp: new Date().toISOString(),
@@ -684,18 +734,26 @@ server.tool(
     }
 
     const fhir = new FhirClient(ctx);
+    let patient, conditions, medications, observations;
 
-    const [patient, conditions, medications, observations] = await Promise.all([
-      fhir.getPatient(pid),
-      fhir.getConditions(pid),
-      fhir.getMedications(pid),
-      fhir.getObservations(pid),
-    ]);
+    try {
+      [patient, conditions, medications, observations] = await Promise.all([
+        fhir.getPatient(pid),
+        fhir.getConditions(pid),
+        fhir.getMedications(pid),
+        fhir.getObservations(pid),
+      ]);
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `FHIR fetch failed for consultation brief: ${(err as Error).message}` }) }],
+        isError: true,
+      };
+    }
 
     const name = patientDisplayName(patient);
     const age = calculateAge(patient.birthDate);
 
-    const brief = await callClaude(
+    const brief = await callAIText(
       `You are a clinical documentation AI preparing a physician pre-consultation brief.
 Write in a clear, clinical style. A busy doctor will read this in under 60 seconds.
 Structure your response with these exact headers:
@@ -771,12 +829,19 @@ app.get("/health", (_req, res) => {
   });
 });
 
+// MCP Transport Setup
+const transport = new StreamableHTTPServerTransport({
+  sessionIdGenerator: undefined,
+});
+
+await server.connect(transport);
+
 // MCP endpoint — Prompt Opinion connects here
 app.all("/mcp", async (req, res) => {
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-  });
-  await server.connect(transport);
+  console.log(`\n📬 MCP Request: ${req.method} ${req.url}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log(`   Body: ${JSON.stringify(req.body).substring(0, 100)}...`);
+  }
   await transport.handleRequest(req, res, req.body);
 });
 

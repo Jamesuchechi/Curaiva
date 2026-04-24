@@ -7,9 +7,10 @@ Thank you for your interest in contributing. Curaiva AI is a healthcare AI platf
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - A Supabase account (free tier works)
-- An Anthropic API key
+- An MISTRAL/GROQ API key
 - Access to a FHIR R4 server (HAPI public server works for development)
 
 ### Local Setup
@@ -23,7 +24,7 @@ cd curaiva-ai
 cd mcp-server
 npm install
 cp .env.example .env
-# Fill in ANTHROPIC_API_KEY in .env
+# Fill in MISTRAL/GROQ_API_KEY in .env
 npm run dev
 # Server runs on http://localhost:3001
 
@@ -41,6 +42,7 @@ npx supabase db push
 ```
 
 ### Verify Setup
+
 ```bash
 # MCP server health check
 curl http://localhost:3001/health
@@ -96,6 +98,7 @@ node scripts/fhir-seed.js             # Actually seed
 ## Reporting Issues
 
 Use the GitHub Issue templates:
+
 - **Bug report** — for broken functionality
 - **Feature request** — for new capabilities
 
@@ -103,4 +106,4 @@ For **security vulnerabilities**, do NOT open a public issue. See `SECURITY.md`.
 
 ---
 
-*Curaiva AI — Built to bridge the healthcare gap.*
+_Curaiva AI — Built to bridge the healthcare gap._
