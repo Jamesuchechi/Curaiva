@@ -78,6 +78,21 @@ const getMistral = () => {
     }
     return new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
 };
+// ─── Model Configuration ─────────────────────────────────────────────────────
+const MODELS = {
+    mistral: {
+        primary: process.env.MISTRAL_MODEL_PRIMARY || "mistral-large-latest",
+        secondary: process.env.MISTRAL_MODEL_SECONDARY || "mistral-medium-latest",
+        tertiary: process.env.MISTRAL_MODEL_TERTIARY || "mistral-small-latest",
+        quaternary: process.env.MISTRAL_MODEL_QUATERNARY || "pixtral-12b-2409",
+    },
+    groq: {
+        primary: process.env.GROQ_MODEL_PRIMARY || "llama-3.3-70b-versatile",
+        secondary: process.env.GROQ_MODEL_SECONDARY || "llama-3.1-70b-versatile",
+        tertiary: process.env.GROQ_MODEL_TERTIARY || "llama-3.1-8b-instant",
+        quaternary: process.env.GROQ_MODEL_QUATERNARY || "mixtral-8x7b-32768",
+    }
+};
 /**
  * callAI — Primary clinical reasoning engine.
  * Uses Mistral Large for high-accuracy medical triage and assessment.
@@ -85,7 +100,7 @@ const getMistral = () => {
 async function callAI(system, user, maxTokens = 1024) {
     const mistral = getMistral();
     const response = await mistral.chat.complete({
-        model: "mistral-large-latest",
+        model: MODELS.mistral.primary,
         messages: [
             { role: "system", content: system },
             { role: "user", content: user },
@@ -103,7 +118,7 @@ async function callAI(system, user, maxTokens = 1024) {
 async function callAIText(system, user, maxTokens = 2000) {
     const groq = getGroq();
     const response = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: MODELS.groq.primary,
         messages: [
             { role: "system", content: system },
             { role: "user", content: user },

@@ -14,7 +14,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { z } from "zod";
 import Groq from "groq-sdk";
 import { Mistral } from "@mistralai/mistralai";
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 
 // Only load dotenv in development
@@ -843,12 +843,12 @@ app.use(cors()); // Allow all origins for the hackathon
 app.use(express.json());
 
 // Root route for basic health checks
-app.get("/", (_req, res) => {
+app.get("/", (_req: Request, res: Response) => {
   res.status(200).send("🏥 Curaiva AI MCP Server is Live");
 });
 
 // Health check
-app.get("/health", (_req, res) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.json({
     status: "healthy",
     service: "curaiva-ai-mcp",
@@ -875,7 +875,7 @@ const transport = new StreamableHTTPServerTransport({
 await server.connect(transport);
 
 // MCP endpoint — Prompt Opinion connects here
-app.all("/mcp", async (req, res) => {
+app.all("/mcp", async (req: Request, res: Response) => {
   console.log(`\n📬 MCP Request: ${req.method} ${req.url}`);
   if (req.body && Object.keys(req.body).length > 0) {
     console.log(`   Body: ${JSON.stringify(req.body).substring(0, 100)}...`);
