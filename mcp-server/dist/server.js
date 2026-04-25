@@ -5,11 +5,11 @@
  * Exposes 6 FHIR-powered healthcare tools via the Model Context Protocol.
  * Compliant with SHARP Extension Specs for Prompt Opinion platform integration.
  *
- * Deploy: Railway / Render / Fly.io
+ * Deploy: render / Render / Fly.io
  * Protocol: MCP over HTTP (SSE transport)
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
 import Groq from "groq-sdk";
 import { Mistral } from "@mistralai/mistralai";
@@ -697,17 +697,30 @@ app.get("/health", (_req, res) => {
     });
 });
 // MCP Transport Setup
-const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
+const transports = new Map();
+// SSE connection endpoint (GET)
+app.get("/mcp", async (req, res) => {
+    console.log(`\n📬 MCP SSE Connection opened`);
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    const transport = new SSEServerTransport("/mcp/message", res);
+    transports.set(transport.sessionId, transport);
+    res.on("close", () => {
+        transports.delete(transport.sessionId);
+    });
+    await server.connect(transport);
 });
-await server.connect(transport);
-// MCP endpoint — Prompt Opinion connects here
-app.all("/mcp", async (req, res) => {
-    console.log(`\n📬 MCP Request: ${req.method} ${req.url}`);
-    if (req.body && Object.keys(req.body).length > 0) {
-        console.log(`   Body: ${JSON.stringify(req.body).substring(0, 100)}...`);
+// Message endpoint (POST)
+app.post("/mcp/message", async (req, res) => {
+    const sessionId = req.query.sessionId;
+    const transport = transports.get(sessionId);
+    if (!transport) {
+        res.status(400).json({ error: "No active SSE session found" });
+        return;
     }
-    await transport.handleRequest(req, res, req.body);
+    await transport.handlePostMessage(req, res, req.body);
 });
 // Global Error Handler for debugging
 app.use((err, req, res, _next) => {

@@ -36,7 +36,7 @@
 ║              │                          │                                 ║
 ║   ┌──────────▼──────────┐   ┌──────────▼──────────────────────────┐    ║
 ║   │  MCP SERVER         │   │  SUPABASE                            │    ║
-║   │  (Railway)          │   │                                      │    ║
+║   │  (render)          │   │                                      │    ║
 ║   │                     │   │  PostgreSQL   Auth   Realtime        │    ║
 ║   │  6 Clinical Tools   │   │                                      │    ║
 ║   │  ─────────────────  │   │  profiles          triage_sessions   │    ║
@@ -83,14 +83,14 @@
 
 ## Services & Infrastructure
 
-| Service      | Provider       | Purpose                           | URL Pattern                  |
-| ------------ | -------------- | --------------------------------- | ---------------------------- |
-| Web App      | Vercel         | Next.js frontend, API routes, SSR | `curaiva-ai.vercel.app`      |
-| MCP Server   | Railway        | 6 FHIR-powered clinical tools     | `curaiva-ai-mcp.railway.app` |
-| Database     | Supabase       | PostgreSQL + Auth + Realtime      | Supabase project URL         |
-| AI Engine    | MISTRAL/GROQ   | Claude Opus — all AI inference    | `api.MISTRAL/GROQ.com`       |
-| FHIR Server  | HAPI / EHR     | Patient health records (R4)       | `hapi.fhir.org/baseR4`       |
-| MCP Registry | Prompt Opinion | Tool + Agent marketplace          | `promptopinion.com`          |
+| Service      | Provider       | Purpose                           | URL Pattern                 |
+| ------------ | -------------- | --------------------------------- | --------------------------- |
+| Web App      | Vercel         | Next.js frontend, API routes, SSR | `curaiva-ai.vercel.app`     |
+| MCP Server   | render         | 6 FHIR-powered clinical tools     | `curaiva-ai-mcp.render.app` |
+| Database     | Supabase       | PostgreSQL + Auth + Realtime      | Supabase project URL        |
+| AI Engine    | MISTRAL/GROQ   | Claude Opus — all AI inference    | `api.MISTRAL/GROQ.com`      |
+| FHIR Server  | HAPI / EHR     | Patient health records (R4)       | `hapi.fhir.org/baseR4`      |
+| MCP Registry | Prompt Opinion | Tool + Agent marketplace          | `promptopinion.com`         |
 
 ---
 
@@ -109,7 +109,7 @@ Next.js API Route
   → Calls MCP Server: tools/call triage_patient
         │
         ▼
-MCP Server (Railway)
+MCP Server (render)
   → Extracts SHARP context { fhir_base_url, patient_id }
   → Fetches from FHIR:
       GET /Patient/{id}
@@ -249,7 +249,7 @@ curaiva-ai/
 │   ├── src/server.ts        # All 6 tools + Express HTTP server
 │   ├── package.json
 │   ├── tsconfig.json
-│   └── railway.toml
+│   └── render.toml
 │
 ├── web/                     # The Product (Next.js App)
 │   ├── app/

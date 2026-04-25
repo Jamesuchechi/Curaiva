@@ -63,12 +63,12 @@ RLS is enabled on: `profiles`, `patient_assignments`, `consultations`, `messages
 
 ## API Key Management
 
-| Key                             | Location                             | Accessible To                                      |
-| ------------------------------- | ------------------------------------ | -------------------------------------------------- |
-| `MISTRAL/GROQ_API_KEY`          | Server environment variable          | Next.js server-side only, Railway server-side only |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Server environment variable          | Next.js server-side only                           |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-accessible                    | Browser (this key has RLS enforced)                |
-| FHIR access tokens              | Passed per-request via SHARP context | MCP server only, discarded after response          |
+| Key                             | Location                             | Accessible To                                     |
+| ------------------------------- | ------------------------------------ | ------------------------------------------------- |
+| `MISTRAL/GROQ_API_KEY`          | Server environment variable          | Next.js server-side only, render server-side only |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Server environment variable          | Next.js server-side only                          |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-accessible                    | Browser (this key has RLS enforced)               |
+| FHIR access tokens              | Passed per-request via SHARP context | MCP server only, discarded after response         |
 
 **The MISTRAL/GROQ API key is never included in the client-side JavaScript bundle.** All Claude AI calls are made through Next.js API routes (server-side) or the MCP server (server-side). The browser never has direct access to Claude.
 
@@ -83,7 +83,7 @@ EHR / FHIR Server
       │
       │  Bearer token (SHARP context)
       ▼
-MCP Server (Railway)
+MCP Server (render)
       │
       │  Fetches patient data at request time
       │  Processes with Claude API
@@ -114,7 +114,7 @@ FHIR access tokens are provided by Prompt Opinion's SHARP context propagation me
 ## Transport Security
 
 - All communications use **HTTPS/TLS 1.2+** — no plain HTTP in production
-- Railway enforces HTTPS on all deployed endpoints
+- render enforces HTTPS on all deployed endpoints
 - Vercel enforces HTTPS on all deployed endpoints
 - Supabase enforces HTTPS on all API and database connections
 - WebSocket connections (Supabase Realtime) use WSS (WebSocket Secure)

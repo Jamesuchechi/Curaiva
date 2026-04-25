@@ -8,6 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [1.0.0] — 2025-07-01 · Agents Assemble Submission
 
 ### Added
+
 - **MCP Server** — 6 FHIR-powered clinical tools published to Prompt Opinion Marketplace
   - `triage_patient` — AI symptom triage with FHIR history enrichment
   - `get_patient_summary` — Brief, full, and consultation-mode patient summaries
@@ -34,16 +35,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.3.0] — 2025-06-20 · Integration Sprint
 
 ### Added
+
 - Supabase Realtime subscriptions on consultations and messages
 - Crisis alert auto-trigger via PostgreSQL function on `crisis_flagged = true`
 - Next.js API routes proxying all 6 MCP tools (server-side, API key secured)
 - MCP tool call log in Doctor Workspace (live, animated)
 
 ### Changed
+
 - Moved all Claude API calls server-side — API key no longer in client bundle
 - FHIR fetch errors now return graceful fallbacks instead of crashing
 
 ### Fixed
+
 - Race condition in CHW queue refresh causing stale data display
 - Triage result not showing when FHIR patient had no existing conditions
 
@@ -52,6 +56,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.2.0] — 2025-06-12 · UI Sprint
 
 ### Added
+
 - All three role dashboards (Patient, Doctor, CHW)
 - Role-based redirect after login
 - Shared component library: Card, Badge, Button, MetricCard, Sparkline, Skeleton, Toast
@@ -64,6 +69,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Priority queue with colour-coded urgency tiers
 
 ### Changed
+
 - Layout shell sidebar now collapses to icon strip at 768px
 - All loading states converted to `<Skeleton>` shimmer
 
@@ -72,15 +78,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.0] — 2025-06-05 · Foundation
 
 ### Added
+
 - Next.js 15 project with App Router and TypeScript
 - MCP Server with Express HTTP transport
 - First 3 MCP tools: `triage_patient`, `get_patient_summary`, `create_consultation_brief`
 - FHIR R4 client reading from HAPI public test server
 - Supabase project with initial schema (profiles, consultations, messages)
 - Login and Register pages with Supabase Auth
-- Deployed MCP server to Railway
+- Deployed MCP server to render
 - Registered MCP server on Prompt Opinion platform
 
 ---
 
-*Curaiva AI — Built for the Agents Assemble: Healthcare AI Endgame Challenge*
+_Curaiva AI — Built for the Agents Assemble: Healthcare AI Endgame Challenge_

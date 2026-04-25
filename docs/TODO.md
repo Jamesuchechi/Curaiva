@@ -36,7 +36,7 @@ Phase 0 → Phase 0.1 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Pha
 - [ ] Watch Getting Started video → https://youtu.be/Qvs_QK4meHc
 - [ ] Register on **hackathon website**
 - [ ] Get **MISTRAL/GROQ API key** → console.MISTRAL/GROQ.com
-- [ ] Create **Railway** account → railway.app (free tier)
+- [ ] Create **render** account → render.app (free tier)
 - [ ] Create **Supabase** project → supabase.com (free tier)
 - [ ] Create **Vercel** account → vercel.com (free tier)
 
@@ -86,16 +86,20 @@ Phase 0 → Phase 0.1 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Pha
 ---
 
 ## PHASE 1 — MCP Server (Backend) ✅
+
 **Est. 8 hrs · Dev 1**
+
 > Build the Superpower — 6 FHIR-powered clinical tools
 
 ### Init & Run
+
 - [x] `cd mcp-server && npm install` ✅
 - [x] Copy `.env.example` → `.env`, fill in `GROQ_API_KEY` ✅
 - [x] `npm run dev` — server starts on port 3001 ✅
 - [x] `GET /health` returns all 6 tools ✅
 
 ### Test Each Tool with Real FHIR Data
+
 - [x] `triage_patient` → `severity: "critical"`, `escalate_to_doctor: true` ✅
 - [x] `get_patient_summary` → structured markdown brief with FHIR data ✅
 - [x] `check_medication_adherence` → adherence risk score + CHW alert flag ✅
@@ -104,11 +108,13 @@ Phase 0 → Phase 0.1 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Pha
 - [x] `create_consultation_brief` → physician-ready pre-consult document ✅
 
 ### MCP Hardening & SHARP Validation
+
 - [x] **SHARP Mocking**: Create `scripts/test-mcp-local.sh` to test with mock `sharp_context` ✅
 - [x] **FHIR Error Boundaries**: Ensure tools don't crash if optional FHIR resources (e.g. Observations) are missing ✅
 - [x] **Provenance Metadata**: Ensure every tool response includes `fhir_resources_used[]` for the UI to display ✅
 
 ### Error Handling
+
 - [x] FHIR 404 → graceful error message, no crash ✅
 - [x] FHIR auth error → clear message returned ✅
 - [x] Claude API timeout → safe fallback response with escalation ✅
@@ -119,6 +125,7 @@ Phase 0 → Phase 0.1 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Pha
 ---
 
 ## PHASE 2 — Design System & Project Setup ✅
+
 **Est. 4 hrs · Dev 2**
 
 > Build the foundation FIRST. Every page sits on top of this. Do not skip.
@@ -127,9 +134,10 @@ Phase 0 → Phase 0.1 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Pha
 
 - [x] `npx create-next-app@latest web --typescript --tailwind --app` ✅
 - [x] Install deps:
-  ```bash
+  ````bash
   npm install @supabase/supabase-js @supabase/ssr lucide-react clsx tailwind-merge
   ``` ✅
+  ````
 - [x] Set up `lib/utils.ts` with `cn()` helper (clsx + tailwind-merge) ✅
 - [x] Create `.env.local` with Supabase + MCP server URL ✅
 
@@ -186,17 +194,17 @@ Build these before touching any page. Pages consume them.
 
 **Est. 3 hrs · Dev 1**
 
-### Deploy to Railway
+### Deploy to render
 
-- [x] `npm install -g @railway/cli && railway login` ✅
-- [x] `cd mcp-server && railway init && railway up` ✅
-- [x] Add env vars in Railway dashboard: `MISTRAL/GROQ_API_KEY`, `DEFAULT_FHIR_BASE_URL`, `NODE_ENV` ✅
-- [x] `curl https://curaiva-ai-mcp-production.up.railway.app/health` → 200 with all 6 tools ✅
+- [x] `npm install -g @render/cli && render login` ✅
+- [x] `cd mcp-server && render init && render up` ✅
+- [x] Add env vars in render dashboard: `MISTRAL/GROQ_API_KEY`, `DEFAULT_FHIR_BASE_URL`, `NODE_ENV` ✅
+- [x] `curl https://curaiva-ai-mcp-production.up.render.app/health` → 200 with all 6 tools ✅
 - [x] Share the live URL with Dev 2 + 3 — they need it for API routes ✅
 
 ### Connect to Prompt Opinion
 
-- [ ] Prompt Opinion → Tools → Add MCP Server → paste Railway URL
+- [ ] Prompt Opinion → Tools → Add MCP Server → paste render URL
 - [ ] All 6 tools auto-discovered and listed ✅
 - [ ] Test `triage_patient` from Prompt Opinion tool tester ✅
 - [ ] Test `mental_health_assessment` crisis path ✅
@@ -204,7 +212,7 @@ Build these before touching any page. Pages consume them.
 - [ ] Publish MCP server to **Marketplace**
 - [ ] 📸 Screenshot: Marketplace listing live
 
-**✅ Phase 3 done when:** MCP is live on Railway AND published in Prompt Opinion Marketplace.
+**✅ Phase 3 done when:** MCP is live on render AND published in Prompt Opinion Marketplace.
 
 ---
 
@@ -556,7 +564,7 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `MISTRAL/GROQ_API_KEY`
-  - `MCP_SERVER_URL=https://curaiva-ai-mcp.railway.app`
+  - `MCP_SERVER_URL=https://curaiva-ai-mcp.render.app`
 - [ ] Test live URL — all 3 roles work end-to-end ✅
 
 ### Seed Demo Accounts
@@ -574,7 +582,7 @@ Rehearse this 3 times. Every second counts.
       _"4.5 billion people lack healthcare access. Curaiva AI fixes that — with MCP, A2A, and real FHIR data."_
 
 - [ ] **0:12–0:40** — The Superpower:
-  - Show `https://curaiva-ai-mcp.railway.app/health` → 6 tools in JSON
+  - Show `https://curaiva-ai-mcp.render.app/health` → 6 tools in JSON
   - Cut to Prompt Opinion Marketplace → MCP listed, tools visible
 
 - [ ] **0:40–1:20** — Patient Dashboard:
@@ -612,7 +620,7 @@ Rehearse this 3 times. Every second counts.
 
 - [ ] GitHub repo is public ✅
 - [ ] README.md complete ✅
-- [ ] MCP server live on Railway ✅
+- [ ] MCP server live on render ✅
 - [ ] A2A agent live on Prompt Opinion Marketplace ✅
 - [ ] Frontend live on Vercel ✅
 - [ ] Demo video on Loom (anyone with link) ✅
@@ -659,10 +667,7 @@ Rehearse this 3 times. Every second counts.
 
 _Curaiva AI · Agents Assemble Challenge · $7,500 Grand Prize · Built to win._
 
-
-
-
-Add MCP Server: Go to Tools in Prompt Opinion and add your Railway URL: https://curaiva-ai-mcp-production.up.railway.app/mcp
+Add MCP Server: Go to Tools in Prompt Opinion and add your render URL: https://curaiva-ai-mcp-production.up.render.app/mcp
 Verify: Ensure all 6 tools (triage, summary, adherence, etc.) are auto-discovered.
 Test: Try running triage_patient with a test prompt like "I have a sharp pain in my chest" to confirm the AI and FHIR connection are working through the live server.
 Publish: If it looks good, publish it to the Marketplace so it's ready for the judges.

@@ -1,12 +1,12 @@
 {
   "info": {
     "name": "Curaiva AI — MCP Server",
-    "description": "Complete test collection for all 6 Curaiva AI MCP tools.\n\nSetup:\n1. Set the `base_url` variable to your deployed Railway URL\n2. Optionally set `patient_id` to a real FHIR patient ID\n3. Run the Health Check first to verify server is up\n4. Test each tool in order\n\nDefault FHIR server: https://hapi.fhir.org/baseR4",
+    "description": "Complete test collection for all 6 Curaiva AI MCP tools.\n\nSetup:\n1. Set the `base_url` variable to your deployed render URL\n2. Optionally set `patient_id` to a real FHIR patient ID\n3. Run the Health Check first to verify server is up\n4. Test each tool in order\n\nDefault FHIR server: https://hapi.fhir.org/baseR4",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "curaiva-ai-mcp-v1"
   },
   "variable": [
-    { "key": "base_url", "value": "https://curaiva-ai-mcp.railway.app", "type": "string", "description": "Your deployed MCP server URL. Change to http://localhost:3001 for local testing." },
+    { "key": "base_url", "value": "https://curaiva-ai-mcp.render.app", "type": "string", "description": "Your deployed MCP server URL. Change to http://localhost:3001 for local testing." },
     { "key": "patient_id", "value": "592903", "type": "string", "description": "FHIR Patient resource ID on HAPI FHIR public server" },
     { "key": "fhir_base_url", "value": "https://hapi.fhir.org/baseR4", "type": "string", "description": "FHIR R4 server base URL" }
   ],

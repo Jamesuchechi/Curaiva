@@ -100,27 +100,27 @@ Server starts at `http://localhost:3001`
 - Health check: `GET /health`
 - MCP endpoint: `POST /mcp` (Prompt Opinion connects here)
 
-### 4. Deploy to Railway
+### 4. Deploy to render
 
 ```bash
-# Install Railway CLI
-npm install -g @railway/cli
+# Install render CLI
+npm install -g @render/cli
 
 # Login and deploy
-railway login
-railway init
-railway up
+render login
+render init
+render up
 ```
 
-Add `MISTRAL/GROQ_API_KEY` in Railway dashboard → Variables.
+Add `MISTRAL/GROQ_API_KEY` in render dashboard → Variables.
 
-Your MCP server URL will be: `https://your-app.railway.app/mcp`
+Your MCP server URL will be: `https://your-app.render.app/mcp`
 
 ### 5. Register on Prompt Opinion
 
 1. Create account at [promptopinion.com](https://promptopinion.com)
 2. Navigate to **Marketplace → Add MCP Server**
-3. Paste your Railway URL: `https://your-app.railway.app/mcp`
+3. Paste your render URL: `https://your-app.render.app/mcp`
 4. Platform will discover all 6 tools automatically
 5. Configure A2A Agent using `a2a-agent/agent-config.yaml`
 6. Publish to Marketplace
@@ -190,7 +190,7 @@ Follow this exact sequence for the submission video:
 
 ### Minute 1 — The Superpower
 
-1. Open `https://your-app.railway.app/health` — show 6 tools live
+1. Open `https://your-app.render.app/health` — show 6 tools live
 2. On Prompt Opinion, show MCP server connected with all tools visible
 3. Invoke `triage_patient` directly:
    - Patient ID: `592903` (HAPI FHIR)
@@ -222,7 +222,7 @@ curaiva-ai/
 │   │   └── server.ts           # All 6 MCP tools + Express HTTP server
 │   ├── package.json
 │   ├── tsconfig.json
-│   ├── railway.toml            # One-click Railway deployment
+│   ├── render.toml            # One-click render deployment
 │   └── .env.example
 │
 ├── a2a-agent/                  # The Agent (Option 2)

@@ -82,8 +82,8 @@ system_prompt: |
 
 mcp_servers:
   - name: "curaiva-ai-mcp"
-    url: "https://curaiva-ai-mcp.railway.app/mcp"
-    # Replace with your deployed Railway / Render URL
+    url: "https://curaiva-ai-mcp.render.app/mcp"
+    # Replace with your deployed render / Render URL
     description: "Curaiva AI Healthcare Superpower — 6 FHIR-powered clinical tools"
     sharp_compliant: true
 
