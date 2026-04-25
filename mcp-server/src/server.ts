@@ -14,7 +14,8 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { z } from "zod";
 import Groq from "groq-sdk";
 import { Mistral } from "@mistralai/mistralai";
-import express, { Request, Response } from "express";
+import express from "express";
+import type { Request, Response } from "express";
 import cors from "cors";
 
 // Only load dotenv in development
