@@ -188,11 +188,11 @@ Build these before touching any page. Pages consume them.
 
 ### Deploy to Railway
 
-- [ ] `npm install -g @railway/cli && railway login`
-- [ ] `cd mcp-server && railway init && railway up`
-- [ ] Add env vars in Railway dashboard: `MISTRAL/GROQ_API_KEY`, `DEFAULT_FHIR_BASE_URL`, `NODE_ENV`
-- [ ] `curl https://curaiva-ai-mcp.railway.app/health` → 200 with all 6 tools ✅
-- [ ] Share the live URL with Dev 2 + 3 — they need it for API routes
+- [x] `npm install -g @railway/cli && railway login` ✅
+- [x] `cd mcp-server && railway init && railway up` ✅
+- [x] Add env vars in Railway dashboard: `MISTRAL/GROQ_API_KEY`, `DEFAULT_FHIR_BASE_URL`, `NODE_ENV` ✅
+- [x] `curl https://curaiva-ai-mcp-production.up.railway.app/health` → 200 with all 6 tools ✅
+- [x] Share the live URL with Dev 2 + 3 — they need it for API routes ✅
 
 ### Connect to Prompt Opinion
 
@@ -658,3 +658,11 @@ Rehearse this 3 times. Every second counts.
 ---
 
 _Curaiva AI · Agents Assemble Challenge · $7,500 Grand Prize · Built to win._
+
+
+
+
+Add MCP Server: Go to Tools in Prompt Opinion and add your Railway URL: https://curaiva-ai-mcp-production.up.railway.app/mcp
+Verify: Ensure all 6 tools (triage, summary, adherence, etc.) are auto-discovered.
+Test: Try running triage_patient with a test prompt like "I have a sharp pain in my chest" to confirm the AI and FHIR connection are working through the live server.
+Publish: If it looks good, publish it to the Marketplace so it's ready for the judges.

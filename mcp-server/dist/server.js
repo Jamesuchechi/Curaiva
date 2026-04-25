@@ -14,7 +14,11 @@ import { z } from "zod";
 import Groq from "groq-sdk";
 import { Mistral } from "@mistralai/mistralai";
 import express from "express";
-import "dotenv/config";
+import cors from "cors";
+// Only load dotenv in development
+if (process.env.NODE_ENV !== 'production') {
+    await import('dotenv/config');
+}
 // ─── FHIR Client ─────────────────────────────────────────────────────────────
 class FhirClient {
     baseUrl;
@@ -61,13 +65,25 @@ class FhirClient {
     }
 }
 // ─── AI Clients ──────────────────────────────────────────────────────────────
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+// Initialize clients lazily to prevent crash on startup if env vars are being loaded
+const getGroq = () => {
+    if (!process.env.GROQ_API_KEY) {
+        throw new Error("GROQ_API_KEY is missing from environment variables");
+    }
+    return new Groq({ apiKey: process.env.GROQ_API_KEY });
+};
+const getMistral = () => {
+    if (!process.env.MISTRAL_API_KEY) {
+        throw new Error("MISTRAL_API_KEY is missing from environment variables");
+    }
+    return new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+};
 /**
  * callAI — Primary clinical reasoning engine.
  * Uses Mistral Large for high-accuracy medical triage and assessment.
  */
 async function callAI(system, user, maxTokens = 1024) {
+    const mistral = getMistral();
     const response = await mistral.chat.complete({
         model: "mistral-large-latest",
         messages: [
@@ -85,6 +101,7 @@ async function callAI(system, user, maxTokens = 1024) {
  * Uses Llama 3.3 via Groq for near-instant brief generation.
  */
 async function callAIText(system, user, maxTokens = 2000) {
+    const groq = getGroq();
     const response = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         messages: [
@@ -639,7 +656,12 @@ ${observations.slice(0, 8).map(o => `- ${o.code?.text || o.code?.coding?.[0]?.di
 });
 // ─── Express HTTP Server ──────────────────────────────────────────────────────
 const app = express();
+app.use(cors()); // Allow all origins for the hackathon
 app.use(express.json());
+// Root route for basic health checks
+app.get("/", (_req, res) => {
+    res.status(200).send("🏥 Curaiva AI MCP Server is Live");
+});
 // Health check
 app.get("/health", (_req, res) => {
     res.json({
@@ -671,6 +693,19 @@ app.all("/mcp", async (req, res) => {
         console.log(`   Body: ${JSON.stringify(req.body).substring(0, 100)}...`);
     }
     await transport.handleRequest(req, res, req.body);
+});
+// Global Error Handler for debugging
+app.use((err, req, res, _next) => {
+    console.error("\n❌ GLOBAL ERROR DETECTED:");
+    console.error(`   Path: ${req.path}`);
+    console.error(`   Method: ${req.method}`);
+    console.error(`   Message: ${err.message}`);
+    console.error(`   Stack: ${err.stack}\n`);
+    res.status(500).json({
+        error: "Internal Server Error",
+        message: err.message,
+        path: req.path
+    });
 });
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
