@@ -118,66 +118,65 @@ Phase 0 → Phase 0.1 → [Phase 1 ∥ Phase 2] → Phase 3 → [Phase 4 ∥ Pha
 
 ---
 
-## PHASE 2 — Design System & Project Setup
-
+## PHASE 2 — Design System & Project Setup ✅
 **Est. 4 hrs · Dev 2**
 
 > Build the foundation FIRST. Every page sits on top of this. Do not skip.
 
 ### Next.js Init
 
-- [ ] `npx create-next-app@latest web --typescript --tailwind --app`
-- [ ] Install deps:
+- [x] `npx create-next-app@latest web --typescript --tailwind --app` ✅
+- [x] Install deps:
   ```bash
   npm install @supabase/supabase-js @supabase/ssr lucide-react clsx tailwind-merge
-  ```
-- [ ] Set up `lib/utils.ts` with `cn()` helper (clsx + tailwind-merge)
-- [ ] Create `.env.local` with Supabase + MCP server URL
+  ``` ✅
+- [x] Set up `lib/utils.ts` with `cn()` helper (clsx + tailwind-merge) ✅
+- [x] Create `.env.local` with Supabase + MCP server URL ✅
 
 ### Design Tokens — `app/globals.css`
 
 Define these CSS variables. All components reference them — never hardcode a colour.
 
-- [ ] Background layers: `--bg`, `--bg2`, `--bg3`
-- [ ] Surface layers: `--surface`, `--surface2`
-- [ ] Brand: `--green`, `--green-dim`, `--lime`, `--lime-dim`
-- [ ] Semantic: `--teal`, `--coral`, `--amber`, `--purple`, `--red`
-- [ ] Text: `--white`, `--muted`, `--light`
-- [ ] Borders: `--border`, `--border2`
-- [ ] Shape: `--radius: 14px`, `--radius-sm: 9px`, `--sidebar: 240px`
-- [ ] **Glassmorphism**: `--glass-bg`, `--glass-border`, `--glass-blur`
-- [ ] **Glow System**: `--glow-green`, `--glow-red`, `--glow-amber`
+- [x] Background layers: `--bg`, `--bg2`, `--bg3` ✅
+- [x] Surface layers: `--surface`, `--surface2` ✅
+- [x] Brand: `--green`, `--green-dim`, `--lime`, `--lime-dim` ✅
+- [x] Semantic: `--teal`, `--coral`, `--amber`, `--purple`, `--red` ✅
+- [x] Text: `--white`, `--muted`, `--light` ✅
+- [x] Borders: `--border`, `--border2` ✅
+- [x] Shape: `--radius: 14px`, `--radius-sm: 9px`, `--sidebar: 240px` ✅
+- [x] **Glassmorphism**: `--glass-bg`, `--glass-border`, `--glass-blur` ✅
+- [x] **Glow System**: `--glow-green`, `--glow-red`, `--glow-amber` ✅
 
 ### Typography
 
-- [ ] Import `Fraunces` (display headings), `Instrument Sans` (body), `DM Mono` (data/code) from Google Fonts
-- [ ] Apply via CSS variables in `globals.css`
-- [ ] Verify: headings use Fraunces, body uses Instrument Sans, numbers/IDs use DM Mono
+- [x] Import `Fraunces` (display headings), `Instrument Sans` (body), `DM Mono` (data/code) from Google Fonts ✅
+- [x] Apply via CSS variables in `globals.css` ✅
+- [x] Verify: headings use Fraunces, body uses Instrument Sans, numbers/IDs use DM Mono ✅
 
 ### Shared Component Library — `components/ui/`
 
 Build these before touching any page. Pages consume them.
 
-- [ ] `<Card>` — base card with border, background, optional padding variant
-- [ ] `<Badge>` — severity/status pill: `critical` (red), `moderate` (amber), `low` (teal), `stable` (green), `new` (purple)
-- [ ] `<Button>` — variants: `primary` (lime), `ghost` (border only), `danger` (red), `icon` (square)
-- [ ] `<Avatar>` — circular emoji or initials, with size variants
-- [ ] `<MetricCard>` — label, large value (Fraunces), trend indicator (↑↓ coloured), icon, hover lift
-- [ ] `<Sparkline>` — canvas-based mini line chart, accepts `data[]`, `color`, `min`, `max`
-- [ ] `<Spinner>` — animated ring, used on all AI loading states
-- [ ] `<Skeleton>` — shimmer placeholder, used while data loads
-- [ ] `<EmptyState>` — icon + heading + sub-text for empty lists
-- [ ] `<StatusDot>` — blinking dot for live/connected status
-- [ ] `<Toast>` — success (teal), error (red), warning (amber) notification
+- [x] `<Card>` — base card with border, background, optional padding variant ✅
+- [x] `<Badge>` — severity/status pill: `critical` (red), `moderate` (amber), `low` (teal), `stable` (green), `new` (purple) ✅
+- [x] `<Button>` — variants: `primary` (lime), `ghost` (border only), `danger` (red), `icon` (square) ✅
+- [x] `<Avatar>` — circular emoji or initials, with size variants ✅
+- [x] `<MetricCard>` — label, large value (Fraunces), trend indicator (↑↓ coloured), icon, hover lift ✅
+- [x] `<Sparkline>` — canvas-based mini line chart, accepts `data[]`, `color`, `min`, `max` ✅
+- [x] `<Spinner>` — animated ring, used on all AI loading states ✅
+- [x] `<Skeleton>` — shimmer placeholder, used while data loads ✅
+- [x] `<EmptyState>` — icon + heading + sub-text for empty lists ✅
+- [x] `<StatusDot>` — blinking dot for live/connected status ✅
+- [x] `<Toast>` — success (teal), error (red), warning (amber) notification ✅
 
 ### Layout Shell — `app/(dashboard)/layout.tsx`
 
-- [ ] Sidebar: Curaiva logo, nav sections, nav items with icons + badges, user card at bottom
-- [ ] Role-aware nav: Patient nav / Doctor nav / CHW nav switch based on `profile.role`
-- [ ] Topbar: page title, status pill ("FHIR Connected"), context CTA button
-- [ ] Main content area: `overflow-y-auto` with custom scrollbar
-- [ ] Sidebar collapses to icon strip at `< 768px`
-- [ ] All transitions smooth: `transition-all duration-200`
+- [x] Sidebar: Curaiva logo, nav sections, nav items with icons + badges, user card at bottom ✅
+- [x] Role-aware nav: Patient nav / Doctor nav / CHW nav switch based on `profile.role` ✅
+- [x] Topbar: page title, status pill ("FHIR Connected"), context CTA button ✅
+- [x] Main content area: `overflow-y-auto` with custom scrollbar ✅
+- [x] Sidebar collapses to icon strip at `< 768px` ✅
+- [x] All transitions smooth: `transition-all duration-200` ✅
 
 **✅ Phase 2 done when:** Design system renders correctly, layout shell shows with sidebar + topbar, all shared components exist and look right in isolation.
 

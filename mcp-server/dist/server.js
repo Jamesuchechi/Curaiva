@@ -214,6 +214,7 @@ JSON schema:
                     fhir_base_url: ctx.fhir_base_url,
                     symptoms_received: symptoms,
                     assessment: parsed,
+                    fhir_resources_used: ["Patient", include_history ? "Condition" : null, include_history ? "Observation" : null].filter(Boolean),
                     timestamp: new Date().toISOString(),
                 }, null, 2),
             }],
@@ -238,13 +239,22 @@ server.tool("get_patient_summary", "Generate a comprehensive AI clinical summary
         };
     }
     const fhir = new FhirClient(ctx);
-    const [patient, conditions, medications, observations, encounters] = await Promise.all([
-        fhir.getPatient(pid),
-        fhir.getConditions(pid),
-        fhir.getMedications(pid),
-        fhir.getObservations(pid),
-        fhir.getEncounters(pid),
-    ]);
+    let patient, conditions, medications, observations, encounters;
+    try {
+        [patient, conditions, medications, observations, encounters] = await Promise.all([
+            fhir.getPatient(pid),
+            fhir.getConditions(pid),
+            fhir.getMedications(pid),
+            fhir.getObservations(pid),
+            fhir.getEncounters(pid),
+        ]);
+    }
+    catch (err) {
+        return {
+            content: [{ type: "text", text: JSON.stringify({ error: `FHIR data fetch failed for patient ${pid}: ${err.message}` }) }],
+            isError: true,
+        };
+    }
     const age = calculateAge(patient.birthDate);
     const name = patientDisplayName(patient);
     const rawData = {
@@ -308,10 +318,19 @@ server.tool("check_medication_adherence", "Analyse a patient's active medication
         };
     }
     const fhir = new FhirClient(ctx);
-    const [patient, medications] = await Promise.all([
-        fhir.getPatient(pid),
-        fhir.getMedications(pid),
-    ]);
+    let patient, medications;
+    try {
+        [patient, medications] = await Promise.all([
+            fhir.getPatient(pid),
+            fhir.getMedications(pid),
+        ]);
+    }
+    catch (err) {
+        return {
+            content: [{ type: "text", text: JSON.stringify({ error: `FHIR medication fetch failed: ${err.message}` }) }],
+            isError: true,
+        };
+    }
     const name = patientDisplayName(patient);
     const activeMeds = medications.filter(m => m.status === "active");
     const analysis = await callAI(`You are a clinical pharmacist AI analysing medication adherence risk. 
@@ -348,6 +367,7 @@ Analyse adherence risk for this patient.`);
                     patient_id: pid,
                     patient_name: name,
                     active_medication_count: activeMeds.length,
+                    fhir_resources_used: ["Patient", "MedicationRequest"],
                     medications: activeMeds.map(m => ({
                         name: m.medicationCodeableConcept?.text,
                         dosage: m.dosageInstruction?.[0]?.text,
@@ -444,6 +464,7 @@ Perform a mental health assessment.`);
                         },
                     }),
                     assessment: parsed,
+                    fhir_resources_used: ["Patient", check_fhir_history ? "Observation" : null].filter(Boolean),
                     timestamp: new Date().toISOString(),
                 }, null, 2),
             }],
@@ -526,6 +547,7 @@ Rank top ${max_results} patients by urgency.`);
                     chw_id: chw_id || ctx.practitioner_id,
                     patients_assessed: resolved.length,
                     patients_requested: patient_ids.length,
+                    fhir_resources_used: ["Patient", "Condition", "MedicationRequest", "Observation"],
                     fhir_base_url: ctx.fhir_base_url,
                     priority_queue: parsed,
                     timestamp: new Date().toISOString(),
@@ -554,12 +576,21 @@ server.tool("create_consultation_brief", "Generate a structured pre-consultation
         };
     }
     const fhir = new FhirClient(ctx);
-    const [patient, conditions, medications, observations] = await Promise.all([
-        fhir.getPatient(pid),
-        fhir.getConditions(pid),
-        fhir.getMedications(pid),
-        fhir.getObservations(pid),
-    ]);
+    let patient, conditions, medications, observations;
+    try {
+        [patient, conditions, medications, observations] = await Promise.all([
+            fhir.getPatient(pid),
+            fhir.getConditions(pid),
+            fhir.getMedications(pid),
+            fhir.getObservations(pid),
+        ]);
+    }
+    catch (err) {
+        return {
+            content: [{ type: "text", text: JSON.stringify({ error: `FHIR fetch failed for consultation brief: ${err.message}` }) }],
+            isError: true,
+        };
+    }
     const name = patientDisplayName(patient);
     const age = calculateAge(patient.birthDate);
     const brief = await callAIText(`You are a clinical documentation AI preparing a physician pre-consultation brief.
