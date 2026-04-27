@@ -550,13 +550,13 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 
 ### Deploy to Vercel
 
-- [ ] `cd web && vercel --prod`
+- [/] `cd web && vercel --prod` (Build verified locally ✅)
 - [ ] Add env vars in Vercel dashboard:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `MISTRAL/GROQ_API_KEY`
-  - `MCP_SERVER_URL=https://curaiva-ai-mcp.render.app`
+  - `MCP_SERVER_URL=https://curaiva-ai-mcp.onrender.com`
 - [ ] Test live URL — all 3 roles work end-to-end ✅
 
 ### Seed Demo Accounts
