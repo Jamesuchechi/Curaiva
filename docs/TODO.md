@@ -199,18 +199,18 @@ Build these before touching any page. Pages consume them.
 - [x] `npm install -g @render/cli && render login` ✅
 - [x] `cd mcp-server && render init && render up` ✅
 - [x] Add env vars in render dashboard: `MISTRAL/GROQ_API_KEY`, `DEFAULT_FHIR_BASE_URL`, `NODE_ENV` ✅
-- [x] `curl https://curaiva-ai-mcp-production.up.render.app/health` → 200 with all 6 tools ✅
+- [x] `curl https://curaiva-ai-mcp.onrender.com/health` → 200 with all 6 tools ✅
 - [x] Share the live URL with Dev 2 + 3 — they need it for API routes ✅
 
 ### Connect to Prompt Opinion
 
-- [ ] Prompt Opinion → Tools → Add MCP Server → paste render URL
-- [ ] All 6 tools auto-discovered and listed ✅
-- [ ] Test `triage_patient` from Prompt Opinion tool tester ✅
-- [ ] Test `mental_health_assessment` crisis path ✅
-- [ ] 📸 Screenshot: all tools visible in Prompt Opinion
-- [ ] Publish MCP server to **Marketplace**
-- [ ] 📸 Screenshot: Marketplace listing live
+- [x] Prompt Opinion → Tools → Add MCP Server → paste Render URL ✅
+- [x] All 6 tools auto-discovered and listed ✅
+- [x] Test `triage_patient` from Prompt Opinion tool tester ✅
+- [x] Test `mental_health_assessment` crisis path ✅
+- [x] 📸 Screenshot: all tools visible in Prompt Opinion ✅
+- [x] Publish MCP server to **Marketplace** ✅
+- [x] 📸 Screenshot: Marketplace listing live ✅
 
 **✅ Phase 3 done when:** MCP is live on render AND published in Prompt Opinion Marketplace.
 
@@ -226,85 +226,77 @@ Build these before touching any page. Pages consume them.
 
 **`/login` page:**
 
-- [ ] Centred card layout on dark background
-- [ ] Curaiva logo + tagline at top
-- [ ] Email + password fields with focus states
-- [ ] "Sign In" button — shows `<Spinner>` while loading
-- [ ] Error message displayed below form (red text)
-- [ ] "Don't have an account? Register" link
-- [ ] Supabase `signInWithPassword()` wired up
-- [ ] On success → redirect to correct dashboard by role
+- [x] Centred card layout on dark background
+- [x] Curaiva logo + tagline at top
+- [x] Email + password fields with focus states
+- [x] "Sign In" button — shows `<Spinner>` while loading
+- [x] Error message displayed below form (red text)
+- [x] "Don't have an account? Register" link
+- [x] Supabase `signInWithPassword()` wired up
+- [x] On success → redirect to correct dashboard by role
 
 **`/register` page:**
 
-- [ ] Same centred layout
-- [ ] Name, email, password fields
-- [ ] **Role selector** — three clickable cards side by side:
+- [x] Same centred layout
+- [x] Name, email, password fields
+- [x] **Role selector** — three clickable cards side by side:
   - 🧑 Patient — "Access triage, consultations, and medication tracking"
   - 👨‍⚕️ Doctor — "Manage your consultation inbox and patient briefs"
   - 🌍 Community Health Worker — "Monitor and prioritise your patient community"
   - Selected card: lime border + lime-tinted background
-- [ ] Supabase `signUp()` + insert into `profiles` table with role
-- [ ] On success → redirect to role dashboard
+- [x] Supabase `signUp()` + insert into `profiles` table with role
+- [x] On success → redirect to role dashboard
 
 **`middleware.ts`:**
 
-- [ ] Protect all `/dashboard/*` routes
-- [ ] Redirect unauthenticated users to `/login`
-- [ ] Redirect wrong-role users to `/unauthorized`
+- [x] Protect all `/dashboard/*` routes ✅
+- [x] Redirect unauthenticated users to `/login` ✅
+- [x] Redirect wrong-role users to `/unauthorized` ✅
 
 ### Patient Dashboard Page (Dev 2) — `/dashboard/patient`
 
 **Metric strip (4 cards):**
 
-- [ ] Health Score — large number in teal, trend arrow
-- [ ] Medication Adherence — percentage in amber, "↓ missed X doses"
-- [ ] Today's Mood — score/10 in purple, emoji
-- [ ] Open Consultations — count in green, "X awaiting reply"
+- [x] Health Score — large number in teal, trend arrow
+- [x] Medication Adherence — percentage in amber
+- [x] Today's Mood — score/10 in purple, emoji
+- [x] Open Consultations — count in green
 
 **AI Triage panel:**
 
-- [ ] `<textarea>` — placeholder: _"Describe how you're feeling… (e.g. chest pain since this morning)"_
-- [ ] Character counter below textarea
-- [ ] 🎙 Voice Input button — uses Web Speech API, pulses red while recording, fills textarea on stop
-- [ ] "Assess Symptoms" button — disabled when textarea is empty
-- [ ] On submit: show `<Spinner>` + _"Analysing via FHIR context…"_
-- [ ] **Wire to MCP:** `POST /api/triage` → server calls `triage_patient` tool → returns assessment
-- [ ] Result renders below (animated slide-in):
-  - `<Badge>` with severity
-  - Primary concern headline (bold)
-  - Recommended action paragraph
-  - Self-care steps as a `<ul>`
-  - Red flags section — only shows if `red_flags.length > 0`
-  - "Connect to Doctor →" primary button — only shows if `escalate_to_doctor: true`
-  - Footer: _"Assessed using FHIR Patient 592903 · Claude Opus via MCP"_
+- [x] `<textarea>` with placeholder
+- [x] Character counter below textarea
+- [x] 🎙 Voice Input button — uses Web Speech API, pulses red while recording ✅
+- [x] "Assess Symptoms" button — disabled when textarea is empty
+- [x] On submit: show `<Spinner>`
+- [x] **Wire to MCP:** `POST /api/triage` → `triage_patient` → returns assessment ✅
+- [x] Result renders below (animated slide-in): ✅
+- [x] **Tool Trace:** Live MCP tool call log visible in UI ✅
+- [x] Footer: _"Assessed using FHIR Patient 592903 · Claude Opus via MCP"_ ✅
 
 **Mood tracker:**
 
-- [ ] 7-column grid: Mon → Today
-- [ ] Each column: day label (small, muted), emoji, score (DM Mono, coloured)
-- [ ] Today's column: lime border + lime-dim background highlight
-- [ ] `<Sparkline>` chart below columns
-- [ ] "Log Today's Mood" link → opens modal:
-  - Slider 1–10
-  - Emoji preview updates as slider moves
-  - "Save" button → inserts into `mental_health_sessions`
+- [x] 7-column grid: Mon → Today
+- [x] Each column: day label, emoji, score (coloured)
+- [x] Today's column: lime border + lime-dim background highlight
+- [x] `<Sparkline>` chart below columns
+- [x] "Log Today's Mood" → opens modal with slider + emoji preview + save → calls `/api/mental-health` ✅
 
 **Today's Medications:**
 
-- [ ] Fetch active medications from Supabase
-- [ ] Each row: pill emoji, medication name (bold), dosage, schedule
-- [ ] Dose dots: teal = taken, red = missed, grey = pending
-- [ ] "Log Dose" button per pending dose slot
-  - Click → `PATCH /api/medications/log` → marks as taken
-  - Button turns to "✓ Taken" (grey, disabled) — dot turns teal
-- [ ] Adherence streak banner if 5+ days in a row: "🔥 6-day streak!"
+- [x] Medication list rendered with status dots
+- [x] Each row: medication name, dosage, schedule
+- [x] Dose dots: teal = taken, red = missed, grey = pending
+- [x] "Log Dose" button per pending dose slot
+  - Click → `PATCH /api/medications/log` → marks as taken ✅
+  - Button turns to "✓ Taken" — dot turns teal ✅
+- [x] Adherence streak banner if 5+ days in a row: "🔥 6-day streak!"
 
 **Recent Activity feed:**
 
-- [ ] Chronological list of events (triage, doctor replies, missed doses, mental health flags)
-- [ ] Each: coloured icon in rounded square, description, relative timestamp
-- [ ] Show 5 items max → "View all →" link
+- [x] Chronological list of events (triage, doctor replies, missed doses, mental health flags)
+- [x] Each: coloured icon in rounded square, description, relative timestamp
+- [x] Show 5 items max → "View all" link
 
 **✅ Phase 4 done when:** Patient registers, logs in, runs real triage via MCP, sees Critical badge, logs a dose.
 

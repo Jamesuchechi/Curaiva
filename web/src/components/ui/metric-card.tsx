@@ -13,7 +13,7 @@ export interface MetricCardProps {
   }
   icon?: React.ReactNode
   className?: string
-  color?: 'green' | 'red' | 'amber' | 'purple' | 'teal'
+  color?: 'green' | 'red' | 'amber' | 'purple' | 'teal' | 'coral'
 }
 
 function MetricCard({ label, value, trend, icon, className, color = 'green' }: MetricCardProps) {
@@ -23,6 +23,7 @@ function MetricCard({ label, value, trend, icon, className, color = 'green' }: M
     amber: "text-amber",
     purple: "text-purple",
     teal: "text-teal",
+    coral: "text-coral",
   }
 
   return (

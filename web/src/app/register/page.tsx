@@ -7,8 +7,9 @@ import { createClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/loading"
-import { Heart, User, Stethoscope, Users } from "lucide-react"
+import { User, Stethoscope, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 const roles = [
   { 
@@ -41,6 +42,23 @@ export default function RegisterPage() {
   const [error, setError] = React.useState<string | null>(null)
   const [selectedRole, setSelectedRole] = React.useState('patient')
 
+  /* ── Auth guard: already logged in → go straight to dashboard ── */
+  React.useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        // Fetch their role so we send them to the right dashboard
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+        router.replace(`/dashboard/${profile?.role ?? 'patient'}`)
+      }
+    }
+    checkSession()
+  }, [supabase, router])
+
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
@@ -51,15 +69,17 @@ export default function RegisterPage() {
     const password = formData.get("password") as string
     const fullName = formData.get("fullName") as string
 
-    // 1. Sign up user
+    // 1. Sign up — pass role + name in metadata so the DB trigger can read them
     const { error: signUpError, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           full_name: fullName,
-        }
-      }
+          role: selectedRole,
+        },
+      },
     })
 
     if (signUpError) {
@@ -68,18 +88,36 @@ export default function RegisterPage() {
       return
     }
 
-    if (data.user) {
-      // 2. Create profile entry
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: data.user.id,
-          full_name: fullName,
-          role: selectedRole,
-          fhir_patient_id: selectedRole === 'patient' ? '592903' : null // Default demo ID
-        })
+    // 2. If identities is empty — account already exists and is verified.
+    //    Don't leave them on the register page with a spinner. Send them to login
+    //    with a friendly message pre-filled.
+    if (data.user && data.user.identities?.length === 0) {
+      router.push('/login?notice=already_registered')
+      return
+    }
 
-      if (profileError) {
+    // 3. Email confirmation required (user created but no active session yet)
+    if (data.user && !data.session) {
+      await supabase.from("profiles").insert({
+        id: data.user.id,
+        full_name: fullName,
+        role: selectedRole,
+        fhir_patient_id: selectedRole === "patient" ? "592903" : null,
+      })
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+      return
+    }
+
+    // 4. Email confirmation disabled — user is immediately active
+    if (data.user && data.session) {
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: data.user.id,
+        full_name: fullName,
+        role: selectedRole,
+        fhir_patient_id: selectedRole === "patient" ? "592903" : null,
+      })
+
+      if (profileError && !profileError.message?.includes("duplicate")) {
         setError(profileError.message)
         setLoading(false)
         return
@@ -89,20 +127,27 @@ export default function RegisterPage() {
     }
   }
 
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg p-4 py-12">
       <div className="w-full max-w-2xl space-y-8">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-lime mb-4">
-            <Heart className="w-8 h-8 text-bg fill-current" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl overflow-hidden bg-white shadow-lg border border-brand-lime/20 mb-6">
+            <Image 
+              src="/logo.png" 
+              alt="Curaiva Logo" 
+              width={64} 
+              height={64} 
+              className="object-contain"
+            />
           </div>
           <h1 className="text-3xl font-display font-bold tracking-tight">Join Curaiva<span className="text-brand-lime">AI</span></h1>
-          <p className="mt-2 text-text-muted">Create your healthcare intelligence account</p>
+          <p className="mt-2 text-text-muted font-medium">Create your healthcare intelligence account</p>
         </div>
 
         <Card className="glass">
           <form onSubmit={handleRegister}>
-            <CardContent className="p-8 space-y-6">
+            <CardContent className="p-6 sm:p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-text-light">Full Name</label>
@@ -171,7 +216,7 @@ export default function RegisterPage() {
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex flex-col p-8 pt-0 space-y-4">
+            <CardFooter className="flex flex-col p-6 sm:p-8 pt-0 space-y-4">
               <Button type="submit" className="w-full h-12 text-md" disabled={loading}>
                 {loading ? <Spinner size="sm" className="mr-2 border-bg" /> : "Create Account"}
               </Button>
