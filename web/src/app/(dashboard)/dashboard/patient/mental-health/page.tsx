@@ -5,7 +5,7 @@ import { useAuth } from "@/components/providers/auth-provider"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/loading"
-import { Brain, Heart, Smile, AlertCircle, TrendingUp, CheckCircle2, Mic, Send, PhoneCall, Activity, Sparkles } from "lucide-react"
+import { Brain, Heart, AlertCircle, TrendingUp, Mic, Send, PhoneCall, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const MOODS = [
@@ -86,7 +86,6 @@ export default function MentalHealthPage() {
     e.preventDefault()
     if (!replyText.trim()) return
     setChatLog(prev => [...prev, { role: 'user', text: replyText }])
-    const currentReply = replyText
     setReplyText("")
     
     // Fake AI conversational reply
@@ -106,7 +105,7 @@ export default function MentalHealthPage() {
 
       {/* AI Insight */}
       <div className="p-4 rounded-2xl bg-surface-2 border border-brand-lime/20 flex items-start gap-3 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-lime/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-linear-to-r from-brand-lime/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         <Sparkles className="w-5 h-5 text-brand-lime shrink-0 mt-0.5" />
         <div>
           <p className="text-sm font-bold text-brand-lime">AI Insight</p>
@@ -143,7 +142,7 @@ export default function MentalHealthPage() {
                 {/* Tooltip */}
                 <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-10 w-32 bg-surface-2 border border-border-base rounded-xl p-2 shadow-xl translate-y-2 group-hover:translate-y-0">
                   <p className="text-xs font-bold text-center mb-1">Score: {v}/10</p>
-                  <p className="text-[10px] text-text-muted text-center leading-tight">"{PAST_JOURNALS[i]}"</p>
+                  <p className="text-[10px] text-text-muted text-center leading-tight">&quot;{PAST_JOURNALS[i]}&quot;</p>
                 </div>
                 
                 <div
