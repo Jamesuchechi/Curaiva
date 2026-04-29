@@ -476,7 +476,7 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 
 ---
 
-## PHASE 8 — UI Polish & QA
+## PHASE 8 — UI Polish & QA ✅
 
 **Est. 4 hrs · Everyone**
 
@@ -484,28 +484,28 @@ All routes: check Supabase session first, then call MCP. API key never exposed t
 
 ### Loading States (every page, every AI call)
 
-- [ ] `<Skeleton>` shimmer on all data that loads async
-- [ ] `<Spinner>` inside buttons while submitting
-- [ ] Graceful error states on all MCP calls: "Unable to load — try again"
-- [ ] Empty states on all list views
+- [x] `<Skeleton>` shimmer on all data that loads async
+- [x] `<Spinner>` inside buttons while submitting
+- [x] Graceful error states on all MCP calls: "Unable to load — try again"
+- [x] Empty states on all list views
 
 ### Micro-interactions
 
-- [ ] Sidebar nav: hover tint + active lime highlight + 3px left border
-- [ ] Critical `<Badge>`: subtle pulse animation
-- [ ] `<MetricCard>`: hover lifts `translateY(-1px)` + deeper shadow
-- [ ] Triage result panel: `fadeUp` slide-in animation
-- [ ] Inbox rows: hover background transition
-- [ ] Queue rows: border-left colour transition on hover
-- [ ] Buttons: `scale(0.97)` on active state
-- [ ] "Log Dose" → "✓ Taken": colour + text transition, dot fills teal
-- [ ] MCP log entries: `slideIn` from top on each new entry
+- [x] Sidebar nav: hover tint + active lime highlight + 3px left border
+- [x] Critical `<Badge>`: subtle pulse animation
+- [x] `<MetricCard>`: hover lifts `translateY(-1px)` + deeper shadow
+- [x] Triage result panel: `fadeUp` slide-in animation
+- [x] Inbox rows: hover background transition
+- [x] Queue rows: border-left colour transition on hover
+- [x] Buttons: `scale(0.97)` on active state
+- [x] "Log Dose" → "✓ Taken": colour + text transition, dot fills teal
+- [x] MCP log entries: `slideIn` from top on each new entry
 
 ### Responsive Check
 
-- [ ] 1440px (primary design target) — looks great ✅
-- [ ] 1024px (laptop) — still readable ✅
-- [ ] 768px (tablet) — sidebar collapses ✅
+- [x] 1440px (primary design target) — looks great ✅
+- [x] 1024px (laptop) — still readable ✅
+- [x] 768px (tablet) — sidebar collapses ✅
 
 ### Full End-to-End QA
 
