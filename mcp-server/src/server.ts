@@ -235,21 +235,21 @@ function calculateAge(birthDate?: string): number | null {
 
 // ─── MCP Server ───────────────────────────────────────────────────────────────
 
-const server = new McpServer({
-  name: "curaiva-ai",
-  version: "1.0.0",
-  description:
-    "Curaiva AI Healthcare Superpower — AI-powered clinical intelligence tools for triage, " +
-    "patient summarization, medication adherence, mental health assessment, CHW prioritization, " +
-    "and consultation briefing. FHIR R4 native. SHARP context compliant.",
-  capabilities: {
-    experimental: {
-      prompt_opinion: {
-        fhir_extension: true
+const server = new McpServer(
+  {
+    name: "curaiva-ai",
+    version: "1.0.0",
+  },
+  {
+    capabilities: {
+      experimental: {
+        prompt_opinion: {
+          fhir_extension: true
+        }
       }
     }
   }
-});
+);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TOOL 1: triage_patient
