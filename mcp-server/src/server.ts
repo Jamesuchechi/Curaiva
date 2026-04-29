@@ -242,9 +242,15 @@ const server = new McpServer(
   },
   {
     capabilities: {
-      experimental: {
-        prompt_opinion: {
-          fhir_extension: true
+      extensions: {
+        "ai.promptopinion/fhir-context": {
+          scopes: [
+            { name: "patient/Patient.rs", required: true },
+            { name: "patient/Condition.rs", required: true },
+            { name: "patient/MedicationRequest.rs", required: true },
+            { name: "patient/Observation.rs", required: true },
+            { name: "patient/Encounter.rs", required: false }
+          ]
         }
       }
     }

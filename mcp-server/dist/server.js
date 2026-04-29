@@ -163,9 +163,20 @@ function calculateAge(birthDate) {
 const server = new McpServer({
     name: "curaiva-ai",
     version: "1.0.0",
-    description: "Curaiva AI Healthcare Superpower — AI-powered clinical intelligence tools for triage, " +
-        "patient summarization, medication adherence, mental health assessment, CHW prioritization, " +
-        "and consultation briefing. FHIR R4 native. SHARP context compliant.",
+}, {
+    capabilities: {
+        extensions: {
+            "ai.promptopinion/fhir-context": {
+                scopes: [
+                    { name: "patient/Patient.rs", required: true },
+                    { name: "patient/Condition.rs", required: true },
+                    { name: "patient/MedicationRequest.rs", required: true },
+                    { name: "patient/Observation.rs", required: true },
+                    { name: "patient/Encounter.rs", required: false }
+                ]
+            }
+        }
+    }
 });
 // ══════════════════════════════════════════════════════════════════════════════
 // TOOL 1: triage_patient
