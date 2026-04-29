@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function callMcpTool(toolName: string, args: Record<string, unknown>, _fhirBaseUrl: string, _patientId?: string) {
   const mcpUrl = process.env.MCP_SERVER_URL;
   if (!mcpUrl) throw new Error("MCP_SERVER_URL not configured");
@@ -17,7 +18,6 @@ export async function callMcpTool(toolName: string, args: Record<string, unknown
   await client.connect(transport);
 
   try {
-   
     const result = await client.callTool({
       name: toolName,
       arguments: args,
