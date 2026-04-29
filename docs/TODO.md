@@ -632,17 +632,17 @@ Rehearse this 3 times. Every second counts.
 
 | Page                    | Route                                 | Owner | Phase | Done? |
 | ----------------------- | ------------------------------------- | ----- | ----- | ----- |
-| Login                   | `/login`                              | Dev 3 | 4     | [ ]   |
-| Register                | `/register`                           | Dev 3 | 4     | [ ]   |
-| Patient Dashboard       | `/dashboard/patient`                  | Dev 2 | 4     | [ ]   |
+| Login                   | `/login`                              | Dev 3 | 4     | [x]   |
+| Register                | `/register`                           | Dev 3 | 4     | [x]   |
+| Patient Dashboard       | `/dashboard/patient`                  | Dev 2 | 4     | [x]   |
 | Patient — Mental Health | `/dashboard/patient/mental-health`    | Dev 2 | 5     | [x]   |
-| Patient — Medications   | `/dashboard/patient/medications`      | Dev 2 | 4     | [ ]   |
+| Patient — Medications   | `/dashboard/patient/medications`      | Dev 2 | 4     | [x]   |
 | Patient — Consultations | `/dashboard/patient/consultations`    | Dev 2 | 5     | [x]   |
 | Doctor — Workspace      | `/dashboard/doctor`                   | Dev 2 | 5     | [x]   |
 | Doctor — Consult Detail | `/dashboard/doctor/consultation/[id]` | Dev 2 | 5     | [x]   |
 | CHW — Command Centre    | `/dashboard/chw`                      | Dev 3 | 6     | [x]   |
 | CHW — Patient Drawer    | (component, not page)                 | Dev 3 | 6     | [x]   |
-| Unauthorized            | `/unauthorized`                       | Dev 3 | 4     | [ ]   |
+| Unauthorized            | `/unauthorized`                       | Dev 3 | 4     | [x]   |
 
 ---
 

@@ -24,39 +24,13 @@ export async function POST(req: Request) {
 
     const { patient_ids } = await req.json();
 
-    const mcpUrl = process.env.MCP_SERVER_URL;
-    if (!mcpUrl) {
-      throw new Error("MCP_SERVER_URL not configured");
-    }
+    const { callMcpTool } = await import("@/lib/mcp-client");
+    const toolResult = await callMcpTool(
+      "generate_chw_priority_queue",
+      { patient_ids: patient_ids || ["592903", "12724", "88234", "45611"] },
+      "https://hapi.fhir.org/baseR4"
+    );
 
-    const response = await fetch(`${mcpUrl}/mcp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: {
-          name: "generate_chw_priority_queue",
-          arguments: {
-            patient_ids: patient_ids || ["592903", "12724", "88234", "45611"],
-          },
-          _meta: {
-            sharp_context: {
-              fhir_base_url: "https://hapi.fhir.org/baseR4",
-            },
-          },
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`MCP Server Error: ${response.status} ${errorText}`);
-    }
-
-    const data = await response.json();
-    const toolResult = JSON.parse(data.result.content[0].text);
     return NextResponse.json(toolResult);
   } catch (error: unknown) {
     console.error("Queue API Error:", error);
