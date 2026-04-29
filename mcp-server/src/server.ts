@@ -242,6 +242,13 @@ const server = new McpServer({
     "Curaiva AI Healthcare Superpower — AI-powered clinical intelligence tools for triage, " +
     "patient summarization, medication adherence, mental health assessment, CHW prioritization, " +
     "and consultation briefing. FHIR R4 native. SHARP context compliant.",
+  capabilities: {
+    experimental: {
+      prompt_opinion: {
+        fhir_extension: true
+      }
+    }
+  }
 });
 
 // ══════════════════════════════════════════════════════════════════════════════

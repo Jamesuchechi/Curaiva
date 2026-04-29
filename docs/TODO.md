@@ -372,7 +372,7 @@ Build these before touching any page. Pages consume them.
 
 ---
 
-## PHASE 6 — CHW Command Centre UI
+## PHASE 6 — CHW Command Centre UI ✅
 
 **Est. 5 hrs · Dev 3**
 
@@ -382,17 +382,17 @@ Build these before touching any page. Pages consume them.
 
 **Metric strip (4 cards):**
 
-- [ ] My Patients — total count in purple
-- [ ] Urgent Visits — count in red
-- [ ] Missed Doses Across Community — count in amber
-- [ ] Visits Done This Week — count in teal + progress indicator
+- [x] My Patients — total count in purple
+- [x] Urgent Visits — count in red
+- [x] Missed Doses Across Community — count in amber
+- [x] Visits Done This Week — count in teal + progress indicator
 
 **AI Priority Queue (main section, ~65% width):**
 
-- [ ] Section header: "AI Priority Queue" + "Generated HH:MM · FHIR R4" badge
-- [ ] **Wire to MCP:** on page load → `POST /api/queue` → `generate_chw_priority_queue` with CHW's patient IDs
-- [ ] Loading: `<Skeleton>` shimmer on 5 rows
-- [ ] Each queue row:
+- [x] Section header: "AI Priority Queue" + "Generated HH:MM · FHIR R4" badge
+- [x] **Wire to MCP:** on page load → `POST /api/queue` → `generate_chw_priority_queue` with CHW's patient IDs
+- [x] Loading: `<Skeleton>` shimmer on 5 rows
+- [x] Each queue row:
   - Left border colour: red (`score ≥ 75`), amber (`50–74`), teal (`< 50`)
   - Large priority score (Fraunces serif, colour-matched to border)
   - Patient name + age
@@ -401,35 +401,35 @@ Build these before touching any page. Pages consume them.
     - Score 75+: "Visit Now" (primary) + "Call"
     - Score 50–74: "Visit" + "Message" (primary)
     - Score < 50: "Visit" + "Check In" (primary)
-- [ ] Sort controls: Score ↓ / Name A–Z / Last Contact
-- [ ] "Refresh Queue" button → re-calls MCP tool, animates row reordering
+- [x] Sort controls: Score ↓ / Name A–Z / Last Contact
+- [x] "Refresh Queue" button → re-calls MCP tool, animates row reordering
 
 **Patient Detail Drawer:**
 
-- [ ] Clicking any queue row opens a right-side drawer (slides in 300ms)
-- [ ] Drawer shows:
+- [x] Clicking any queue row opens a right-side drawer (slides in 300ms)
+- [x] Drawer shows:
   - Patient name, age, gender, FHIR ID
   - Recent triage assessment (from Supabase)
   - Medication list with adherence dots (last 7 days)
   - Mental health mood trend (7-day mini chart)
   - Message input textarea + "Send Message" button
   - "Schedule Visit" button → simple date picker, saves to Supabase
-- [ ] Drawer closes on Escape key or clicking the backdrop overlay
+- [x] Drawer closes on Escape key or clicking the backdrop overlay
 
 **Live Alerts panel (right ~35%):**
 
-- [ ] **Supabase Realtime** on `crisis_alerts` + `medication_logs` tables
-- [ ] Each alert: coloured dot (red = crisis, amber = missed dose, teal = doctor reply), description, relative time
-- [ ] Crisis alerts: full red background band — impossible to miss
-- [ ] "Acknowledge" button → removes from feed
-- [ ] Empty state: "✓ No active alerts"
+- [x] **Supabase Realtime** on `crisis_alerts` + `medication_logs` tables
+- [x] Each alert: coloured dot (red = crisis, amber = missed dose, teal = doctor reply), description, relative time
+- [x] Crisis alerts: full red background band — impossible to miss
+- [x] "Acknowledge" button → removes from feed
+- [x] Empty state: "✓ No active alerts"
 
 **Community Health summary card:**
 
-- [ ] Avg medication adherence % (DM Mono, coloured)
-- [ ] Active conditions count
-- [ ] Critical patients count (red)
-- [ ] Weekly visit progress bar (lime fill, grey track, "7 / 12" label)
+- [x] Avg medication adherence % (DM Mono, coloured)
+- [x] Active conditions count
+- [x] Critical patients count (red)
+- [x] Weekly visit progress bar (lime fill, grey track, "7 / 12" label)
 
 **✅ Phase 6 done when:** CHW logs in, sees real AI priority queue from FHIR, crisis alert is visible, drawer opens with patient history, message can be sent.
 
@@ -453,23 +453,23 @@ Build these before touching any page. Pages consume them.
 
 All routes: check Supabase session first, then call MCP. API key never exposed to browser.
 
-- [ ] `POST /api/triage` → `triage_patient`
-- [ ] `POST /api/summary` → `get_patient_summary`
-- [ ] `POST /api/brief` → `create_consultation_brief`
-- [ ] `POST /api/adherence` → `check_medication_adherence`
-- [ ] `POST /api/mental-health` → `mental_health_assessment`
-- [ ] `POST /api/queue` → `generate_chw_priority_queue`
-- [ ] `PATCH /api/medications/log` → update `medication_logs` in Supabase
-- [ ] `POST /api/messages` → insert into `messages` in Supabase
+- [x] `POST /api/triage` → `triage_patient`
+- [x] `POST /api/summary` → `get_patient_summary`
+- [x] `POST /api/brief` → `create_consultation_brief`
+- [x] `POST /api/adherence` → `check_medication_adherence`
+- [x] `POST /api/mental-health` → `mental_health_assessment`
+- [x] `POST /api/queue` → `generate_chw_priority_queue`
+- [x] `PATCH /api/medications/log` → update `medication_logs` in Supabase
+- [x] `POST /api/messages` → insert into `messages` in Supabase
 
 ### Supabase Tables
 
-- [ ] `profiles` — id, full_name, role, fhir_patient_id
-- [ ] `consultations` — patient_id, doctor_id, status, ai_summary, priority, created_at
-- [ ] `messages` — consultation_id, sender_id, content, created_at
-- [ ] `medication_logs` — patient_id, medication_id, scheduled_at, taken_at, status
-- [ ] `mental_health_sessions` — patient_id, mood_score, session_notes, crisis_flagged, created_at
-- [ ] Realtime enabled on: `consultations`, `messages`
+- [x] `profiles` — id, full_name, role, fhir_patient_id
+- [x] `consultations` — patient_id, doctor_id, status, ai_summary, priority, created_at
+- [x] `messages` — consultation_id, sender_id, content, created_at
+- [x] `medication_logs` — patient_id, medication_id, scheduled_at, taken_at, status
+- [x] `mental_health_sessions` — patient_id, mood_score, session_notes, crisis_flagged, created_at
+- [x] Realtime enabled on: `consultations`, `messages`
 - [ ] RLS policies on every table — patients only see their own data ✅
 
 **✅ Phase 7 done when:** All 3 dashboards call real MCP tools. A2A agent live on Marketplace.
@@ -640,8 +640,8 @@ Rehearse this 3 times. Every second counts.
 | Patient — Consultations | `/dashboard/patient/consultations`    | Dev 2 | 5     | [x]   |
 | Doctor — Workspace      | `/dashboard/doctor`                   | Dev 2 | 5     | [x]   |
 | Doctor — Consult Detail | `/dashboard/doctor/consultation/[id]` | Dev 2 | 5     | [x]   |
-| CHW — Command Centre    | `/dashboard/chw`                      | Dev 3 | 6     | [ ]   |
-| CHW — Patient Drawer    | (component, not page)                 | Dev 3 | 6     | [ ]   |
+| CHW — Command Centre    | `/dashboard/chw`                      | Dev 3 | 6     | [x]   |
+| CHW — Patient Drawer    | (component, not page)                 | Dev 3 | 6     | [x]   |
 | Unauthorized            | `/unauthorized`                       | Dev 3 | 4     | [ ]   |
 
 ---

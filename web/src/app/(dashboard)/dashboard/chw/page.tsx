@@ -163,15 +163,23 @@ function PatientDrawer({ patient, onClose }: DrawerProps) {
               </div>
             )}
           </div>
+          
+          {/* Schedule Visit */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-mono font-bold text-brand-lime uppercase tracking-widest">Schedule Visit</h4>
+            <div className="flex items-center gap-2">
+               <input type="date" className="flex-1 p-2 rounded-xl bg-bg border border-border-base outline-none focus:border-brand-lime text-sm" />
+               <Button variant="primary" className="gap-2 shrink-0">
+                 <Calendar className="w-4 h-4" /> Schedule
+               </Button>
+            </div>
+          </div>
         </div>
 
         {/* Footer actions */}
         <div className="p-6 border-t border-border-base bg-bg2 flex gap-3">
-          <Button variant="primary" className="flex-1 gap-2">
-            <Calendar className="w-4 h-4" /> Schedule Visit
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-xl hover:bg-brand-lime/10 hover:text-brand-lime">
-            <Phone className="w-5 h-5" />
+          <Button variant="ghost" size="icon" className="rounded-xl hover:bg-brand-lime/10 hover:text-brand-lime w-full">
+            <Phone className="w-5 h-5 mr-2" /> Call Patient
           </Button>
         </div>
       </div>
@@ -188,6 +196,7 @@ export default function CHWDashboard() {
   const [queueError, setQueueError] = React.useState<string | null>(null)
   const [trace, setTrace] = React.useState<TraceEntry[]>([])
   const [drawerPatient, setDrawerPatient] = React.useState<QueueItem | null>(null)
+  const [sort, setSort] = React.useState<"score" | "name" | "contact">("score")
 
   // alerts: keyed by id so acknowledging one doesn't shift others
   interface LiveAlert {
@@ -333,10 +342,19 @@ export default function CHWDashboard() {
               <h3 className="text-xl font-display font-bold">AI Priority Queue</h3>
               <Badge variant="new">FHIR R4 Analyzed</Badge>
             </div>
-            <Button variant="ghost" size="sm" onClick={generateQueue} disabled={loading} className="text-xs gap-2">
-              <RefreshCcw className={cn("w-3 h-3", loading && "animate-spin")} />
-              Refresh Queue
-            </Button>
+            <div className="flex gap-2">
+              <div className="flex items-center bg-surface-2 rounded-lg p-1 border border-border-base">
+                {(["score", "name", "contact"] as const).map(s => (
+                  <button key={s} onClick={() => setSort(s)} className={cn("px-3 py-1 text-[10px] font-bold rounded-md capitalize transition-all", sort === s ? "bg-bg text-brand-lime shadow-sm" : "text-text-muted hover:text-text-white")}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <Button variant="ghost" size="sm" onClick={generateQueue} disabled={loading} className="text-xs gap-2">
+                <RefreshCcw className={cn("w-3 h-3", loading && "animate-spin")} />
+                Refresh Queue
+              </Button>
+            </div>
           </div>
 
           {queueError && (
@@ -354,7 +372,11 @@ export default function CHWDashboard() {
                 </div>
               ) : (
                 <div className="divide-y divide-border-base/50">
-                  {queue.map(item => (
+                  {[...queue].sort((a, b) => {
+                    if (sort === "score") return b.score - a.score
+                    if (sort === "name") return a.name.localeCompare(b.name)
+                    return 0 // fallback for contact
+                  }).map(item => (
                     <button
                       key={item.id}
                       onClick={() => setDrawerPatient(item)}
