@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 
-export async function callMcpTool(toolName: string, args: Record<string, unknown>, fhirBaseUrl: string, patientId?: string) {
+export async function callMcpTool(toolName: string, args: Record<string, unknown>, _fhirBaseUrl: string, _patientId?: string) {
   const mcpUrl = process.env.MCP_SERVER_URL;
   if (!mcpUrl) throw new Error("MCP_SERVER_URL not configured");
 
