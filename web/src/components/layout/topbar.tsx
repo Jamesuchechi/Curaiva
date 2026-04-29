@@ -3,7 +3,7 @@
 import * as React from "react"
 import { StatusDot } from "@/components/ui/feedback"
 import { Button } from "@/components/ui/button"
-import { Bell, Search, MessageSquare, Send, X, Activity } from "lucide-react"
+import { Bell, Search, Send, X, Activity } from "lucide-react"
 import { Profile } from "@/types"
 import { cn } from "@/lib/utils"
 
@@ -18,13 +18,25 @@ export function Topbar({ title, profile }: { title: string, profile: Profile | n
   const handleSendAI = (e: React.FormEvent) => {
     e.preventDefault()
     if (!aiMessage.trim()) return
-    const msg = aiMessage
-    setChatLog(prev => [...prev, { role: "user", text: msg }])
+    const msg = aiMessage.toLowerCase()
+    setChatLog(prev => [...prev, { role: "user", text: aiMessage }])
     setAiMessage("")
     
-    // Fake typing effect for AI
+    // Dynamic mock responses
     setTimeout(() => {
-      setChatLog(prev => [...prev, { role: "ai", text: "I have recorded your update to your health record. Would you like me to schedule a consultation or notify your Community Health Worker?" }])
+      let response = "I have recorded your update to your health record. Would you like me to schedule a consultation or notify your Community Health Worker?"
+      
+      if (msg.includes("hello") || msg.includes("hi")) {
+        response = "Hello! I'm your clinical assistant. I can help you track medications, log symptoms, or prepare for your next consultation. What's on your mind?"
+      } else if (msg.includes("medication") || msg.includes("pill") || msg.includes("dose")) {
+        response = "I can see your current prescriptions in your FHIR records. Are you having trouble with adherence, or are you experiencing side effects?"
+      } else if (msg.includes("pain") || msg.includes("hurt") || msg.includes("sick")) {
+        response = "I'm sorry you're not feeling well. I've flagged this for your care team. Should we run a quick triage assessment now?"
+      } else if (msg.includes("appointment") || msg.includes("doctor") || msg.includes("consultation")) {
+        response = "I can help you prepare for your visit. I'll generate a summary of your recent logs for Dr. Nwosu to review."
+      }
+      
+      setChatLog(prev => [...prev, { role: "ai", text: response }])
     }, 1000)
   }
 
@@ -95,31 +107,38 @@ export function Topbar({ title, profile }: { title: string, profile: Profile | n
         </Button>
       </div>
 
-      {/* AI Assist Modal */}
+      {/* AI Assist Sidebar */}
       {showAIAssist && (
-        <div className="fixed inset-0 bg-bg/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-surface border border-border-base rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <>
+          <div className="fixed inset-0 bg-bg/40 backdrop-blur-[2px] z-40 animate-in fade-in" onClick={() => setShowAIAssist(false)} />
+          <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-surface border-l border-border-base z-50 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
             <div className="p-4 border-b border-border-base bg-surface-2 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-brand-lime flex items-center justify-center text-bg">
                   <Activity className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">Curaiva AI</h3>
-                  <p className="text-xs text-text-muted">Clinical Orchestrator</p>
+                  <h3 className="font-bold text-sm">Curaiva Assistant</h3>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-lime animate-pulse" />
+                    <p className="text-[10px] text-text-muted">Clinical Orchestrator · Online</p>
+                  </div>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowAIAssist(false)}>
+              <Button variant="ghost" size="icon" onClick={() => setShowAIAssist(false)} className="rounded-full hover:bg-surface-2">
                 <X className="w-5 h-5" />
               </Button>
             </div>
             
-            <div className="flex-1 p-4 space-y-4 min-h-[300px] max-h-[400px] overflow-y-auto">
+            <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-bg/30">
+              <div className="text-[10px] text-center text-text-muted font-mono uppercase tracking-widest mb-4">
+                Clinical Session Started · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
               {chatLog.map((msg, i) => (
                 <div key={i} className={cn(
-                  "max-w-[80%] rounded-2xl p-3 text-sm",
+                  "max-w-[85%] rounded-2xl p-3 text-sm shadow-sm",
                   msg.role === "ai" 
-                    ? "bg-surface-2 text-text-light mr-auto rounded-tl-sm" 
+                    ? "bg-surface-2 border border-border-base text-text-light mr-auto rounded-tl-sm" 
                     : "bg-brand-lime text-bg ml-auto rounded-tr-sm font-medium"
                 )}>
                   {msg.text}
@@ -128,21 +147,26 @@ export function Topbar({ title, profile }: { title: string, profile: Profile | n
             </div>
 
             <div className="p-4 border-t border-border-base bg-surface-2">
-              <form onSubmit={handleSendAI} className="relative">
-                <input 
-                  type="text" 
-                  value={aiMessage}
-                  onChange={(e) => setAiMessage(e.target.value)}
-                  placeholder="Ask anything or log a symptom..."
-                  className="w-full h-12 pl-4 pr-12 rounded-xl bg-surface border border-border-base focus:border-brand-lime outline-none text-sm transition-all"
-                />
-                <Button type="submit" size="icon" variant="ghost" className="absolute right-1 top-1 text-brand-lime hover:bg-brand-lime/10 h-10 w-10">
-                  <Send className="w-4 h-4" />
-                </Button>
+              <form onSubmit={handleSendAI} className="relative flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input 
+                    type="text" 
+                    value={aiMessage}
+                    onChange={(e) => setAiMessage(e.target.value)}
+                    placeholder="Ask about your health..."
+                    className="w-full h-11 pl-4 pr-10 rounded-xl bg-surface border border-border-base focus:border-brand-lime outline-none text-sm transition-all shadow-inner"
+                  />
+                  <Button type="submit" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 text-brand-lime hover:bg-brand-lime/10 h-9 w-9">
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
               </form>
+              <p className="text-[10px] text-center text-text-muted mt-3">
+                Assistant has access to your FHIR records and SHARP context.
+              </p>
             </div>
           </div>
-        </div>
+        </>
       )}
     </header>
   )
