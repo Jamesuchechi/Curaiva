@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/providers/auth-provider"
 import { ToolTrace, type TraceEntry } from "@/components/ui/tool-trace"
+import { Sparkline } from "@/components/ui/sparkline"
 import { createClient } from "@/lib/supabase"
 
 /* ── types ── */
@@ -27,6 +28,7 @@ interface InboxItem {
   id: string
   name: string
   severity: "critical" | "moderate" | "low"
+  status: "open" | "active" | "resolved"
   time: string
   snippet: string
   patient_id: string
@@ -51,9 +53,9 @@ interface LiveMetrics {
 }
 
 const FALLBACK_INBOX: InboxItem[] = [
-  { id: "1", name: "Alice Johnson",   severity: "critical", time: "12m ago", snippet: "Severe chest pain and shortness of breath...", patient_id: "592903" },
-  { id: "2", name: "Robert Smith",    severity: "moderate", time: "45m ago", snippet: "Follow-up on blood pressure medications...",   patient_id: "12724"  },
-  { id: "3", name: "Elena Rodriguez", severity: "low",      time: "2h ago",  snippet: "Persistent dry cough for 3 days...",           patient_id: "88234"  },
+  { id: "1", name: "Alice Johnson",   severity: "critical", status: "open", time: "12m ago", snippet: "Severe chest pain and shortness of breath...", patient_id: "592903" },
+  { id: "2", name: "Robert Smith",    severity: "moderate", status: "open", time: "45m ago", snippet: "Follow-up on blood pressure medications...",   patient_id: "12724"  },
+  { id: "3", name: "Elena Rodriguez", severity: "low",      status: "open", time: "2h ago",  snippet: "Persistent dry cough for 3 days...",           patient_id: "88234"  },
 ]
 
 function relativeTime(iso: string): string {
@@ -72,6 +74,7 @@ export default function DoctorDashboard() {
 
   // inbox state — starts with fallback, gets replaced by live data
   const [inbox, setInbox] = React.useState<InboxItem[]>(FALLBACK_INBOX)
+  const [inboxFilter, setInboxFilter] = React.useState<"all" | "critical" | "moderate" | "resolved">("all")
   const [metrics, setMetrics] = React.useState<LiveMetrics>({ open: 12, critical: 3, avgResponseMin: 14, briefsReady: 4 })
   const [metricsLoaded, setMetricsLoaded] = React.useState(false)
   const [realtimeConnected, setRealtimeConnected] = React.useState(false)
@@ -115,6 +118,7 @@ export default function DoctorDashboard() {
             id: String(c.id),
             name: String(pat?.full_name ?? "Unknown Patient"),
             severity: (c.priority as "critical" | "moderate" | "low") ?? "moderate",
+            status: (c.status as "open" | "active" | "resolved") ?? "open",
             time: relativeTime(String(c.created_at)),
             snippet: String(c.ai_summary ?? "Consultation request received."),
             patient_id: String(pat?.fhir_patient_id ?? "592903"),
@@ -160,6 +164,7 @@ export default function DoctorDashboard() {
             id: String(payload.new.id),
             name: String(pat?.full_name ?? "New Patient"),
             severity: (payload.new.priority as "critical" | "moderate" | "low") ?? "moderate",
+            status: (payload.new.status as "open" | "active" | "resolved") ?? "open",
             time: "Just now",
             snippet: String(payload.new.ai_summary ?? "New consultation request."),
             patient_id: String(pat?.fhir_patient_id ?? "592903"),
@@ -255,6 +260,29 @@ export default function DoctorDashboard() {
     }
   }
 
+  /* ── mark resolved ── */
+  const handleMarkResolved = async () => {
+    if (!selectedId) return
+    const tid = addTrace({ tool: "resolve_consultation", status: "pending", resources: ["consultations"] })
+    const t0 = Date.now()
+    try {
+      const res = await fetch("/api/consultations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ consultation_id: selectedId, status: "resolved" }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      
+      setInbox(prev => prev.map(i => i.id === selectedId ? { ...i, status: "resolved" } : i))
+      setSelectedId(null)
+      setBrief(null)
+      updateTrace(tid, { status: "success", duration: Date.now() - t0 })
+    } catch {
+      updateTrace(tid, { status: "error", duration: Date.now() - t0 })
+    }
+  }
+
   const criticalCount = inbox.filter(i => i.severity === "critical").length
   const newCount = inbox.filter(i => i.isNew).length
 
@@ -334,8 +362,18 @@ export default function DoctorDashboard() {
               </Badge>
             </div>
           </div>
+          <div className="flex gap-2 my-3">
+             {(["all", "critical", "moderate", "resolved"] as const).map(f => (
+               <button key={f} onClick={() => setInboxFilter(f)}
+                 className={cn("px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all capitalize",
+                   inboxFilter === f ? "bg-brand-lime text-bg border-brand-lime" : "bg-surface border-border-base text-text-muted hover:bg-surface-2"
+                 )}>
+                 {f}
+               </button>
+             ))}
+          </div>
           <div className="space-y-3">
-            {inbox.map(item => (
+            {inbox.filter(i => inboxFilter === "all" ? i.status !== "resolved" : inboxFilter === "resolved" ? i.status === "resolved" : (i.severity === inboxFilter && i.status !== "resolved")).map(item => (
               <button
                 key={item.id}
                 onClick={() => loadBrief(item)}
@@ -512,7 +550,7 @@ export default function DoctorDashboard() {
                             {sending ? <Spinner size="sm" className="border-bg" /> : <Send className="w-4 h-4" />}
                             Send Reply
                           </Button>
-                          <Button variant="ghost" className="px-4">Mark Resolved</Button>
+                          <Button variant="ghost" className="px-4" onClick={handleMarkResolved}>Mark Resolved</Button>
                         </div>
                       </div>
                     )}
@@ -522,6 +560,46 @@ export default function DoctorDashboard() {
             ) : null}
           </Card>
         </div>
+      </div>
+
+      {/* Analytics cards (bottom row) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="glass p-5">
+          <h3 className="text-sm font-bold text-text-white mb-4">Consults This Week</h3>
+          <div className="h-[80px] flex items-center justify-center">
+            <Sparkline data={[2, 4, 3, 6, 8]} width={200} height={60} color="var(--lime)" />
+          </div>
+        </Card>
+        <Card className="glass p-5">
+          <h3 className="text-sm font-bold text-text-white mb-4">Severity Distribution</h3>
+          <div className="flex items-center justify-between">
+            <div className="space-y-2 flex-1">
+              <div className="flex justify-between text-xs"><span className="text-red">Critical</span><span className="font-mono">{metrics.critical}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-amber">Moderate</span><span className="font-mono">{Math.max(0, metrics.open - metrics.critical)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-teal">Low</span><span className="font-mono">0</span></div>
+            </div>
+            <div className="w-16 h-16 rounded-full border-4 border-surface-2 ml-6 flex shrink-0"
+              style={{
+                background: `conic-gradient(var(--red) 0% 30%, var(--amber) 30% 90%, var(--teal) 90% 100%)`,
+                WebkitMask: `radial-gradient(transparent 55%, black 56%)`,
+                mask: `radial-gradient(transparent 55%, black 56%)`
+              }}
+            />
+          </div>
+        </Card>
+        <Card className="glass p-5">
+          <h3 className="text-sm font-bold text-text-white mb-4">FHIR Resource Usage</h3>
+          <div className="space-y-3">
+             {["Patient", "Condition", "MedicationRequest", "Observation"].map((res, i) => (
+                <div key={res} className="flex items-center gap-2">
+                  <span className="text-[10px] text-text-muted w-24">{res}</span>
+                  <div className="flex-1 h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                    <div className="h-full bg-brand-lime/80" style={{ width: `${80 - i * 15}%` }} />
+                  </div>
+                </div>
+             ))}
+          </div>
+        </Card>
       </div>
 
       {/* Live Tool Trace */}

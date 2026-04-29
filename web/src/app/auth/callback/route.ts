@@ -5,7 +5,6 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
-  const next = searchParams.get("next") ?? "/"
 
   if (code) {
     const cookieStore = await cookies()
@@ -30,12 +29,12 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // Get user to determine role for redirect
       const {
         data: { user },
       } = await supabase.auth.getUser()
 
       if (user) {
+        // Try to get the profile row
         const { data: profile } = await supabase
           .from("profiles")
           .select("role")
@@ -43,12 +42,30 @@ export async function GET(request: Request) {
           .single()
 
         if (profile?.role) {
-          return NextResponse.redirect(
-            `${origin}/dashboard/${profile.role}`
-          )
+          // Happy path: profile already exists
+          return NextResponse.redirect(`${origin}/dashboard/${profile.role}`)
         }
+
+        // Profile doesn't exist yet (insert failed before email confirmation,
+        // or tables haven't been migrated). Reconstruct it from user_metadata
+        // which we stored during signUp.
+        const meta = user.user_metadata ?? {}
+        const role: string = (meta.role as string) || "patient"
+        const fullName: string = (meta.full_name as string) || ""
+
+        // Upsert so we don't fail if there's a partial row
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          full_name: fullName,
+          role,
+          fhir_patient_id: role === "patient" ? "592903" : null,
+        })
+
+        return NextResponse.redirect(`${origin}/dashboard/${role}`)
       }
-      return NextResponse.redirect(`${origin}${next}`)
+
+      // User object missing — send to login rather than landing page
+      return NextResponse.redirect(`${origin}/login`)
     }
   }
 

@@ -2,6 +2,27 @@ import { NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+async function makeServerClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          cookieStore.set({ name, value: "", ...options });
+        },
+      },
+    }
+  );
+}
+
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
@@ -107,3 +128,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const supabase = await makeServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { consultation_id, status } = await req.json();
+    if (!consultation_id) {
+      return NextResponse.json({ error: "consultation_id required" }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from("consultations")
+      .update({ status: status ?? "resolved" })
+      .eq("id", consultation_id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json({ consultation: data });
+  } catch (error: unknown) {
+    console.error("Consultations PATCH Error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+

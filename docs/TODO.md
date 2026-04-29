@@ -302,7 +302,7 @@ Build these before touching any page. Pages consume them.
 
 ---
 
-## PHASE 5 — Doctor Workspace UI
+## PHASE 5 — Doctor Workspace UI ✅
 
 **Est. 6 hrs · Dev 2**
 
@@ -312,17 +312,17 @@ Build these before touching any page. Pages consume them.
 
 **Metric strip (4 cards):**
 
-- [ ] Open Consultations — count in coral, "X critical" warning sub-text
-- [ ] Avg Response Time — minutes in amber, trend down = good
-- [ ] Patients Seen This Week — count in teal
-- [ ] AI Briefs Ready — count in lime
+- [x] Open Consultations — count in coral, "X critical" warning sub-text
+- [x] Avg Response Time — minutes in amber, trend down = good
+- [x] Patients Seen This Week — count in teal
+- [x] AI Briefs Ready — count in lime
 
 **Consultation Inbox (left ~55% of content area):**
 
-- [ ] Filter tabs: All / Critical / Moderate / Resolved — updates list
-- [ ] **Supabase Realtime** subscription on `consultations` table filtered by `doctor_id`
+- [x] Filter tabs: All / Critical / Moderate / Resolved — updates list
+- [x] **Supabase Realtime** subscription on `consultations` table filtered by `doctor_id`
   - New consultations slide in from top automatically — no refresh needed
-- [ ] Each inbox row:
+- [x] Each inbox row:
   - Unread: lime 3px left border indicator
   - Critical: subtle red background tint
   - Patient avatar (emoji/initials)
@@ -331,14 +331,14 @@ Build these before touching any page. Pages consume them.
   - `<Badge>` severity top-right
   - Relative timestamp
   - Hover: background darkens slightly
-- [ ] Clicking a row → loads the AI Brief panel (no navigation, stays on same page)
+- [x] Clicking a row → loads the AI Brief panel (no navigation, stays on same page)
 
 **AI Brief Panel (right ~45% of content area):**
 
-- [ ] Default: centred `<EmptyState>` — "Select a consultation to load the AI brief"
-- [ ] Loading: `<Skeleton>` shimmer on all text sections
-- [ ] **Wire to MCP:** clicking a row calls `POST /api/brief` → `create_consultation_brief` tool
-- [ ] Loaded state:
+- [x] Default: centred `<EmptyState>` — "Select a consultation to load the AI brief"
+- [x] Loading: `<Skeleton>` shimmer on all text sections
+- [x] **Wire to MCP:** clicking a row calls `POST /api/brief` → `create_consultation_brief` tool
+- [x] Loaded state:
   - Patient name, age, gender — header row
   - `FHIR R4 · SHARP` monospace badge in lime (shows data provenance)
   - ⚠ Alert banner (red background) if `triage_severity === "critical"`
@@ -349,24 +349,24 @@ Build these before touching any page. Pages consume them.
   - **SUGGESTED FOCUS AREAS** — numbered list, each item is a specific clinical action
   - "Reply to Patient" primary button (lime)
   - "Mark Resolved" ghost button
-- [ ] Reply → opens inline text editor below, "Send" posts message to `messages` table
+- [x] Reply → opens inline text editor below, "Send" posts message to `messages` table
 
 **MCP Tool Call Log (below brief panel):**
 
-- [ ] Live log of every MCP call made this session
-- [ ] Each entry (DM Mono font):
+- [x] Live log of every MCP call made this session
+- [x] Each entry (DM Mono font):
   - Tool name in lime
   - HTTP status badge (200 OK in teal / error in red)
   - Timestamp (HH:MM:SS)
   - Patient ID + FHIR resources used in muted text
-- [ ] New entries insert at top with `slideIn` animation
-- [ ] Shows judges exactly how MCP integration works — keep it visible during demo
+- [x] New entries insert at top with `slideIn` animation
+- [x] Shows judges exactly how MCP integration works — keep it visible during demo
 
 **Analytics cards (bottom row, 3 cards):**
 
-- [ ] Consults This Week — `<Sparkline>` bar chart Mon–Fri
-- [ ] Severity Distribution — canvas donut chart (critical / moderate / low)
-- [ ] FHIR Resource Usage — horizontal bar per resource type (Patient, Condition, MedicationRequest, Observation)
+- [x] Consults This Week — `<Sparkline>` bar chart Mon–Fri
+- [x] Severity Distribution — canvas donut chart (critical / moderate / low)
+- [x] FHIR Resource Usage — horizontal bar per resource type (Patient, Condition, MedicationRequest, Observation)
 
 **✅ Phase 5 done when:** Doctor sees inbox, clicks a consult, real AI brief generates via MCP, MCP log updates, doctor can reply.
 
@@ -635,11 +635,11 @@ Rehearse this 3 times. Every second counts.
 | Login                   | `/login`                              | Dev 3 | 4     | [ ]   |
 | Register                | `/register`                           | Dev 3 | 4     | [ ]   |
 | Patient Dashboard       | `/dashboard/patient`                  | Dev 2 | 4     | [ ]   |
-| Patient — Mental Health | `/dashboard/patient/mental-health`    | Dev 2 | 5     | [ ]   |
+| Patient — Mental Health | `/dashboard/patient/mental-health`    | Dev 2 | 5     | [x]   |
 | Patient — Medications   | `/dashboard/patient/medications`      | Dev 2 | 4     | [ ]   |
-| Patient — Consultations | `/dashboard/patient/consultations`    | Dev 2 | 5     | [ ]   |
-| Doctor — Workspace      | `/dashboard/doctor`                   | Dev 2 | 5     | [ ]   |
-| Doctor — Consult Detail | `/dashboard/doctor/consultation/[id]` | Dev 2 | 5     | [ ]   |
+| Patient — Consultations | `/dashboard/patient/consultations`    | Dev 2 | 5     | [x]   |
+| Doctor — Workspace      | `/dashboard/doctor`                   | Dev 2 | 5     | [x]   |
+| Doctor — Consult Detail | `/dashboard/doctor/consultation/[id]` | Dev 2 | 5     | [x]   |
 | CHW — Command Centre    | `/dashboard/chw`                      | Dev 3 | 6     | [ ]   |
 | CHW — Patient Drawer    | (component, not page)                 | Dev 3 | 6     | [ ]   |
 | Unauthorized            | `/unauthorized`                       | Dev 3 | 4     | [ ]   |
