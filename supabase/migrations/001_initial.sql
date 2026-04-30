@@ -32,17 +32,6 @@ CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
 
--- Doctors and CHWs can view profiles of assigned patients
-CREATE POLICY "Doctors can view patient profiles"
-  ON public.profiles FOR SELECT
-  USING (
-    auth.uid() IN (
-      SELECT doctor_id FROM public.consultations WHERE patient_id = id
-    )
-    OR auth.uid() IN (
-      SELECT chw_id FROM public.patient_assignments WHERE patient_id = id
-    )
-  );
 
 -- ── 2. patient_assignments ───────────────────────────────────
 -- Maps patients to their doctor and CHW
@@ -104,7 +93,9 @@ CREATE POLICY "Doctors can update consultations"
   USING (doctor_id = auth.uid());
 
 -- Enable Realtime on consultations (for live inbox updates)
-ALTER PUBLICATION supabase_realtime ADD TABLE public.consultations;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.consultations;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ── 4. messages ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.messages (
@@ -139,7 +130,9 @@ CREATE POLICY "Consultation participants can send messages"
   );
 
 -- Enable Realtime on messages
-ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ── 5. triage_sessions ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.triage_sessions (
@@ -277,7 +270,9 @@ CREATE POLICY "CHWs see crisis-flagged sessions for their patients"
   );
 
 -- Enable Realtime on mental health sessions (for crisis alerts)
-ALTER PUBLICATION supabase_realtime ADD TABLE public.mental_health_sessions;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.mental_health_sessions;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ── 9. crisis_alerts ─────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.crisis_alerts (
@@ -305,7 +300,9 @@ CREATE POLICY "CHWs can acknowledge alerts"
   USING (chw_id = auth.uid());
 
 -- Enable Realtime on crisis alerts
-ALTER PUBLICATION supabase_realtime ADD TABLE public.crisis_alerts;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.crisis_alerts;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ── 10. chw_visits ───────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.chw_visits (
@@ -403,6 +400,19 @@ CREATE INDEX IF NOT EXISTS idx_triage_sessions_patient ON public.triage_sessions
 CREATE INDEX IF NOT EXISTS idx_mental_health_patient ON public.mental_health_sessions(patient_id);
 CREATE INDEX IF NOT EXISTS idx_crisis_alerts_chw ON public.crisis_alerts(chw_id);
 CREATE INDEX IF NOT EXISTS idx_patient_assignments_chw ON public.patient_assignments(chw_id);
+
+-- ── Cross-Table RLS Policies ─────────────────────────────────
+-- Added here to ensure all dependent tables exist before creation
+CREATE POLICY "Doctors can view patient profiles"
+  ON public.profiles FOR SELECT
+  USING (
+    auth.uid() IN (
+      SELECT doctor_id FROM public.consultations WHERE patient_id = id
+    )
+    OR auth.uid() IN (
+      SELECT chw_id FROM public.patient_assignments WHERE patient_id = id
+    )
+  );
 
 -- ════════════════════════════════════════════════════════════
 -- Migration complete.

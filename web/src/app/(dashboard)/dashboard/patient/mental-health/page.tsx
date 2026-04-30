@@ -2,10 +2,12 @@
 
 import * as React from "react"
 import { useAuth } from "@/components/providers/auth-provider"
+import { useAIPanel } from "@/components/providers/ai-panel-provider"
+import { useMentalHealthData } from "@/hooks/use-mental-health-data"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/loading"
-import { Brain, Heart, AlertCircle, TrendingUp, Mic, Send, PhoneCall, Sparkles, Activity } from "lucide-react"
+import { Spinner, Skeleton } from "@/components/ui/loading"
+import { Brain, Heart, TrendingUp, Mic, Sparkles, Activity } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const MOODS = [
@@ -16,48 +18,31 @@ const MOODS = [
   { score: 9, emoji: "😄", label: "Great" },
 ]
 
-const WEEK_MOODS = [6, 5, 7, 4, 8, 7, 6]
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-const PAST_JOURNALS = [
-  "Felt pretty average today.",
-  "A bit anxious about work.",
-  "Had a great walk outside!",
-  "Struggled to get out of bed.",
-  "Productive and energetic.",
-  "Relaxed weekend vibes.",
-  "Preparing for the week."
-]
-
 export default function MentalHealthPage() {
   const { profile } = useAuth()
-  const [loading, setLoading] = React.useState(false)
-  const [result, setResult] = React.useState<{ 
-    crisis_detected: boolean; 
-    assessment?: {
-      clinical_notes?: string;
-      cbt_recommendations?: string[];
-      disclaimer?: string;
-    };
-    recommendation?: string; 
-    resources?: string[] 
-  } | null>(null)
+  const { setPageContext, open } = useAIPanel()
+  const { data, loading, error, refetch, supabase } = useMentalHealthData(profile?.id)
+  
   const [selectedMood, setSelectedMood] = React.useState(5)
   const [notes, setNotes] = React.useState("")
-  const [sessionDone, setSessionDone] = React.useState(false)
   const [isRecording, setIsRecording] = React.useState(false)
-  const [chatLog, setChatLog] = React.useState<{role: 'user'|'ai', text: string}[]>([])
-  const [replyText, setReplyText] = React.useState("")
-  const chatRef = React.useRef<HTMLDivElement>(null)
+  const [saving, setSaving] = React.useState(false)
 
-  // Auto-scroll chat
+  // Inject context to AI Panel when data changes
   React.useEffect(() => {
-    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [chatLog])
+    if (data) {
+      setPageContext({
+        avgMoodScore7Days: data.avgMood,
+        recentMoodLogs: data.trendChart.filter(t => t.score !== null).map(t => `${t.dayLabel}: ${t.score}/10 - ${t.notes || "No notes"}`),
+        activeStreak: data.streak
+      })
+    }
+  }, [data, setPageContext])
 
   const handleMicClick = () => {
     if (isRecording) {
       setIsRecording(false)
-      // Fake transcription
+      // Fake transcription for demo purposes
       setNotes(prev => prev + (prev ? " " : "") + "I've been feeling really overwhelmed with work lately and finding it hard to sleep.")
     } else {
       setIsRecording(true)
@@ -65,47 +50,63 @@ export default function MentalHealthPage() {
   }
 
   const startSession = async () => {
-    if (!notes.trim()) setNotes("Feeling okay today, just checking in.")
-    setLoading(true)
-    setResult(null)
-    setChatLog([{ role: 'user', text: `Mood: ${selectedMood}/10. ${notes || "Just checking in."}` }])
-    
+    setSaving(true)
+    const finalNotes = notes.trim() || "Just checking in."
+    const isCrisis = selectedMood <= 3 || finalNotes.toLowerCase().includes("overwhelmed") || finalNotes.toLowerCase().includes("hopeless")
+
     try {
-      const res = await fetch("/api/mental-health", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patient_id: profile?.fhir_patient_id ?? "592903",
+      // 1. Save to database
+      if (profile?.id) {
+        await supabase.from("mental_health_sessions").insert({
+          patient_id: profile.id,
           mood_score: selectedMood,
-          session_notes: notes,
-        }),
-      })
-      const data = await res.json()
-      if (!data.error) {
-        setResult(data)
-        // Correctly extract the AI recommendation from the MCP assessment object
-        const clinicalText = data.assessment?.clinical_notes || data.assessment?.disclaimer || "Assessment complete. Please review the recommendations below.";
-        setChatLog(prev => [...prev, { role: 'ai', text: clinicalText }])
-        setSessionDone(true)
+          session_notes: finalNotes,
+          crisis_flagged: isCrisis
+        })
+        refetch()
       }
+
+      // 2. Open the AI Assistant with a structured prompt
+      open(`I would like to start a mental health check-in session. My current mood score is ${selectedMood}/10. Notes: ${finalNotes}. Please provide empathetic support and CBT strategies if applicable.`)
+      
+      // 3. Reset form
+      setNotes("")
+      setSelectedMood(5)
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  const handleReply = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!replyText.trim()) return
-    setChatLog(prev => [...prev, { role: 'user', text: replyText }])
-    setReplyText("")
-    
-    // Fake AI conversational reply
-    setTimeout(() => {
-      setChatLog(prev => [...prev, { role: 'ai', text: "I understand your concern. Based on your FHIR records and our current session, I recommend focusing on the coping strategies listed in your resources. Would you like to schedule a follow-up with your care coordinator?" }])
-    }, 1500)
+  if (error) {
+    return (
+      <div className="p-6 rounded-2xl bg-red/10 border border-red/20 text-red flex items-center justify-between">
+        <div>
+          <h3 className="font-bold">Failed to load mental health data</h3>
+          <p className="text-sm mt-1">{error}</p>
+        </div>
+        <Button variant="secondary" onClick={() => refetch()}>Try Again</Button>
+      </div>
+    )
   }
 
-  const avgMood = Math.round(WEEK_MOODS.reduce((a, b) => a + b, 0) / WEEK_MOODS.length)
+  if (loading || !data) {
+    return (
+      <div className="flex flex-col lg:flex-row gap-8 animate-in fade-in duration-500 pb-20">
+        <div className="flex-1 space-y-8">
+          <Skeleton className="h-20 w-64 rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-2xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[1,2,3].map(i => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
+          </div>
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
+        </div>
+        <div className="lg:w-80 space-y-6">
+          <Skeleton className="h-64 w-full rounded-2xl" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 animate-in fade-in duration-500 pb-20">
@@ -116,21 +117,23 @@ export default function MentalHealthPage() {
         </div>
 
         {/* AI Insight */}
-        <div className="p-4 rounded-2xl bg-surface-2 border border-brand-lime/20 flex items-start gap-3 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-linear-to-r from-brand-lime/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <Sparkles className="w-5 h-5 text-brand-lime shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-brand-lime">AI Insight</p>
-            <p className="text-sm text-text-light mt-1">Your mood historically dips on Thursdays. We&apos;ve prepared a 5-minute breathing exercise in your resources section to help you preemptively decompress today.</p>
+        {data.avgMood > 0 && data.avgMood < 6 && (
+          <div className="p-4 rounded-2xl bg-surface-2 border border-brand-lime/20 flex items-start gap-3 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-linear-to-r from-brand-lime/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Sparkles className="w-5 h-5 text-brand-lime shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-brand-lime">AI Insight</p>
+              <p className="text-sm text-text-light mt-1">We noticed your mood has been lower than usual this week. Consider exploring the breathing exercises in the AI Assistant or scheduling a quick consultation.</p>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Mood trend */}
+        {/* Mood trend summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { label: "Avg Mood (7d)", value: `${avgMood}/10`, icon: <TrendingUp className="w-4 h-4" />, color: "text-teal" },
-            { label: "Sessions This Week", value: "3", icon: <Brain className="w-4 h-4" />, color: "text-purple" },
-            { label: "Streak", value: "5 days", icon: <Heart className="w-4 h-4" />, color: "text-brand-lime" },
+            { label: "Avg Mood (7d)", value: data.avgMood > 0 ? `${data.avgMood}/10` : "—", icon: <TrendingUp className="w-4 h-4" />, color: "text-teal" },
+            { label: "Sessions This Week", value: data.sessionsThisWeek.toString(), icon: <Brain className="w-4 h-4" />, color: "text-purple" },
+            { label: "Streak", value: `${data.streak} days`, icon: <Heart className="w-4 h-4" />, color: "text-brand-lime" },
           ].map(s => (
             <Card key={s.label} className="glass p-5 flex items-center gap-4 transition-all hover:-translate-y-1 hover:shadow-lg">
               <div className={cn("p-2 rounded-xl bg-surface-2", s.color)}>{s.icon}</div>
@@ -148,180 +151,94 @@ export default function MentalHealthPage() {
             <h2 className="text-lg font-display font-semibold">7-Day Mood Trend</h2>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-3 h-32 pt-6">
-              {WEEK_MOODS.map((v, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-10 w-32 bg-surface-2 border border-border-base rounded-xl p-2 shadow-xl translate-y-2 group-hover:translate-y-0">
-                    <p className="text-xs font-bold text-center mb-1">Score: {v}/10</p>
-                    <p className="text-[10px] text-text-muted text-center leading-tight">&quot;{PAST_JOURNALS[i]}&quot;</p>
+            {data.trendChart.every(t => t.score === null) ? (
+              <p className="text-sm text-text-muted text-center py-8">No mood data recorded in the last 7 days.</p>
+            ) : (
+              <div className="flex items-end gap-3 h-32 pt-6">
+                {data.trendChart.map((t, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
+                    {/* Tooltip */}
+                    {t.score !== null && (
+                      <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-10 w-40 bg-surface-2 border border-border-base rounded-xl p-3 shadow-xl translate-y-2 group-hover:translate-y-0">
+                        <p className="text-xs font-bold text-center mb-1">Score: {t.score}/10</p>
+                        {t.notes && <p className="text-[10px] text-text-muted text-center leading-tight line-clamp-3">&quot;{t.notes}&quot;</p>}
+                      </div>
+                    )}
+                    
+                    <div
+                      className={cn(
+                        "w-full rounded-t-lg transition-all duration-500", 
+                        t.score === null ? "bg-transparent" :
+                        t.score >= 7 ? "bg-teal/60 group-hover:bg-teal" : 
+                        t.score >= 5 ? "bg-brand-lime/40 group-hover:bg-brand-lime" : 
+                        "bg-amber/40 group-hover:bg-amber"
+                      )}
+                      style={{ height: t.score !== null ? `${(t.score / 10) * 100}px` : '4px', opacity: t.score === null ? 0.1 : 1 }}
+                    />
+                    <span className="text-[10px] font-mono font-bold text-text-muted">{t.dayLabel}</span>
                   </div>
-                  
-                  <div
-                    className={cn("w-full rounded-t-lg transition-all duration-500", v >= 7 ? "bg-teal/60 group-hover:bg-teal" : v >= 5 ? "bg-brand-lime/40 group-hover:bg-brand-lime" : "bg-amber/40 group-hover:bg-amber")}
-                    style={{ height: `${(v / 10) * 100}px` }}
-                  />
-                  <span className="text-[10px] font-mono font-bold text-text-muted">{DAYS[i]}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Session form or Chat UI */}
-        <Card className={cn("glass transition-all duration-500 relative overflow-hidden", sessionDone && result?.crisis_detected ? "border-red shadow-[0_0_30px_rgba(255,0,0,0.15)]" : "border-purple/20")}>
-          {sessionDone && result?.crisis_detected && (
-            <div className="absolute inset-0 bg-red/5 pointer-events-none animate-pulse" />
-          )}
-          
+        {/* Intake Form */}
+        <Card className="glass border-purple/20 relative overflow-hidden">
           <CardHeader className="pb-4 border-b border-border-base bg-surface-2/30 relative z-10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {sessionDone && result?.crisis_detected ? (
-                  <div className="w-10 h-10 rounded-xl bg-red/20 flex items-center justify-center animate-pulse">
-                    <AlertCircle className="w-6 h-6 text-red" />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-xl bg-purple/20 flex items-center justify-center">
-                    <Brain className="w-6 h-6 text-purple" />
-                  </div>
-                )}
-                <div>
-                  <h2 className="text-lg font-display font-semibold">
-                    {sessionDone ? (result?.crisis_detected ? "Crisis Protocol Activated" : "Active Therapy Session") : "Start AI Support Session"}
-                  </h2>
-                  <p className="text-xs text-text-muted">
-                    {sessionDone ? "Curaiva AI is providing real-time cognitive support" : "AI-driven emotional assessment & support"}
-                  </p>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple/20 flex items-center justify-center">
+                <Brain className="w-6 h-6 text-purple" />
               </div>
-              {sessionDone && (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-teal/10 border border-teal/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-                  <span className="text-[10px] font-bold text-teal uppercase tracking-wider">Live Analysis</span>
-                </div>
-              )}
+              <div>
+                <h2 className="text-lg font-display font-semibold">Start AI Support Session</h2>
+                <p className="text-xs text-text-muted">Log your mood and chat with Curaiva AI for emotional support</p>
+              </div>
             </div>
           </CardHeader>
           
           <CardContent className="space-y-6 relative z-10 pt-6">
-            {sessionDone && result ? (
-              <div className="flex flex-col h-[500px] bg-surface-2/50 rounded-2xl border border-border-base overflow-hidden">
-                {/* Chat History */}
-                <div ref={chatRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {result.crisis_detected && (
-                    <div className="p-4 mb-4 rounded-xl bg-red/10 border border-red/20 flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-4">
-                      <AlertCircle className="w-8 h-8 text-red mb-2" />
-                      <p className="font-bold text-red text-lg">Immediate Escalation Required</p>
-                      <p className="text-sm text-red/80 mt-1 mb-4">We have detected signs of crisis. Please connect with emergency services immediately.</p>
-                      <div className="flex gap-3 w-full">
-                        <Button className="flex-1 bg-red text-white hover:bg-red/90 font-bold h-12 shadow-lg">
-                          <PhoneCall className="w-4 h-4 mr-2" /> Call 911
-                        </Button>
-                        <Button variant="secondary" className="flex-1 font-bold h-12 border-red/20 text-red hover:bg-red/5">
-                          <AlertCircle className="w-4 h-4 mr-2" /> Notify Care Team
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {chatLog.map((msg, idx) => (
-                    <div key={idx} className={cn(
-                      "max-w-[85%] rounded-2xl p-4 text-sm animate-in fade-in slide-in-from-bottom-2 shadow-sm",
-                      msg.role === "ai" 
-                        ? "bg-surface-2 border border-purple/20 text-text-light mr-auto rounded-tl-sm" 
-                        : "bg-purple text-white ml-auto rounded-tr-sm font-medium"
+            <div className="space-y-4 mb-4">
+              <p className="text-sm font-medium text-text-light">How are you feeling right now?</p>
+              <div className="flex gap-3">
+                {MOODS.map(m => (
+                  <button key={m.score} onClick={() => setSelectedMood(m.score)}
+                    className={cn("flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-300",
+                      selectedMood === m.score ? "border-purple bg-purple/10 scale-105 shadow-lg" : "border-border-base bg-surface hover:bg-surface-2 hover:scale-105"
                     )}>
-                      {msg.role === "ai" && (
-                        <div className="flex items-center gap-1.5 mb-2 opacity-70">
-                          <Activity className="w-3 h-3 text-purple" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple">Clinical AI Response</span>
-                        </div>
-                      )}
-                      {msg.text}
-                    </div>
-                  ))}
-                  
-                  {result.assessment?.cbt_recommendations && result.assessment.cbt_recommendations.length > 0 && !result.crisis_detected && (
-                    <div className="max-w-[85%] mr-auto bg-brand-lime/10 border border-brand-lime/20 rounded-2xl p-4 rounded-tl-sm animate-in fade-in slide-in-from-left-4">
-                      <p className="text-xs font-mono font-bold text-brand-lime uppercase mb-2">Coping Strategies</p>
-                      <ul className="space-y-2">
-                        {result.assessment.cbt_recommendations.map((r: string, i: number) => (
-                          <li key={i} className="text-sm text-text-light flex items-start gap-2">
-                            <span className="text-brand-lime mt-0.5">→</span> {r}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-
-                {/* Chat Input */}
-                <div className="p-4 border-t border-border-base bg-surface">
-                  <form onSubmit={handleReply} className="relative flex gap-2">
-                    <input 
-                      type="text" 
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Type your response..."
-                      className="flex-1 h-12 pl-4 pr-4 rounded-xl bg-surface-2 border border-border-base focus:border-purple outline-none text-sm transition-all"
-                    />
-                    <Button type="submit" size="icon" className="h-12 w-12 bg-purple text-white hover:bg-purple/90 shrink-0 rounded-xl">
-                      <Send className="w-5 h-5" />
-                    </Button>
-                  </form>
-                  <div className="mt-3 flex justify-center">
-                    <Button variant="ghost" size="sm" onClick={() => { setSessionDone(false); setResult(null); setNotes(""); setChatLog([]) }} className="text-xs text-text-muted">
-                      End Session
-                    </Button>
-                  </div>
-                </div>
+                    <span className="text-3xl">{m.emoji}</span>
+                    <span className={cn("text-xs font-mono font-bold", selectedMood === m.score ? "text-purple" : "text-text-muted")}>
+                      {m.score}/10
+                    </span>
+                  </button>
+                ))}
               </div>
-            ) : (
-              <div className="animate-in fade-in slide-in-from-bottom-4">
-                <div className="space-y-4 mb-8">
-                  <p className="text-sm font-medium text-text-light">How are you feeling right now?</p>
-                  <div className="flex gap-3">
-                    {MOODS.map(m => (
-                      <button key={m.score} onClick={() => setSelectedMood(m.score)}
-                        className={cn("flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-300",
-                          selectedMood === m.score ? "border-purple bg-purple/10 scale-105 shadow-lg" : "border-border-base bg-surface hover:bg-surface-2 hover:scale-105"
-                        )}>
-                        <span className="text-3xl">{m.emoji}</span>
-                        <span className={cn("text-xs font-mono font-bold", selectedMood === m.score ? "text-purple" : "text-text-muted")}>
-                          {m.score}/10
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-3 mb-8">
-                  <label className="text-sm font-medium text-text-light">What&apos;s on your mind? <span className="text-text-muted font-normal">(optional)</span></label>
-                  <div className="relative group">
-                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
-                      placeholder="Share what you're experiencing today..."
-                      className="w-full p-4 pr-16 rounded-2xl bg-surface-2 border border-border-base focus:border-purple outline-none resize-none text-sm text-text-light placeholder:text-text-muted/50 transition-all shadow-inner"
-                    />
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={handleMicClick}
-                      className={cn("absolute bottom-3 right-3 h-10 w-10 rounded-xl transition-all", 
-                        isRecording ? "bg-red/10 text-red hover:bg-red/20" : "bg-surface border border-border-base text-text-muted hover:text-purple"
-                      )}
-                    >
-                      {isRecording ? <div className="flex items-center gap-1"><span className="w-1 h-3 bg-red rounded-full animate-pulse" /><span className="w-1 h-4 bg-red rounded-full animate-pulse delay-75" /><span className="w-1 h-3 bg-red rounded-full animate-pulse delay-150" /></div> : <Mic className="w-5 h-5" />}
-                    </Button>
-                  </div>
-                  {isRecording && <p className="text-xs text-red animate-pulse text-right font-medium">Listening...</p>}
-                </div>
-                
-                <Button onClick={startSession} disabled={loading || isRecording} className="w-full h-14 rounded-2xl font-bold text-lg gap-2 bg-purple hover:bg-purple/90 text-white shadow-xl transition-all active:scale-95">
-                  {loading ? <><Spinner size="sm" className="border-white" /> Connecting to AI Therapist…</> : <><Brain className="w-5 h-5" /> Begin CBT Session</>}
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              <label className="text-sm font-medium text-text-light">What&apos;s on your mind? <span className="text-text-muted font-normal">(optional)</span></label>
+              <div className="relative group">
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
+                  placeholder="Share what you're experiencing today..."
+                  className="w-full p-4 pr-16 rounded-2xl bg-surface-2 border border-border-base focus:border-purple outline-none resize-none text-sm text-text-light placeholder:text-text-muted/50 transition-all shadow-inner"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleMicClick}
+                  className={cn("absolute bottom-3 right-3 h-10 w-10 rounded-xl transition-all", 
+                    isRecording ? "bg-red/10 text-red hover:bg-red/20" : "bg-surface border border-border-base text-text-muted hover:text-purple"
+                  )}
+                >
+                  {isRecording ? <div className="flex items-center gap-1"><span className="w-1 h-3 bg-red rounded-full animate-pulse" /><span className="w-1 h-4 bg-red rounded-full animate-pulse delay-75" /><span className="w-1 h-3 bg-red rounded-full animate-pulse delay-150" /></div> : <Mic className="w-5 h-5" />}
                 </Button>
               </div>
-            )}
+              {isRecording && <p className="text-xs text-red animate-pulse text-right font-medium">Listening...</p>}
+            </div>
+            
+            <Button onClick={startSession} disabled={saving || isRecording} className="w-full h-14 rounded-2xl font-bold text-lg gap-2 bg-purple hover:bg-purple/90 text-white shadow-xl transition-all active:scale-95">
+              {saving ? <><Spinner size="sm" className="border-white" /> Connecting to AI Therapist…</> : <><Brain className="w-5 h-5" /> Begin CBT Session</>}
+            </Button>
           </CardContent>
         </Card>
 
@@ -345,7 +262,9 @@ export default function MentalHealthPage() {
             </div>
             <div>
               <p className="text-[10px] text-text-muted font-mono uppercase">Last Assessment</p>
-              <p className="text-sm font-bold text-text-white">2 days ago · Stable</p>
+              <p className="text-sm font-bold text-text-white">
+                {data.logs.length > 0 ? `${new Date(data.logs[0].dateStr).toLocaleDateString()} · ${data.logs[0].score >= 6 ? 'Stable' : 'Monitored'}` : "No recent data"}
+              </p>
             </div>
             <div className="pt-2 border-t border-border-base">
               <p className="text-[10px] text-text-muted font-mono uppercase mb-2">Connected Resources</p>
@@ -357,10 +276,6 @@ export default function MentalHealthPage() {
                 <div className="flex items-center gap-2 text-xs text-text-light hover:text-brand-lime cursor-pointer transition-colors">
                   <div className="w-1 h-1 rounded-full bg-brand-lime" />
                   Local Community Clinic
-                </div>
-                <div className="flex items-center gap-2 text-xs text-text-light hover:text-brand-lime cursor-pointer transition-colors">
-                  <div className="w-1 h-1 rounded-full bg-brand-lime" />
-                  Medication Tracker
                 </div>
               </div>
             </div>
@@ -375,7 +290,7 @@ export default function MentalHealthPage() {
           </div>
           <CardContent className="p-4">
             <p className="text-xs text-text-muted leading-relaxed">
-              Curaiva AI uses Natural Language Processing to detect emotional markers and cognitive distortions in session notes, cross-referencing with longitudinal FHIR history.
+              When you begin a session, Curaiva AI analyzes your mood and notes, instantly opening the Assistant Panel to provide empathetic support and CBT strategies based on your historical patterns.
             </p>
           </CardContent>
         </Card>
