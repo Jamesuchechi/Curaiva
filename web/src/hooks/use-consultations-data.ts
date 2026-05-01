@@ -50,7 +50,7 @@ export function useConsultationsData(userId: string | undefined) {
     try {
       const { data, error: fetchError } = await supabase
         .from("consultations")
-        .select("id, status, severity, created_at, doctor_id, ai_summary")
+        .select("id, status, priority, created_at, doctor_id, ai_summary")
         .eq("patient_id", userId)
         .order("created_at", { ascending: false })
 
@@ -59,9 +59,9 @@ export function useConsultationsData(userId: string | undefined) {
       const formatted = (data ?? []).map(c => ({
         id: c.id,
         doctor_id: c.doctor_id,
-        doctor_name: "Clinical Provider", // Fallback since join is failing
+        doctor_name: "Clinical Provider",
         status: c.status as "open" | "active" | "resolved",
-        severity: c.severity as "low" | "moderate" | "high" | "critical",
+        severity: (c.priority || "moderate") as "low" | "moderate" | "high" | "critical",
         created_at: c.created_at,
         snippet: c.ai_summary || "No summary available."
       }))

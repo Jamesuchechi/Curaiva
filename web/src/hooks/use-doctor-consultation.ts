@@ -12,6 +12,14 @@ export interface PatientHistoryItem {
   ai_summary: string
 }
 
+interface RawConsultation {
+  id: string
+  created_at: string
+  status: string
+  priority: string
+  ai_summary: string
+}
+
 export function useDoctorConsultation(consultationId: string | null, patientId: string | null) {
   const [messages, setMessages] = React.useState<Message[]>([])
   const [history, setHistory] = React.useState<PatientHistoryItem[]>([])
@@ -66,12 +74,20 @@ export function useDoctorConsultation(consultationId: string | null, patientId: 
       // Fetch past consultations (excluding the current one)
       const { data } = await supabase
         .from("consultations")
-        .select("id, created_at, status, severity, ai_summary")
+        .select("id, created_at, status, priority, ai_summary")
         .eq("patient_id", patientId)
         .order("created_at", { ascending: false })
         .limit(10)
 
-      if (data) setHistory(data.filter(c => c.id !== consultationId))
+      if (data) {
+        setHistory((data as unknown as RawConsultation[]).map(c => ({
+          id: c.id,
+          created_at: c.created_at,
+          status: c.status,
+          severity: c.priority || "moderate",
+          ai_summary: c.ai_summary
+        })).filter(c => c.id !== consultationId))
+      }
     }
 
     const timer = setTimeout(() => fetchHistory(), 0)

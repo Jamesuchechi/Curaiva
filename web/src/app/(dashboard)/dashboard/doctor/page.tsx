@@ -126,7 +126,7 @@ export default function DoctorDashboard() {
     const fetchInboxAndMetrics = async () => {
       const { data: consultations, error } = await supabase
         .from("consultations")
-        .select("id, patient_id, status, severity, ai_summary, created_at, profiles!patient_id(id, full_name, fhir_patient_id)")
+        .select("id, patient_id, status, priority, ai_summary, created_at, profiles!patient_id(id, full_name, fhir_patient_id)")
         .order("created_at", { ascending: false })
         .limit(20)
 
@@ -136,7 +136,7 @@ export default function DoctorDashboard() {
           return {
             id: String(c.id),
             name: String(pat?.full_name ?? "Unknown Patient"),
-            severity: (c.severity as "critical" | "moderate" | "low") || "moderate",
+            severity: (c.priority as "critical" | "moderate" | "low") || "moderate",
             status: (c.status as "open" | "active" | "resolved") ?? "open",
             time: relativeTime(String(c.created_at)),
             snippet: String(c.ai_summary ?? "Consultation request received."),
