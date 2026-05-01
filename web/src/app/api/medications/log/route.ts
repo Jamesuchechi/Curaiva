@@ -34,32 +34,53 @@ export async function PATCH(req: Request) {
     const { medication_id, log_id } = await req.json();
     const now = new Date().toISOString();
 
-    interface MedicationLogPayload {
-      id?: string;
+    interface LogPayload {
       patient_id: string;
       medication_id: string;
-      scheduled_at: string;
       status: string;
+      scheduled_at?: string;
+      id?: string;
     }
 
-    const payload: MedicationLogPayload = {
+    const payload: LogPayload = {
       patient_id: user.id,
       medication_id,
-      scheduled_at: now,
       status: "taken",
+      scheduled_at: now
     };
 
-    if (log_id) payload.id = log_id;
+    // Only include ID if it's a valid truthy value
+    if (log_id && log_id !== "undefined") {
+      payload.id = log_id;
+    }
 
-    // Upsert a medication log record marking this dose as taken
-    const { error } = await supabase.from("medication_logs").upsert(payload);
+    // Attempt the upsert
+    const { data, error } = await supabase
+      .from("medication_logs")
+      .upsert(payload)
+      .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase Error Details:", error);
+      // If scheduled_at failed, try one more time without it
+      if (error.message?.includes("column \"scheduled_at\" does not exist")) {
+        const rest = { ...payload };
+        delete rest.scheduled_at;
+        const { error: retryError } = await supabase.from("medication_logs").upsert(rest);
+        if (retryError) throw retryError;
+      } else {
+        throw error;
+      }
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data });
   } catch (error: unknown) {
     console.error("Medication Log API Error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const err = error as { message?: string; details?: string; hint?: string };
+    return NextResponse.json({ 
+      error: err.message || "Unknown error",
+      details: err.details || null,
+      hint: err.hint || null
+    }, { status: 500 });
   }
 }
