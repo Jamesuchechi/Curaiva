@@ -32,7 +32,23 @@ export default function CHWQueuePage() {
         if (data.error) throw new Error(data.error)
         
         if (active) {
-          setQueue(Array.isArray(data) ? data : (data.queue ?? []))
+          const rawQueue = data.priority_queue?.queue || []
+          const mapped: QueueItem[] = rawQueue.map((item: { 
+            patient_id: string; 
+            patient_name: string; 
+            priority_score: number; 
+            primary_concern: string; 
+            priority_tier: string; 
+          }) => ({
+            id: item.patient_id,
+            name: item.patient_name,
+            score: item.priority_score,
+            reason: item.primary_concern,
+            location: "Community Zone A",
+            status: item.priority_tier === "critical" ? "critical" : 
+                    item.priority_tier === "high" ? "urgent" : "stable"
+          }))
+          setQueue(mapped)
         }
       } catch {
         if (active) {

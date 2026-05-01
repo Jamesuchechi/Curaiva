@@ -23,11 +23,33 @@ export async function POST(req: Request) {
     }
 
     const { patient_ids } = await req.json();
-
     const { callMcpTool } = await import("@/lib/mcp-client");
+
+    let targetIds: string[] = patient_ids;
+
+    // If no IDs provided, discover some from FHIR first
+    if (!targetIds || targetIds.length === 0) {
+      const discoveryResult = await callMcpTool(
+        "list_fhir_patients",
+        { count: 10 },
+        "https://hapi.fhir.org/baseR4"
+      );
+      if (discoveryResult.patients) {
+        targetIds = discoveryResult.patients.map((p: { id: string }) => p.id);
+      }
+    }
+
+    // Fallback if discovery failed or empty
+    if (!targetIds || targetIds.length === 0) {
+      targetIds = ["592903", "12724", "88234", "45611"];
+    }
+
     const toolResult = await callMcpTool(
       "generate_chw_priority_queue",
-      { patient_ids: patient_ids || ["592903", "12724", "88234", "45611"] },
+      { 
+        patient_ids: targetIds,
+        chw_id: user.id
+      },
       "https://hapi.fhir.org/baseR4"
     );
 
