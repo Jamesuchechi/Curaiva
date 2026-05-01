@@ -8,22 +8,26 @@ import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase"
 import { Spinner } from "@/components/ui/loading"
 import { useRouter } from "next/navigation"
+import { useGlobalDiscoveryData } from "@/hooks/use-global-discovery-data"
 
 interface PatientItem {
   id: string
-  consultationId: string
+  consultationId?: string
   name: string
   age: number
   condition: string
   severity: "critical" | "moderate" | "low"
   lastSeen: string
+  isGlobal?: boolean
 }
 
 export default function DoctorPatientsPage() {
   const router = useRouter()
+  const [activeTab, setActiveTab] = React.useState<"assigned" | "global">("assigned")
   const [search, setSearch] = React.useState("")
   const [filter, setFilter] = React.useState<"all" | "critical" | "moderate" | "low">("all")
   const [patients, setPatients] = React.useState<PatientItem[]>([])
+  const { patients: globalPatients, loading: globalLoading, fetchGlobalData } = useGlobalDiscoveryData()
   const [loading, setLoading] = React.useState(true)
   const supabase = createClient()
 
@@ -53,7 +57,7 @@ export default function DoctorPatientsPage() {
               id: fhirId,
               consultationId: c.id,
               name: pat?.full_name || "Unknown Patient",
-              age: 41, // Not provided in current schema, using fallback
+              age: 41, 
               condition: c.ai_summary || "Consultation record",
               severity: (c.priority as "critical" | "moderate" | "low") || "moderate",
               lastSeen: new Date(c.created_at).toLocaleDateString(),
@@ -67,17 +71,63 @@ export default function DoctorPatientsPage() {
     fetchPatients()
   }, [supabase])
 
-  const filtered = patients.filter(p => {
+  React.useEffect(() => {
+    if (activeTab === "global" && globalPatients.length === 0) {
+      fetchGlobalData()
+    }
+  }, [activeTab, globalPatients.length, fetchGlobalData])
+
+  const displayData = activeTab === "assigned" 
+    ? patients 
+    : globalPatients.map(p => ({
+        id: p.id,
+        name: p.name,
+        age: 2026 - parseInt(p.birthDate?.split("-")[0] || "1980"),
+        condition: "FHIR Record Discovery",
+        severity: "moderate" as const,
+        lastSeen: "Global FHIR",
+        isGlobal: true,
+        consultationId: undefined
+      } as PatientItem))
+
+  const filtered = displayData.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.condition.toLowerCase().includes(search.toLowerCase())
     const matchFilter = filter === "all" || p.severity === filter
     return matchSearch && matchFilter
   })
 
+  const isLoading = activeTab === "assigned" ? loading : globalLoading
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-text-white">Patient Registry</h1>
-        <p className="text-text-muted mt-1">Your assigned patients with AI-generated risk profiles</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-text-white">Patient Registry</h1>
+          <p className="text-text-muted mt-1">
+            {activeTab === "assigned" ? "Your assigned patients with AI risk profiles" : "Global FHIR R4 Patient Discovery"}
+          </p>
+        </div>
+        
+        <div className="flex p-1 bg-surface-2 rounded-xl border border-border-base">
+          <button 
+            onClick={() => setActiveTab("assigned")}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+              activeTab === "assigned" ? "bg-surface shadow-sm text-text-white" : "text-text-muted hover:text-text-white"
+            )}
+          >
+            Assigned
+          </button>
+          <button 
+            onClick={() => setActiveTab("global")}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+              activeTab === "global" ? "bg-surface shadow-sm text-text-white" : "text-text-muted hover:text-text-white"
+            )}
+          >
+            Global Discovery
+          </button>
+        </div>
       </div>
 
       {/* Search + filter */}
@@ -103,7 +153,7 @@ export default function DoctorPatientsPage() {
 
       <Card className="glass border-brand-lime/20 overflow-hidden min-h-[200px]">
         <CardContent className="p-0 divide-y divide-border-base/50">
-          {loading ? (
+          {isLoading ? (
              <div className="p-12 flex justify-center"><Spinner size="md" className="border-brand-lime" /></div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center text-text-muted">No patients match your search.</div>
@@ -111,7 +161,13 @@ export default function DoctorPatientsPage() {
             filtered.map(p => (
               <div 
                 key={p.id} 
-                onClick={() => router.push(`/dashboard/doctor?consultationId=${p.consultationId}`)}
+                onClick={() => {
+                  if (p.consultationId) {
+                    router.push(`/dashboard/doctor?consultationId=${p.consultationId}`)
+                  } else {
+                    alert(`Starting consultation for ${p.name} (Discovered via FHIR)`)
+                  }
+                }}
                 className="flex items-center gap-5 p-5 hover:bg-surface-2 transition-all group cursor-pointer"
               >
               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-bold text-lg",

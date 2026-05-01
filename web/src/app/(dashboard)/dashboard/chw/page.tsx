@@ -32,6 +32,7 @@ import { useAuth } from "@/components/providers/auth-provider"
 import { ToolTrace, type TraceEntry } from "@/components/ui/tool-trace"
 import { createClient } from "@/lib/supabase"
 import type { QueueItem } from "@/types"
+import { GlobalPatient, useGlobalDiscoveryData } from "@/hooks/use-global-discovery-data"
 
 /* ── Patient Drawer ── */
 interface DrawerProps {
@@ -298,7 +299,8 @@ export default function CHWDashboard() {
   const [trace, setTrace] = React.useState<TraceEntry[]>([])
   const [drawerPatient, setDrawerPatient] = React.useState<QueueItem | null>(null)
   const [sort, setSort] = React.useState<"score" | "name" | "contact">("score")
-  const [activeTab, setActiveTab] = React.useState<"queue" | "route" | "vitals">("queue")
+  const [activeTab, setActiveTab] = React.useState<"queue" | "route" | "vitals" | "community">("queue")
+  const { patients: globalPatients, loading: globalLoading, fetchGlobalData } = useGlobalDiscoveryData()
   
   // Vitals Form State
   interface VitalsEntry {
@@ -402,6 +404,12 @@ export default function CHWDashboard() {
     }
   }, [refreshKey])
 
+  React.useEffect(() => {
+    if (activeTab === "community" && globalPatients.length === 0) {
+      fetchGlobalData()
+    }
+  }, [activeTab, globalPatients.length, fetchGlobalData])
+
   /* ── Supabase Realtime: new critical consultations become alerts ── */
   React.useEffect(() => {
     const channel = supabase
@@ -452,6 +460,7 @@ export default function CHWDashboard() {
           { id: "queue", label: "Queue", icon: Users },
           { id: "route", label: "Task Route", icon: MapPin },
           { id: "vitals", label: "Rapid Vitals", icon: Pill },
+          { id: "community", label: "Discovery", icon: Activity },
         ].map(tab => (
           <button
             key={tab.id}
@@ -939,6 +948,59 @@ export default function CHWDashboard() {
                  </Card>
               </div>
            </div>
+        </div>
+      )}
+      {activeTab === "community" && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+           <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-display font-bold">Community Registry</h3>
+                <p className="text-text-muted">Discover and reach out to community members via FHIR R4</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => fetchGlobalData()} disabled={globalLoading} className="text-xs gap-2">
+                  <RefreshCcw className={cn("w-3 h-3", globalLoading && "animate-spin")} />
+                  Refresh Registry
+                </Button>
+              </div>
+           </div>
+
+           <Card className="glass border-brand-lime/20 overflow-hidden min-h-[400px]">
+             <CardContent className="p-0">
+               {globalLoading ? (
+                 <div className="p-20 flex flex-col items-center justify-center text-center space-y-4">
+                   <Spinner size="lg" className="border-brand-lime" />
+                   <p className="text-sm font-mono text-brand-lime animate-pulse">QUERYING HAPI FHIR DIRECTORY...</p>
+                 </div>
+               ) : globalPatients.length === 0 ? (
+                 <div className="p-20 text-center text-text-muted italic">No community members found in this registry.</div>
+               ) : (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-x divide-y divide-border-base/30">
+                    {globalPatients.map((p: GlobalPatient) => (
+                      <div key={p.id} className="p-6 hover:bg-surface-2 transition-all group">
+                         <div className="flex items-start justify-between mb-4">
+                            <div className="w-12 h-12 rounded-2xl bg-surface-3 flex items-center justify-center text-xl font-bold text-brand-lime border border-border-base group-hover:border-brand-lime transition-all">
+                              {p.name[0]}
+                            </div>
+                            <Badge variant="stable" className="opacity-0 group-hover:opacity-100 transition-opacity">FHIR R4</Badge>
+                         </div>
+                         <h4 className="font-bold text-text-white text-lg mb-1">{p.name}</h4>
+                         <p className="text-xs text-text-muted font-mono mb-4 uppercase tracking-tighter">ID: {p.id} · {p.gender}</p>
+                         
+                         <div className="flex items-center gap-2 mt-auto">
+                            <Button size="sm" className="bg-brand-lime text-bg font-bold rounded-xl flex-1 h-9" onClick={() => alert(`Starting outreach visit for ${p.name}`)}>
+                              Visit
+                            </Button>
+                            <Button size="icon" variant="ghost" className="rounded-xl hover:bg-brand-lime/10 hover:text-brand-lime h-9 w-9">
+                              <MessageSquare className="w-4 h-4" />
+                            </Button>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+               )}
+             </CardContent>
+           </Card>
         </div>
       )}
 

@@ -146,6 +146,20 @@ class FhirClient {
     return bundle.entry?.map(e => e.resource) ?? [];
   }
 
+  async getPatients(count: number = 20): Promise<FhirPatient[]> {
+    const bundle = await this.fetch<{ entry?: Array<{ resource: FhirPatient }> }>(
+      `Patient?_sort=-_lastUpdated&_count=${count}`
+    );
+    return bundle.entry?.map(e => e.resource) ?? [];
+  }
+
+  async getPractitioners(count: number = 20): Promise<any[]> {
+    const bundle = await this.fetch<{ entry?: Array<{ resource: any }> }>(
+      `Practitioner?_sort=-_lastUpdated&_count=${count}`
+    );
+    return bundle.entry?.map(e => e.resource) ?? [];
+  }
+
   async createGoal(patientId: string, description: string, category: string, dueDate: string): Promise<Record<string, any>> {
     const goal = {
       resourceType: "Goal",
@@ -997,6 +1011,81 @@ server.tool(
   }
 );
 
+// ══════════════════════════════════════════════════════════════════════════════
+// TOOL 8: list_fhir_patients
+// ══════════════════════════════════════════════════════════════════════════════
+server.tool(
+  "list_fhir_patients",
+  "Fetch a list of recent patients from the FHIR server. Useful for discovery and demo population.",
+  {
+    count: z.number().optional().default(20).describe("Number of patients to fetch"),
+  },
+  async ({ count }, extra) => {
+    const ctx = extractSharpContext(extra as Record<string, unknown>);
+    const fhir = new FhirClient(ctx);
+    try {
+      const patients = await fhir.getPatients(count);
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            tool: "list_fhir_patients",
+            patients: patients.map(p => ({
+              id: p.id,
+              name: patientDisplayName(p),
+              gender: p.gender,
+              birthDate: p.birthDate,
+            })),
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        }],
+      };
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Failed to list patients: ${(err as Error).message}` }) }],
+        isError: true,
+      };
+    }
+  }
+);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOOL 9: list_fhir_practitioners
+// ══════════════════════════════════════════════════════════════════════════════
+server.tool(
+  "list_fhir_practitioners",
+  "Fetch a list of recent practitioners (doctors/specialists) from the FHIR server.",
+  {
+    count: z.number().optional().default(20).describe("Number of practitioners to fetch"),
+  },
+  async ({ count }, extra) => {
+    const ctx = extractSharpContext(extra as Record<string, unknown>);
+    const fhir = new FhirClient(ctx);
+    try {
+      const practitioners = await fhir.getPractitioners(count);
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            tool: "list_fhir_practitioners",
+            practitioners: practitioners.map(p => ({
+              id: p.id,
+              name: patientDisplayName(p), // patientDisplayName works for Practitioners too as it checks .name
+              gender: p.gender,
+            })),
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        }],
+      };
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Failed to list practitioners: ${(err as Error).message}` }) }],
+        isError: true,
+      };
+    }
+  }
+);
+
 // ─── Express HTTP Server ──────────────────────────────────────────────────────
 
 const app = express();
@@ -1021,6 +1110,8 @@ app.get("/health", (_req: Request, res: Response) => {
       "mental_health_assessment",
       "generate_chw_priority_queue",
       "create_consultation_brief",
+      "list_fhir_patients",
+      "list_fhir_practitioners",
     ],
     fhir_default: process.env.DEFAULT_FHIR_BASE_URL || "https://hapi.fhir.org/baseR4",
     sharp_compliant: true,
