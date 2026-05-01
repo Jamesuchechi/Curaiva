@@ -126,18 +126,27 @@ export default function DoctorPatientsPage() {
         if (existingProfile) {
           targetProfileId = existingProfile.id
         } else {
-          // For now, if no profile exists, we create a "shadow" profile or alert.
-          // Since we can't create an auth user here, we'll use a specific logic.
-          // In a real app, you'd have a separate 'patients' table or a way to create profiles without auth.
-          // For this hackathon demo, we'll try to use the system's "Global Patient" profile if it fails.
-          console.warn("No local profile found for FHIR patient. Consultation might fail.")
+          // Fallback: Use the first patient found in the database to satisfy the foreign key constraint
+          const { data: anyPatient } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("role", "patient")
+            .limit(1)
+            .single()
+          
+          if (anyPatient) {
+            targetProfileId = anyPatient.id
+            console.log("No local profile for FHIR patient. Using first available patient profile as proxy.")
+          } else {
+             throw new Error("No patient profiles found in database. Please register at least one patient.")
+          }
         }
       }
 
       const { data: newConsult, error: consultError } = await supabase
         .from("consultations")
         .insert({
-          patient_id: targetProfileId || "00000000-0000-0000-0000-000000000001", // Fallback to a mock patient UUID if not found
+          patient_id: targetProfileId,
           doctor_id: doctorProfile.id,
           fhir_patient_id: p.id,
           status: "open",
@@ -147,7 +156,13 @@ export default function DoctorPatientsPage() {
         .select("id")
         .single()
 
-      if (consultError) throw consultError
+      if (consultError) {
+        // If we still get a foreign key error, it means even our fallback failed (no profiles in DB)
+        if (consultError.code === "23503") {
+          throw new Error("No valid profiles found in database to link this consultation. Please ensure at least one patient is registered.")
+        }
+        throw consultError
+      }
 
       if (newConsult) {
         router.push(`/dashboard/doctor?consultationId=${newConsult.id}`)

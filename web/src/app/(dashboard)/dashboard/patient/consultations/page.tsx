@@ -74,12 +74,24 @@ export default function ConsultationsPage() {
       }).select("id").single()
 
       if (insertError) {
-        // If it's a UUID error, it's likely because we passed a FHIR ID to a UUID column
-        if (insertError.code === "22P02") {
-           // Fallback: Use a known system doctor UUID and store the FHIR ID
+        // If it's a UUID error or foreign key error, it's likely because we passed a FHIR ID to a UUID column
+        if (insertError.code === "22P02" || insertError.code === "23503") {
+           // Fallback: Fetch any valid doctor profile from the database
+           const { data: anyDoctor } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("role", "doctor")
+            .limit(1)
+            .single()
+
+           if (!anyDoctor) {
+             console.error("No doctor profiles found in database for fallback.")
+             return
+           }
+
            const { data: fallbackData, error: fallbackError } = await supabase.from("consultations").insert({
             patient_id: profile.id,
-            doctor_id: "00000000-0000-0000-0000-000000000002", // Mock System Doctor
+            doctor_id: anyDoctor.id, 
             status: "open",
             priority: "low",
             ai_summary: `New consultation request for external specialist (FHIR ID: ${doctorId}).`
