@@ -32,15 +32,27 @@ export async function PATCH(req: Request) {
     }
 
     const { medication_id, log_id } = await req.json();
+    const now = new Date().toISOString();
 
-    // Upsert a medication log record marking this dose as taken
-    const { error } = await supabase.from("medication_logs").upsert({
-      id: log_id,
+    interface MedicationLogPayload {
+      id?: string;
+      patient_id: string;
+      medication_id: string;
+      scheduled_at: string;
+      status: string;
+    }
+
+    const payload: MedicationLogPayload = {
       patient_id: user.id,
       medication_id,
-      taken_at: new Date().toISOString(),
+      scheduled_at: now,
       status: "taken",
-    });
+    };
+
+    if (log_id) payload.id = log_id;
+
+    // Upsert a medication log record marking this dose as taken
+    const { error } = await supabase.from("medication_logs").upsert(payload);
 
     if (error) throw error;
 

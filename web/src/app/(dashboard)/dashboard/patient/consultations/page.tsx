@@ -143,7 +143,18 @@ export default function ConsultationsPage() {
         {/* List */}
         <div className="lg:col-span-4 space-y-3">
           {consultations.length === 0 ? (
-            <p className="text-sm text-text-muted text-center py-6">No consultation history.</p>
+            <div className="p-8 rounded-3xl border border-dashed border-border-base bg-surface/50 text-center space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-brand-lime/10 flex items-center justify-center mx-auto">
+                <Plus className="w-6 h-6 text-brand-lime" />
+              </div>
+              <div>
+                <p className="font-bold text-text-white">No Consultations</p>
+                <p className="text-xs text-text-muted mt-1">Start a new session with a specialist to get medical advice.</p>
+              </div>
+              <Button onClick={() => setShowDoctorModal(true)} variant="secondary" className="w-full bg-brand-lime/10 border-brand-lime/20 text-brand-lime hover:bg-brand-lime/20">
+                Find a Doctor
+              </Button>
+            </div>
           ) : (
             consultations.map(c => (
               <button key={c.id} onClick={() => setActiveThreadId(c.id)}

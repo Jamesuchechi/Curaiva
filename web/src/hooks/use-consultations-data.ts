@@ -13,6 +13,16 @@ export interface Consultation {
   snippet: string
 }
 
+interface RawConsultation {
+  id: string
+  doctor_id: string
+  status: string
+  priority: string
+  created_at: string
+  ai_summary: string
+  profiles: { full_name: string } | null
+}
+
 export interface Message {
   id: string
   consultation_id: string
@@ -50,16 +60,26 @@ export function useConsultationsData(userId: string | undefined) {
     try {
       const { data, error: fetchError } = await supabase
         .from("consultations")
-        .select("id, status, priority, created_at, doctor_id, ai_summary")
+        .select(`
+          id, 
+          status, 
+          priority, 
+          created_at, 
+          doctor_id, 
+          ai_summary,
+          profiles!doctor_id (
+            full_name
+          )
+        `)
         .eq("patient_id", userId)
         .order("created_at", { ascending: false })
 
       if (fetchError) throw fetchError
 
-      const formatted = (data ?? []).map(c => ({
+      const formatted = (data as unknown as RawConsultation[] ?? []).map(c => ({
         id: c.id,
         doctor_id: c.doctor_id,
-        doctor_name: "Clinical Provider",
+        doctor_name: c.profiles?.full_name || "Unassigned Provider",
         status: c.status as "open" | "active" | "resolved",
         severity: (c.priority || "moderate") as "low" | "moderate" | "high" | "critical",
         created_at: c.created_at,
