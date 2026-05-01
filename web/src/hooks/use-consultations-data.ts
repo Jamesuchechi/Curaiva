@@ -50,7 +50,7 @@ export function useConsultationsData(userId: string | undefined) {
     try {
       const { data, error: fetchError } = await supabase
         .from("consultations")
-        .select("id, status, severity, created_at, doctor_id, ai_summary, doctor:profiles!doctor_id(full_name)")
+        .select("id, status, severity, created_at, doctor_id, ai_summary")
         .eq("patient_id", userId)
         .order("created_at", { ascending: false })
 
@@ -59,7 +59,7 @@ export function useConsultationsData(userId: string | undefined) {
       const formatted = (data ?? []).map(c => ({
         id: c.id,
         doctor_id: c.doctor_id,
-        doctor_name: ((c.doctor as unknown) as { full_name?: string })?.full_name || "Unassigned Provider",
+        doctor_name: "Clinical Provider", // Fallback since join is failing
         status: c.status as "open" | "active" | "resolved",
         severity: c.severity as "low" | "moderate" | "high" | "critical",
         created_at: c.created_at,
@@ -87,7 +87,7 @@ export function useConsultationsData(userId: string | undefined) {
     try {
       const { data, error: fetchError } = await supabase
         .from("messages")
-        .select("id, consultation_id, sender_id, content, created_at, sender:profiles!sender_id(role)")
+        .select("id, consultation_id, sender_id, content, created_at")
         .eq("consultation_id", consultationId)
         .order("created_at", { ascending: true })
 
@@ -97,7 +97,7 @@ export function useConsultationsData(userId: string | undefined) {
         id: m.id,
         consultation_id: m.consultation_id,
         sender_id: m.sender_id,
-        sender_role: ((m.sender as unknown) as { role?: string })?.role || "unknown",
+        sender_role: m.sender_id === userId ? "patient" : "doctor",
         content: m.content,
         created_at: m.created_at
       }))
@@ -108,7 +108,7 @@ export function useConsultationsData(userId: string | undefined) {
     } finally {
       setLoadingThread(false)
     }
-  }, [supabase])
+  }, [supabase, userId])
 
   // Effect to load initial data
   React.useEffect(() => {

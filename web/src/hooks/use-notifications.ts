@@ -86,7 +86,7 @@ export function useNotifications(userId: string | undefined) {
     if (!userId) return
 
     const channel = supabase
-      .channel(`notifications_${userId}`)
+      .channel(`notifications_${userId}_${Math.random().toString(36).substring(7)}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
