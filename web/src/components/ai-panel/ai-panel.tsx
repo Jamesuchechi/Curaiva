@@ -220,7 +220,7 @@ export function AIPanel() {
   const inputRef = React.useRef<HTMLInputElement>(null)
   const quickActions = getQuickActions(role, currentPage)
   const roleInfo = ROLE_LABELS[role]
-  const LANGUAGES = ["English", "Swahili", "Hausa", "Yoruba", "French"]
+  const LANGUAGES = ["English", "Swahili", "Hausa", "Yoruba", "Igbo", "French"]
   
   const { profile } = useAuth()
   const supabase = React.useMemo(() => createClient(), [])
@@ -295,7 +295,7 @@ export function AIPanel() {
     } else {
       try {
         // Set language for recognition based on selected language
-        const langCode = language === "French" ? "fr-FR" : language === "Swahili" ? "sw-KE" : "en-US"
+        const langCode = language === "French" ? "fr-FR" : language === "Swahili" ? "sw-KE" : language === "Igbo" ? "ig-NG" : "en-US"
         if (recognitionRef.current) recognitionRef.current.lang = langCode
         recognitionRef.current?.start()
         setIsListening(true)
