@@ -1110,6 +1110,7 @@ app.get("/health", (_req: Request, res: Response) => {
       "mental_health_assessment",
       "generate_chw_priority_queue",
       "create_consultation_brief",
+      "manage_patient_goals",
       "list_fhir_patients",
       "list_fhir_practitioners",
     ],
@@ -1173,6 +1174,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🏥 Curaiva AI MCP Server running on port ${PORT}`);
   console.log(`   Health:  /health`);
   console.log(`   MCP:     /mcp`);
-  console.log(`   Tools:   8 FHIR-powered healthcare tools`);
+  console.log(`   Tools:   9 FHIR-powered healthcare tools`);
   console.log(`   SHARP:   Compliant with Prompt Opinion extension specs\n`);
 });
