@@ -159,7 +159,7 @@ export default function ConsultationsPage() {
                 </div>
                 <p className="text-xs text-text-muted line-clamp-2">{c.snippet}</p>
                 <p className="text-[10px] font-mono text-text-muted mt-2 flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {new Date(c.updated_at).toLocaleDateString()}
+                  <Clock className="w-3 h-3" /> {new Date(c.created_at).toLocaleDateString()}
                 </p>
               </button>
             ))

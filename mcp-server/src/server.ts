@@ -126,6 +126,35 @@ class FhirClient {
     );
     return bundle.entry?.map(e => e.resource) ?? [];
   }
+
+  async getGoals(patientId: string): Promise<unknown[]> {
+    const bundle = await this.fetch<{ entry?: Array<{ resource: unknown }> }>(
+      `Goal?patient=${patientId}&_sort=-date&_count=10`
+    );
+    return bundle.entry?.map(e => e.resource) ?? [];
+  }
+
+  async createGoal(patientId: string, description: string, category: string, dueDate: string): Promise<Record<string, any>> {
+    const goal = {
+      resourceType: "Goal",
+      lifecycleStatus: "active",
+      category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/goal-category", code: category }] }],
+      description: { text: description },
+      subject: { reference: `Patient/${patientId}` },
+      target: [{ dueDate }]
+    };
+    const res = await globalThis.fetch(`${this.baseUrl}/Goal`, {
+      method: "POST",
+      headers: {
+        "Accept": "application/fhir+json",
+        "Content-Type": "application/fhir+json",
+        ...(this.token ? { "Authorization": `Bearer ${this.token}` } : {})
+      },
+      body: JSON.stringify(goal)
+    });
+    if (!res.ok) throw new Error(`Failed to create goal: ${res.statusText}`);
+    return res.json() as Promise<Record<string, any>>;
+  }
 }
 
 // ─── AI Clients ──────────────────────────────────────────────────────────────
@@ -308,7 +337,13 @@ FHIR Patient ID: ${pid}
 
     const assessment = await callAI(
       `You are a clinical triage AI assistant integrated into a healthcare platform. 
-Your role is to assess patient symptoms and provide a structured triage decision.
+Your role is to assess patient symptoms and provide a high-fidelity clinical triage decision.
+
+CLINICAL REASONING PROTOCOL:
+- Use SBAR (Situation, Background, Assessment, Recommendation) framework.
+- Identify "Must-Not-Miss" diagnoses (differential diagnosis).
+- Calculate risk scores where applicable (e.g., HEART for chest pain, PERC for PE).
+- Evaluate longitudinal trends from recent vitals.
 
 CRITICAL RULES:
 - You are a triage TOOL, not a diagnosing physician. Always recommend professional evaluation.
@@ -321,7 +356,9 @@ JSON schema:
   "severity": "low" | "moderate" | "critical",
   "severity_score": 1-10,
   "primary_concern": "string — one-sentence summary",
-  "likely_conditions": ["string"],
+  "differential_diagnosis": ["string — ranked from most to least likely"],
+  "must_not_miss": ["string — critical conditions to rule out"],
+  "clinical_rationale": "string — evidence-based justification for the triage score",
   "recommended_action": "string",
   "self_care_steps": ["string"],
   "red_flags": ["string — symptoms warranting emergency care"],
@@ -423,13 +460,14 @@ server.tool(
     };
 
     const prompts: Record<string, string> = {
-      brief: "Write a 2-3 sentence patient summary a busy clinician can read in 10 seconds.",
-      full: "Write a comprehensive clinical summary covering all available data points with clinical interpretation.",
-      consultation: "Write a structured pre-consultation brief. Format: Chief Data Points, Active Problems, Current Medications, Recent Observations, Clinical Considerations. Be clinical, factual, and concise. This will be read by a physician immediately before seeing the patient.",
+      brief: "Write a 2-3 sentence patient summary a busy clinician can read in 10 seconds. Focus on the single most critical data point.",
+      full: "Write a comprehensive clinical summary covering all available data points. Include a section on 'Clinical Trajectory' (improving/stable/declining) and 'Potential Risks'.",
+      consultation: "Write a structured pre-consultation brief. Format: Chief Data Points, Active Problems, Current Medications, Recent Observations, Clinical Trajectory, and Gaps in Care. Be clinical, factual, and concise.",
     };
 
     const summary = await callAIText(
-      `You are a clinical documentation AI. Generate a ${summary_type} patient summary from FHIR data. ` +
+      `You are a senior clinical documentation specialist AI. Generate a ${summary_type} patient summary from FHIR data. ` +
+      `Identify clinical patterns, abnormal trends in vitals, and potential drug-disease interactions. ` +
       `Be accurate, clinical, and concise. Never fabricate data not present in the FHIR record.`,
       `FHIR Patient Data:\n${JSON.stringify(rawData, null, 2)}\n\nGenerate a ${summary_type} summary.\n\n${prompts[summary_type ?? "consultation"]}`,
       1500
@@ -800,17 +838,18 @@ server.tool(
     const age = calculateAge(patient.birthDate);
 
     const brief = await callAIText(
-      `You are a clinical documentation AI preparing a physician pre-consultation brief.
+      `You are a clinical documentation AI preparing a high-impact physician pre-consultation brief.
 Write in a clear, clinical style. A busy doctor will read this in under 60 seconds.
 Structure your response with these exact headers:
 
 ## PATIENT OVERVIEW
 ## CHIEF COMPLAINT  
+## CLINICAL TRAJECTORY (Is the patient getting better or worse based on trends?)
 ## ACTIVE PROBLEMS
-## CURRENT MEDICATIONS
-## RECENT OBSERVATIONS
-## CLINICAL CONSIDERATIONS
-## SUGGESTED FOCUS AREAS
+## CURRENT MEDICATIONS (Highlight potential contraindications or adherence issues)
+## RECENT OBSERVATIONS (Note any critical labs/vitals)
+## GAPS IN CARE (What is missing? e.g. missed labs, overdue screenings)
+## SUGGESTED FOCUS AREAS & QUESTIONS (What should the doctor ask today?)
 
 Be concise. Use clinical terminology. Highlight anything urgent.`,
       `Consultation Type: ${consultation_type}
@@ -847,6 +886,90 @@ ${observations.slice(0, 8).map(o => `- ${o.code?.text || o.code?.coding?.[0]?.di
         }, null, 2),
       }],
     };
+  }
+);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOOL 7: manage_patient_goals
+// ══════════════════════════════════════════════════════════════════════════════
+server.tool(
+  "manage_patient_goals",
+  "Fetch, create, or update health goals for a patient using FHIR Goal resources. " +
+  "Allows doctors and CHWs to set clinical targets (e.g., weight loss, BP control) and track progress.",
+  {
+    action: z.enum(["get", "create"]).describe("Action to perform: get goals or create a new one"),
+    patient_id: z.string().optional().describe("FHIR Patient resource ID"),
+    description: z.string().optional().describe("Description of the goal (required for create)"),
+    category: z.enum(["dietary", "safety", "behavioral", "physiotherapy"]).optional().default("behavioral")
+      .describe("Category of the goal"),
+    due_date: z.string().optional().describe("Target date for completion (YYYY-MM-DD)"),
+  },
+  async ({ action, patient_id, description, category, due_date }, extra) => {
+    const ctx = extractSharpContext(extra as Record<string, unknown>);
+    const pid = patient_id || ctx.patient_id;
+
+    if (!pid) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: "patient_id required" }) }],
+        isError: true,
+      };
+    }
+
+    const fhir = new FhirClient(ctx);
+
+    interface FhirGoal {
+      id: string
+      description?: { text?: string }
+      lifecycleStatus: string
+      category?: Array<{ coding?: Array<{ code?: string }> }>
+      target?: Array<{ dueDate?: string }>
+    }
+
+    if (action === "get") {
+      const goals = await fhir.getGoals(pid) as FhirGoal[];
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            tool: "manage_patient_goals",
+            patient_id: pid,
+            action: "get",
+            goals: goals.map(g => ({
+              id: g.id,
+              description: g.description?.text,
+              status: g.lifecycleStatus,
+              category: g.category?.[0]?.coding?.[0]?.code,
+              target_date: g.target?.[0]?.dueDate,
+            })),
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        }],
+      };
+    } else {
+      if (!description) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: "description required for create" }) }],
+          isError: true,
+        };
+      }
+      const newGoal = await fhir.createGoal(pid, description, category, due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) as FhirGoal;
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            tool: "manage_patient_goals",
+            patient_id: pid,
+            action: "create",
+            goal: {
+              id: newGoal.id,
+              description: newGoal.description?.text,
+              status: newGoal.lifecycleStatus,
+            },
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        }],
+      };
+    }
   }
 );
 
@@ -917,7 +1040,7 @@ app.post("/mcp/message", async (req: Request, res: Response) => {
 });
 
 // Global Error Handler for debugging
-app.use((err: any, req: any, res: any, _next: any) => {
+app.use((err: Error, req: Request, res: Response, _next: express.NextFunction) => {
   console.error("\n❌ GLOBAL ERROR DETECTED:");
   console.error(`   Path: ${req.path}`);
   console.error(`   Method: ${req.method}`);

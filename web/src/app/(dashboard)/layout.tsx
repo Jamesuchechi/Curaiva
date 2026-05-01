@@ -23,6 +23,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/chw': 'Community Command Centre',
   '/dashboard/chw/queue': 'AI Priority Queue',
   '/dashboard/chw/community': 'Community Health Feed',
+  '/dashboard/notifications': 'Notifications & Alerts',
 }
 
 /* ─── Inner layout — needs access to useAIPanel context ─────────────────── */

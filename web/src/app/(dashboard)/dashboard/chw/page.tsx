@@ -18,6 +18,14 @@ import {
   X,
   Send,
   CheckCircle2,
+  Mic,
+  Activity,
+  Droplets,
+  Thermometer,
+  CloudUpload,
+  Navigation,
+  Clock,
+  ExternalLink,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/providers/auth-provider"
@@ -35,6 +43,68 @@ function PatientDrawer({ patient, onClose }: DrawerProps) {
   const [message, setMessage] = React.useState("")
   const [sending, setSending] = React.useState(false)
   const [sent, setSent] = React.useState(false)
+  
+  // Goals state
+  interface Goal {
+    id: string
+    description: string
+    status: string
+    category?: string
+    target_date?: string
+  }
+  const [goals, setGoals] = React.useState<Goal[]>([])
+  const [loadingGoals, setLoadingGoals] = React.useState(false)
+  const [goalInput, setGoalInput] = React.useState("")
+
+  const loadGoals = React.useCallback(async () => {
+    setLoadingGoals(true)
+    try {
+      const res = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "get", patient_id: patient.id }),
+      })
+      const data = await res.json()
+      if (data.goals) setGoals(data.goals)
+    } catch (err) {
+      console.error("Failed to load goals", err)
+    } finally {
+      setLoadingGoals(false)
+    }
+  }, [patient.id])
+
+  const handleAddGoal = async () => {
+    if (!goalInput.trim()) return
+    setLoadingGoals(true)
+    try {
+      const res = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          action: "create", 
+          patient_id: patient.id,
+          description: goalInput,
+          category: "behavioral"
+        }),
+      })
+      const data = await res.json()
+      if (data.goal) {
+        setGoalInput("")
+        loadGoals()
+      }
+    } catch (err) {
+      console.error("Failed to add goal", err)
+    } finally {
+      setLoadingGoals(false)
+    }
+  }
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      loadGoals()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [loadGoals])
 
   const handleSend = async () => {
     if (!message.trim()) return
@@ -132,6 +202,37 @@ function PatientDrawer({ patient, onClose }: DrawerProps) {
           </div>
 
           {/* Recent triage */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-mono font-bold text-brand-lime uppercase tracking-widest">Health Goals</h4>
+            <div className="space-y-2">
+              {loadingGoals && goals.length === 0 ? (
+                <div className="text-[10px] text-text-muted animate-pulse">Syncing goals with FHIR...</div>
+              ) : goals.length === 0 ? (
+                <div className="p-3 rounded-xl border border-dashed border-border-base text-[10px] text-text-muted italic">No goals set.</div>
+              ) : (
+                goals.map((g, i) => (
+                  <div key={g.id || i} className="flex items-center justify-between p-3 rounded-xl bg-bg border border-border-base">
+                    <span className="text-xs text-text-white">{g.description}</span>
+                    <Badge variant={g.status === "active" ? "stable" : "new"} className="text-[8px] h-4">{g.status.toUpperCase()}</Badge>
+                  </div>
+                ))
+              )}
+              <div className="flex gap-2 mt-2">
+                <input 
+                  type="text" 
+                  placeholder="New behavior goal..." 
+                  value={goalInput}
+                  onChange={e => setGoalInput(e.target.value)}
+                  className="flex-1 bg-bg border border-border-base rounded-lg px-3 py-1.5 text-xs outline-none focus:border-brand-lime transition-all"
+                />
+                <Button size="sm" className="h-8 text-[10px] font-bold" onClick={handleAddGoal} disabled={loadingGoals || !goalInput.trim()}>
+                  Add
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent triage */}
           <div className="space-y-2">
             <h4 className="text-xs font-mono font-bold text-brand-lime uppercase tracking-widest">Recent Triage</h4>
             <div className="p-3 rounded-xl bg-bg border border-border-base">
@@ -197,6 +298,20 @@ export default function CHWDashboard() {
   const [trace, setTrace] = React.useState<TraceEntry[]>([])
   const [drawerPatient, setDrawerPatient] = React.useState<QueueItem | null>(null)
   const [sort, setSort] = React.useState<"score" | "name" | "contact">("score")
+  const [activeTab, setActiveTab] = React.useState<"queue" | "route" | "vitals">("queue")
+  
+  // Vitals Form State
+  interface VitalsEntry {
+    id: string
+    patientName: string
+    vitals: { bp: string; hr: string; sugar: string; temp: string; weight: string }
+    timestamp: string
+  }
+  const [vitalsPatientId, setVitalsPatientId] = React.useState("")
+  const [vitals, setVitals] = React.useState({ bp: "", hr: "", sugar: "", temp: "", weight: "" })
+  const [isRecording, setIsRecording] = React.useState(false)
+  const [syncQueue, setSyncQueue] = React.useState<VitalsEntry[]>([])
+  const [isSyncing, setIsSyncing] = React.useState(false)
 
   // alerts: keyed by id so acknowledging one doesn't shift others
   interface LiveAlert {
@@ -278,8 +393,13 @@ export default function CHWDashboard() {
       }
     }
 
-    run()
-    return () => { active = false }
+    const timer = setTimeout(() => {
+      run()
+    }, 0)
+    return () => { 
+      active = false
+      clearTimeout(timer)
+    }
   }, [refreshKey])
 
   /* ── Supabase Realtime: new critical consultations become alerts ── */
@@ -326,6 +446,29 @@ export default function CHWDashboard() {
         <p className="text-text-muted">Your AI-prioritized patient queue is ready.</p>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-6 border-b border-border-base">
+        {[
+          { id: "queue", label: "Queue", icon: Users },
+          { id: "route", label: "Task Route", icon: MapPin },
+          { id: "vitals", label: "Rapid Vitals", icon: Pill },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as "queue" | "route" | "vitals")}
+            className={cn(
+              "pb-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-all relative top-px",
+              activeTab === tab.id 
+                ? "border-brand-lime text-brand-lime" 
+                : "border-transparent text-text-muted hover:text-text-white"
+            )}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Metric Strip */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard label="My Patients"          value="42"    icon={<Users className="w-5 h-5" />}         color="purple" />
@@ -334,169 +477,470 @@ export default function CHWDashboard() {
         <MetricCard label="Visits This Week"     value="18/25" icon={<Calendar className="w-5 h-5" />}       color="teal"   />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Priority Queue */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xl font-display font-bold">AI Priority Queue</h3>
-              <Badge variant="new">FHIR R4 Analyzed</Badge>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex items-center bg-surface-2 rounded-lg p-1 border border-border-base">
-                {(["score", "name", "contact"] as const).map(s => (
-                  <button key={s} onClick={() => setSort(s)} className={cn("px-3 py-1 text-[10px] font-bold rounded-md capitalize transition-all", sort === s ? "bg-bg text-brand-lime shadow-sm" : "text-text-muted hover:text-text-white")}>
-                    {s}
-                  </button>
-                ))}
+      {activeTab === "queue" && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Priority Queue */}
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xl font-display font-bold">AI Priority Queue</h3>
+                <Badge variant="new">FHIR R4 Analyzed</Badge>
               </div>
-              <Button variant="ghost" size="sm" onClick={generateQueue} disabled={loading} className="text-xs gap-2">
-                <RefreshCcw className={cn("w-3 h-3", loading && "animate-spin")} />
-                Refresh Queue
-              </Button>
-            </div>
-          </div>
-
-          {queueError && (
-            <div className="px-1 flex items-center gap-2 text-xs text-amber font-mono">
-              <AlertTriangle className="w-3 h-3" /> MCP offline — showing cached data
-            </div>
-          )}
-
-          <Card className="glass border-brand-lime/20 overflow-hidden min-h-[400px]">
-            <CardContent className="p-0">
-              {loading && queue.length === 0 ? (
-                <div className="p-20 flex flex-col items-center justify-center text-center space-y-4">
-                  <Spinner size="lg" className="border-brand-lime" />
-                  <p className="text-sm font-mono text-brand-lime animate-pulse">RANKING COMMUNITY BY CLINICAL RISK...</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border-base/50">
-                  {[...queue].sort((a, b) => {
-                    if (sort === "score") return b.score - a.score
-                    if (sort === "name") return a.name.localeCompare(b.name)
-                    return 0 // fallback for contact
-                  }).map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => setDrawerPatient(item)}
-                      className="group w-full text-left flex items-center gap-6 p-6 hover:bg-surface-2 transition-all animate-in slide-in-from-bottom-2"
-                    >
-                      {/* Score badge */}
-                      <div className="flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-bg border border-border-base shrink-0 group-hover:border-brand-lime transition-colors">
-                        <span className={cn(
-                          "text-2xl font-display font-bold",
-                          item.score >= 80 ? "text-red" : item.score >= 50 ? "text-amber" : "text-teal"
-                        )}>{item.score}</span>
-                        <span className="text-[8px] font-mono font-bold text-text-muted uppercase tracking-widest">Score</span>
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0 text-left">
-                        <div className="flex items-center gap-3 mb-1">
-                          <h4 className="font-bold text-text-white">{item.name}</h4>
-                          <Badge variant={item.status}>{item.status.toUpperCase()}</Badge>
-                          <span className="text-[10px] text-text-muted flex items-center gap-1 font-mono">
-                            <MapPin className="w-3 h-3" />{item.location}
-                          </span>
-                        </div>
-                        <p className="text-xs text-text-muted leading-relaxed line-clamp-2 italic">&quot;{item.reason}&quot;</p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <Button size="icon" variant="ghost" className="rounded-full hover:bg-brand-lime/10 hover:text-brand-lime" onClick={e => { e.stopPropagation() }}>
-                          <Phone className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="rounded-full hover:bg-brand-lime/10 hover:text-brand-lime" onClick={e => { e.stopPropagation() }}>
-                          <MessageSquare className="w-4 h-4" />
-                        </Button>
-                        <Button variant="primary" size="sm" className="ml-2 font-bold" onClick={e => { e.stopPropagation(); setDrawerPatient(item) }}>
-                          {item.score >= 75 ? "Visit Now" : item.score >= 50 ? "Visit" : "Check In"}
-                        </Button>
-                      </div>
+              <div className="flex gap-2">
+                <div className="flex items-center bg-surface-2 rounded-lg p-1 border border-border-base">
+                  {(["score", "name", "contact"] as const).map(s => (
+                    <button key={s} onClick={() => setSort(s)} className={cn("px-3 py-1 text-[10px] font-bold rounded-md capitalize transition-all", sort === s ? "bg-bg text-brand-lime shadow-sm" : "text-text-muted hover:text-text-white")}>
+                      {s}
                     </button>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Live Alerts */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-lg font-display font-semibold">Live Health Alerts</h3>
-            <div className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest border",
-              realtimeConnected
-                ? "bg-teal/10 border-teal/30 text-teal"
-                : "bg-surface border-border-base text-text-muted"
-            )}>
-              <span className={cn("w-1.5 h-1.5 rounded-full", realtimeConnected ? "bg-teal animate-pulse" : "bg-text-muted")} />
-              {realtimeConnected ? "Live" : "Connecting"}
-            </div>
-          </div>
-          <div className="space-y-3">
-            {alerts.length === 0 ? (
-              <div className="p-6 rounded-2xl border border-border-base bg-surface text-center">
-                <CheckCircle2 className="w-6 h-6 text-teal mx-auto mb-2" />
-                <p className="text-sm font-medium text-teal">✓ No active alerts</p>
-              </div>
-            ) : alerts.map((alert) => (
-              <div key={alert.id} className={cn(
-                "p-4 rounded-2xl border transition-all relative overflow-hidden animate-in slide-in-from-top-2 duration-300",
-                alert.type === "crisis" ? "bg-red/10 border-red/20" : "bg-surface border-border-base"
-              )}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={cn(
-                    "text-[10px] font-mono font-bold uppercase tracking-widest",
-                    alert.type === "crisis" ? "text-red" : "text-brand-lime"
-                  )}>
-                    {alert.type === "crisis" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red animate-pulse mr-1.5 mb-0.5" />}
-                    {alert.type}
-                  </span>
-                  <span className="text-[10px] text-text-muted">{alert.time}</span>
-                </div>
-                <p className="text-sm font-bold text-text-white mb-1">{alert.patient}</p>
-                <p className="text-xs text-text-muted">{alert.msg}</p>
-                <Button
-                  variant={alert.type === "crisis" ? "danger" : "ghost"}
-                  size="sm"
-                  className={cn("w-full mt-3 h-8 text-xs font-bold", alert.type === "crisis" && "bg-red text-white")}
-                  onClick={() => acknowledgeAlert(alert.id)}
-                >
-                  {alert.type === "crisis" ? "Acknowledge & Call" : "Acknowledge"}
+                <Button variant="ghost" size="sm" onClick={generateQueue} disabled={loading} className="text-xs gap-2">
+                  <RefreshCcw className={cn("w-3 h-3", loading && "animate-spin")} />
+                  Refresh Queue
                 </Button>
               </div>
-            ))}
+            </div>
+
+            {queueError && (
+              <div className="px-1 flex items-center gap-2 text-xs text-amber font-mono">
+                <AlertTriangle className="w-3 h-3" /> MCP offline — showing cached data
+              </div>
+            )}
+
+            <Card className="glass border-brand-lime/20 overflow-hidden min-h-[400px]">
+              <CardContent className="p-0">
+                {loading && queue.length === 0 ? (
+                  <div className="p-20 flex flex-col items-center justify-center text-center space-y-4">
+                    <Spinner size="lg" className="border-brand-lime" />
+                    <p className="text-sm font-mono text-brand-lime animate-pulse">RANKING COMMUNITY BY CLINICAL RISK...</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border-base/50">
+                    {[...queue].sort((a, b) => {
+                      if (sort === "score") return b.score - a.score
+                      if (sort === "name") return a.name.localeCompare(b.name)
+                      return 0 // fallback for contact
+                    }).map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => setDrawerPatient(item)}
+                        className="group w-full text-left flex items-center gap-6 p-6 hover:bg-surface-2 transition-all animate-in slide-in-from-bottom-2"
+                      >
+                        {/* Score badge */}
+                        <div className="flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-bg border border-border-base shrink-0 group-hover:border-brand-lime transition-colors">
+                          <span className={cn(
+                            "text-2xl font-display font-bold",
+                            item.score >= 80 ? "text-red" : item.score >= 50 ? "text-amber" : "text-teal"
+                          )}>{item.score}</span>
+                          <span className="text-[8px] font-mono font-bold text-text-muted uppercase tracking-widest">Score</span>
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="font-bold text-text-white">{item.name}</h4>
+                            <Badge variant={item.status}>{item.status.toUpperCase()}</Badge>
+                            <span className="text-[10px] text-text-muted flex items-center gap-1 font-mono">
+                              <MapPin className="w-3 h-3" />{item.location}
+                            </span>
+                          </div>
+                          <p className="text-xs text-text-muted leading-relaxed line-clamp-2 italic">&quot;{item.reason}&quot;</p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <Button size="icon" variant="ghost" className="rounded-full hover:bg-brand-lime/10 hover:text-brand-lime" onClick={e => { e.stopPropagation() }}>
+                            <Phone className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="rounded-full hover:bg-brand-lime/10 hover:text-brand-lime" onClick={e => { e.stopPropagation() }}>
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
+                          <Button variant="primary" size="sm" className="ml-2 font-bold" onClick={e => { e.stopPropagation(); setDrawerPatient(item) }}>
+                            {item.score >= 75 ? "Visit Now" : item.score >= 50 ? "Visit" : "Check In"}
+                          </Button>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Community Summary Card */}
-          <Card className="glass mt-4">
-            <CardContent className="p-5 space-y-4">
-              <h4 className="text-xs font-mono font-bold text-brand-lime uppercase tracking-widest">Community Summary</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-muted">Avg Adherence</span>
-                  <span className="font-mono font-bold text-amber">68%</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-muted">Critical Patients</span>
-                  <span className="font-mono font-bold text-red">3</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-muted">Weekly Visits</span>
-                  <span className="font-mono font-bold text-teal">18 / 25</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-surface-2">
-                  <div className="h-2 rounded-full bg-brand-lime" style={{ width: "72%" }} />
-                </div>
+          {/* Live Alerts */}
+          <div className="lg:col-span-4 space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-lg font-display font-semibold">Live Health Alerts</h3>
+              <div className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest border",
+                realtimeConnected
+                  ? "bg-teal/10 border-teal/30 text-teal"
+                  : "bg-surface border-border-base text-text-muted"
+              )}>
+                <span className={cn("w-1.5 h-1.5 rounded-full", realtimeConnected ? "bg-teal animate-pulse" : "bg-text-muted")} />
+                {realtimeConnected ? "Live" : "Connecting"}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="space-y-3">
+              {alerts.length === 0 ? (
+                <div className="p-6 rounded-2xl border border-border-base bg-surface text-center">
+                  <CheckCircle2 className="w-6 h-6 text-teal mx-auto mb-2" />
+                  <p className="text-sm font-medium text-teal">✓ No active alerts</p>
+                </div>
+              ) : alerts.map((alert) => (
+                <div key={alert.id} className={cn(
+                  "p-4 rounded-2xl border transition-all relative overflow-hidden animate-in slide-in-from-top-2 duration-300",
+                  alert.type === "crisis" ? "bg-red/10 border-red/20" : "bg-surface border-border-base"
+                )}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={cn(
+                      "text-[10px] font-mono font-bold uppercase tracking-widest",
+                      alert.type === "crisis" ? "text-red" : "text-brand-lime"
+                    )}>
+                      {alert.type === "crisis" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red animate-pulse mr-1.5 mb-0.5" />}
+                      {alert.type}
+                    </span>
+                    <span className="text-[10px] text-text-muted">{alert.time}</span>
+                  </div>
+                  <p className="text-sm font-bold text-text-white mb-1">{alert.patient}</p>
+                  <p className="text-xs text-text-muted">{alert.msg}</p>
+                  <Button
+                    variant={alert.type === "crisis" ? "danger" : "ghost"}
+                    size="sm"
+                    className={cn("w-full mt-3 h-8 text-xs font-bold", alert.type === "crisis" && "bg-red text-white")}
+                    onClick={() => acknowledgeAlert(alert.id)}
+                  >
+                    {alert.type === "crisis" ? "Acknowledge & Call" : "Acknowledge"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            {/* Community Summary Card */}
+            <Card className="glass mt-4">
+              <CardContent className="p-5 space-y-4">
+                <h4 className="text-xs font-mono font-bold text-brand-lime uppercase tracking-widest">Community Summary</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-muted">Avg Adherence</span>
+                    <span className="font-mono font-bold text-amber">68%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-muted">Critical Patients</span>
+                    <span className="font-mono font-bold text-red">3</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-muted">Weekly Visits</span>
+                    <span className="font-mono font-bold text-teal">18 / 25</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-surface-2">
+                    <div className="h-2 rounded-full bg-brand-lime" style={{ width: "72%" }} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
+
+      {activeTab === "route" && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Route Map/List */}
+              <div className="lg:col-span-8 space-y-6">
+                <Card className="glass border-brand-lime/20 overflow-hidden">
+                  <div className="p-6 border-b border-border-base bg-brand-lime/5 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-text-white">Village Route Optimizer</h3>
+                      <p className="text-xs text-text-muted">Most efficient path based on clinical urgency & location</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="gap-2 text-xs">
+                      <ExternalLink className="w-3 h-3" /> Open in Maps
+                    </Button>
+                  </div>
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-border-base/50">
+                      {[...queue].sort((a, b) => b.score - a.score).map((item, i) => (
+                        <div key={item.id} className="p-6 flex items-center gap-6 group hover:bg-surface-2 transition-all">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-surface-2 border border-border-base flex items-center justify-center text-sm font-bold text-text-muted">
+                              {i + 1}
+                            </div>
+                            <div className={cn("w-0.5 h-12 bg-border-base", i === queue.length - 1 && "opacity-0")} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold text-text-white">{item.name}</h4>
+                              <Badge variant={item.status}>{item.status.toUpperCase()}</Badge>
+                            </div>
+                            <p className="text-xs text-text-muted flex items-center gap-2">
+                              <MapPin className="w-3 h-3 text-brand-lime" /> {item.location} · 
+                              <Clock className="w-3 h-3" /> {(i + 1) * 15}m away
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <Button 
+                              size="sm" 
+                              className="bg-brand-lime text-bg font-bold rounded-xl gap-2 h-9"
+                              onClick={() => {
+                                setDrawerPatient(item)
+                              }}
+                            >
+                              <Navigation className="w-3.5 h-3.5" /> Start Visit
+                            </Button>
+                            <span className="text-[10px] font-mono text-text-muted">Est. Duration: 20m</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Route Summary */}
+              <div className="lg:col-span-4 space-y-6">
+                 <Card className="glass border-brand-lime/20 p-6 space-y-6">
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-mono font-bold text-brand-lime uppercase tracking-widest">Today&apos;s Route Summary</h4>
+                      <p className="text-sm text-text-muted">Optimized for 4 high-risk locations</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-surface-2 border border-border-base">
+                        <div className="flex items-center gap-3">
+                           <div className="p-2 rounded-lg bg-teal/10 text-teal"><Clock className="w-4 h-4" /></div>
+                           <div className="text-xs">
+                             <p className="text-text-muted">Total Travel Time</p>
+                             <p className="font-bold text-text-white text-base">~1h 15m</p>
+                           </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-surface-2 border border-border-base">
+                        <div className="flex items-center gap-3">
+                           <div className="p-2 rounded-lg bg-purple/10 text-purple"><Navigation className="w-4 h-4" /></div>
+                           <div className="text-xs">
+                             <p className="text-text-muted">Total Distance</p>
+                             <p className="font-bold text-text-white text-base">8.4 km</p>
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-border-base">
+                      <Button variant="ghost" className="w-full h-12 rounded-xl border-border-base hover:bg-surface-2 text-text-muted gap-2">
+                        <RefreshCcw className="w-4 h-4" /> Re-calculate Route
+                      </Button>
+                    </div>
+                 </Card>
+
+                 <div className="p-6 rounded-2xl bg-amber/5 border border-amber/20 space-y-2">
+                    <div className="flex items-center gap-2 text-amber">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Field Note</span>
+                    </div>
+                    <p className="text-xs text-amber/80 leading-relaxed">
+                      Heavy traffic reported in Zone B. 
+                      Recommended to take the bypass route to Alice Johnson.
+                    </p>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {activeTab === "vitals" && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Vitals Form */}
+              <div className="lg:col-span-8 space-y-6">
+                <Card className="glass border-brand-lime/20 overflow-hidden">
+                  <div className="p-6 border-b border-border-base bg-brand-lime/5 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold text-text-white">Rapid Field Entry</h3>
+                      <p className="text-xs text-text-muted">Direct clinical logging for community visits</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <button 
+                        onClick={() => {
+                          setIsRecording(true)
+                          // Simulate voice recording and parsing
+                          setTimeout(async () => {
+                            const mockTranscript = "Patient blood pressure is 140 over 90, heart rate 85, and sugar is 110."
+                            const res = await fetch("/api/ai/vitals", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ text: mockTranscript }),
+                            })
+                            const data = await res.json()
+                            if (data.vitals) {
+                              setVitals({
+                                bp: data.vitals.blood_pressure || "",
+                                hr: String(data.vitals.heart_rate || ""),
+                                sugar: String(data.vitals.blood_sugar || ""),
+                                temp: String(data.vitals.temperature || ""),
+                                weight: String(data.vitals.weight || ""),
+                              })
+                            }
+                            setIsRecording(false)
+                          }, 2000)
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                          isRecording ? "bg-red text-white animate-pulse" : "bg-brand-lime text-bg hover:opacity-90"
+                        )}
+                       >
+                         <Mic className="w-4 h-4" />
+                         {isRecording ? "Listening..." : "Tap to Speak"}
+                       </button>
+                    </div>
+                  </div>
+                  <CardContent className="p-8 space-y-8">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-mono font-bold text-brand-lime uppercase tracking-widest">Target Patient</label>
+                       <select 
+                        value={vitalsPatientId}
+                        onChange={e => setVitalsPatientId(e.target.value)}
+                        className="w-full h-12 px-4 rounded-xl bg-surface border border-border-base focus:border-brand-lime outline-none text-sm text-text-light transition-all"
+                       >
+                         <option value="">Select Patient...</option>
+                         {queue.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                       </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                          <Activity className="w-3 h-3 text-red" /> Blood Pressure
+                        </label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 120/80" 
+                          value={vitals.bp}
+                          onChange={e => setVitals({...vitals, bp: e.target.value})}
+                          className="w-full h-12 px-4 rounded-xl bg-surface border border-border-base focus:border-brand-lime outline-none text-sm text-text-light transition-all font-mono" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                          <Activity className="w-3 h-3 text-teal" /> Heart Rate (BPM)
+                        </label>
+                        <input 
+                          type="number" 
+                          placeholder="e.g. 72" 
+                          value={vitals.hr}
+                          onChange={e => setVitals({...vitals, hr: e.target.value})}
+                          className="w-full h-12 px-4 rounded-xl bg-surface border border-border-base focus:border-brand-lime outline-none text-sm text-text-light transition-all font-mono" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                          <Droplets className="w-3 h-3 text-amber" /> Blood Sugar (mg/dL)
+                        </label>
+                        <input 
+                          type="number" 
+                          placeholder="e.g. 100" 
+                          value={vitals.sugar}
+                          onChange={e => setVitals({...vitals, sugar: e.target.value})}
+                          className="w-full h-12 px-4 rounded-xl bg-surface border border-border-base focus:border-brand-lime outline-none text-sm text-text-light transition-all font-mono" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                          <Thermometer className="w-3 h-3 text-purple" /> Temperature
+                        </label>
+                        <input 
+                          type="number" 
+                          placeholder="e.g. 36.5" 
+                          value={vitals.temp}
+                          onChange={e => setVitals({...vitals, temp: e.target.value})}
+                          className="w-full h-12 px-4 rounded-xl bg-surface border border-border-base focus:border-brand-lime outline-none text-sm text-text-light transition-all font-mono" 
+                        />
+                      </div>
+                    </div>
+
+                    <Button 
+                      className="w-full h-14 text-lg font-bold bg-brand-lime text-bg hover:opacity-90 rounded-2xl"
+                      disabled={!vitalsPatientId || (!vitals.bp && !vitals.hr && !vitals.sugar)}
+                      onClick={() => {
+                        const newEntry = { 
+                          id: Math.random().toString(36).substring(7),
+                          patientName: queue.find(p => p.id === vitalsPatientId)?.name || "Unknown",
+                          vitals, 
+                          timestamp: new Date().toLocaleTimeString() 
+                        }
+                        setSyncQueue([newEntry, ...syncQueue])
+                        setVitals({ bp: "", hr: "", sugar: "", temp: "", weight: "" })
+                        setVitalsPatientId("")
+                      }}
+                    >
+                      Log To Field Sync Queue
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sync Queue */}
+              <div className="lg:col-span-4 space-y-4">
+                 <div className="flex items-center justify-between px-1">
+                    <h3 className="text-lg font-display font-semibold">Field Sync Queue</h3>
+                    <Badge variant={syncQueue.length > 0 ? "urgent" : "stable"}>
+                      {syncQueue.length} Pending
+                    </Badge>
+                 </div>
+                 <div className="space-y-3">
+                    {syncQueue.length === 0 ? (
+                      <div className="p-12 rounded-2xl border-2 border-dashed border-border-base text-center bg-surface-2/30">
+                        <CloudUpload className="w-8 h-8 text-text-muted mx-auto mb-3" />
+                        <p className="text-sm text-text-muted">Queue is empty. Log vitals to sync.</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                          {syncQueue.map((item) => (
+                            <div key={item.id} className="p-4 rounded-xl bg-surface border border-border-base animate-in slide-in-from-right-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <p className="text-sm font-bold text-text-white">{item.patientName}</p>
+                                <span className="text-[10px] font-mono text-text-muted">{item.timestamp}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {item.vitals.bp && <Badge variant="stable" className="bg-red/10 text-red text-[8px]">{item.vitals.bp}</Badge>}
+                                {item.vitals.hr && <Badge variant="stable" className="bg-teal/10 text-teal text-[8px]">{item.vitals.hr} BPM</Badge>}
+                                {item.vitals.sugar && <Badge variant="stable" className="bg-amber/10 text-amber text-[8px]">{item.vitals.sugar} mg/dL</Badge>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <Button 
+                          variant="primary" 
+                          className="w-full gap-2 h-12 rounded-xl font-bold"
+                          disabled={isSyncing}
+                          onClick={() => {
+                            setIsSyncing(true)
+                            setTimeout(() => {
+                              setSyncQueue([])
+                              setIsSyncing(false)
+                              window.dispatchEvent(new Event("curaiva-refresh-data"))
+                            }, 2000)
+                          }}
+                        >
+                          {isSyncing ? <Spinner size="sm" className="border-bg" /> : <RefreshCcw className="w-4 h-4" />}
+                          {isSyncing ? "Syncing to FHIR Server..." : "Sync All Records"}
+                        </Button>
+                      </>
+                    )}
+                 </div>
+
+                 <Card className="glass border-brand-lime/20 p-5">
+                    <h4 className="text-xs font-mono font-bold text-brand-lime uppercase tracking-widest mb-3">Offline Mode</h4>
+                    <p className="text-[10px] text-text-muted leading-relaxed">
+                      Records are stored locally until you re-establish a stable connection. 
+                      Syncing will push all data to the centralized HAPI FHIR repository.
+                    </p>
+                 </Card>
+              </div>
+           </div>
+        </div>
+      )}
 
       {/* Patient Drawer */}
       {drawerPatient && (

@@ -10,7 +10,6 @@ export interface Consultation {
   status: "open" | "active" | "resolved"
   severity: "low" | "moderate" | "high" | "critical"
   created_at: string
-  updated_at: string
   snippet: string
 }
 
@@ -51,12 +50,9 @@ export function useConsultationsData(userId: string | undefined) {
     try {
       const { data, error: fetchError } = await supabase
         .from("consultations")
-        .select(`
-          id, status, severity, created_at, updated_at, doctor_id, ai_summary,
-          doctor:profiles!doctor_id(full_name)
-        `)
+        .select("id, status, severity, created_at, doctor_id, ai_summary, doctor:profiles!doctor_id(full_name)")
         .eq("patient_id", userId)
-        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
 
       if (fetchError) throw fetchError
 
@@ -67,7 +63,6 @@ export function useConsultationsData(userId: string | undefined) {
         status: c.status as "open" | "active" | "resolved",
         severity: c.severity as "low" | "moderate" | "high" | "critical",
         created_at: c.created_at,
-        updated_at: c.updated_at,
         snippet: c.ai_summary || "No summary available."
       }))
 

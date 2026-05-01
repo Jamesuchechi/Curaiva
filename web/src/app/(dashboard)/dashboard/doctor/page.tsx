@@ -16,12 +16,15 @@ import {
   Send,
   CheckCircle2,
   Zap,
+  History,
+  Activity
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/providers/auth-provider"
 import { ToolTrace, type TraceEntry } from "@/components/ui/tool-trace"
 import { Sparkline } from "@/components/ui/sparkline"
 import { createClient } from "@/lib/supabase"
+import { useDoctorConsultation } from "@/hooks/use-doctor-consultation"
 
 /* ── types ── */
 interface InboxItem {
@@ -32,6 +35,7 @@ interface InboxItem {
   time: string
   snippet: string
   patient_id: string
+  profile_id: string
   isNew?: boolean
 }
 
@@ -53,9 +57,9 @@ interface LiveMetrics {
 }
 
 const FALLBACK_INBOX: InboxItem[] = [
-  { id: "1", name: "Alice Johnson",   severity: "critical", status: "open", time: "12m ago", snippet: "Severe chest pain and shortness of breath...", patient_id: "592903" },
-  { id: "2", name: "Robert Smith",    severity: "moderate", status: "open", time: "45m ago", snippet: "Follow-up on blood pressure medications...",   patient_id: "12724"  },
-  { id: "3", name: "Elena Rodriguez", severity: "low",      status: "open", time: "2h ago",  snippet: "Persistent dry cough for 3 days...",           patient_id: "88234"  },
+  { id: "1", name: "Alice Johnson",   severity: "critical", status: "open", time: "12m ago", snippet: "Severe chest pain and shortness of breath...", patient_id: "592903", profile_id: "00000000-0000-0000-0000-000000000001" },
+  { id: "2", name: "Robert Smith",    severity: "moderate", status: "open", time: "45m ago", snippet: "Follow-up on blood pressure medications...",   patient_id: "12724",  profile_id: "00000000-0000-0000-0000-000000000002" },
+  { id: "3", name: "Elena Rodriguez", severity: "low",      status: "open", time: "2h ago",  snippet: "Persistent dry cough for 3 days...",           patient_id: "88234",  profile_id: "00000000-0000-0000-0000-000000000003" },
 ]
 
 function relativeTime(iso: string): string {
@@ -86,8 +90,23 @@ export default function DoctorDashboard() {
   const [briefError, setBriefError] = React.useState<string | null>(null)
   const [trace, setTrace] = React.useState<TraceEntry[]>([])
   const [replyText, setReplyText] = React.useState("")
-  const [sending, setSending] = React.useState(false)
-  const [replySent, setReplySent] = React.useState(false)
+  const [activeTab, setActiveTab] = React.useState<"overview" | "chat" | "history" | "actions" | "goals">("overview")
+  const [actionInput, setActionInput] = React.useState("")
+  const [executingAction, setExecutingAction] = React.useState(false)
+  interface Goal {
+    id: string
+    description: string
+    status: string
+    category?: string
+    target_date?: string
+  }
+  const [goals, setGoals] = React.useState<Goal[]>([])
+  const [loadingGoals, setLoadingGoals] = React.useState(false)
+  const [goalInput, setGoalInput] = React.useState("")
+
+  // Doctor consultation hook for messages and history
+  const activeProfileId = React.useMemo(() => inbox.find(i => i.id === selectedId)?.profile_id || null, [inbox, selectedId])
+  const { messages, history: patientHistory, sendMessage: sendThreadMessage } = useDoctorConsultation(selectedId, activeProfileId)
 
   /* ── tool trace helpers ── */
   const addTrace = (entry: Omit<TraceEntry, "id" | "timestamp">): string => {
@@ -107,7 +126,7 @@ export default function DoctorDashboard() {
     const fetchInboxAndMetrics = async () => {
       const { data: consultations, error } = await supabase
         .from("consultations")
-        .select("id, patient_id, status, priority, ai_summary, created_at, profiles!patient_id(full_name, fhir_patient_id)")
+        .select("id, patient_id, status, priority, severity, ai_summary, created_at, profiles!patient_id(id, full_name, fhir_patient_id)")
         .order("created_at", { ascending: false })
         .limit(20)
 
@@ -117,13 +136,19 @@ export default function DoctorDashboard() {
           return {
             id: String(c.id),
             name: String(pat?.full_name ?? "Unknown Patient"),
-            severity: (c.priority as "critical" | "moderate" | "low") ?? "moderate",
+            severity: (c.severity as "critical" | "moderate" | "low") || (c.priority as "critical" | "moderate" | "low") || "moderate",
             status: (c.status as "open" | "active" | "resolved") ?? "open",
             time: relativeTime(String(c.created_at)),
             snippet: String(c.ai_summary ?? "Consultation request received."),
             patient_id: String(pat?.fhir_patient_id ?? "592903"),
+            profile_id: String(pat?.id ?? "")
           }
         })
+
+        // Triage Sorting: Critical > Moderate > Low
+        const severityWeight = { critical: 3, moderate: 2, low: 1 }
+        liveInbox.sort((a, b) => severityWeight[b.severity] - severityWeight[a.severity])
+
         setInbox(liveInbox)
 
         const openCount = consultations.filter((c: Record<string, unknown>) => c.status === "open" || c.status === "active").length
@@ -163,11 +188,12 @@ export default function DoctorDashboard() {
           const newItem: InboxItem = {
             id: String(payload.new.id),
             name: String(pat?.full_name ?? "New Patient"),
-            severity: (payload.new.priority as "critical" | "moderate" | "low") ?? "moderate",
+            severity: (payload.new.severity as "critical" | "moderate" | "low") || (payload.new.priority as "critical" | "moderate" | "low") || "moderate",
             status: (payload.new.status as "open" | "active" | "resolved") ?? "open",
             time: "Just now",
             snippet: String(payload.new.ai_summary ?? "New consultation request."),
             patient_id: String(pat?.fhir_patient_id ?? "592903"),
+            profile_id: String(payload.new.patient_id),
             isNew: true,
           }
 
@@ -187,6 +213,50 @@ export default function DoctorDashboard() {
     return () => { supabase.removeChannel(channel) }
   }, [supabase])
 
+  /* ── goal tracking ── */
+  const loadGoals = async (pid: string) => {
+    setLoadingGoals(true)
+    try {
+      const res = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "get", patient_id: pid }),
+      })
+      const data = await res.json()
+      if (data.goals) setGoals(data.goals)
+    } catch (err) {
+      console.error("Failed to load goals", err)
+    } finally {
+      setLoadingGoals(false)
+    }
+  }
+
+  const handleAddGoal = async () => {
+    if (!goalInput.trim() || !brief?.patient?.id) return
+    setLoadingGoals(true)
+    try {
+      const res = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          action: "create", 
+          patient_id: brief.patient.id,
+          description: goalInput,
+          category: "behavioral"
+        }),
+      })
+      const data = await res.json()
+      if (data.goal) {
+        setGoalInput("")
+        loadGoals(brief.patient.id)
+      }
+    } catch (err) {
+      console.error("Failed to add goal", err)
+    } finally {
+      setLoadingGoals(false)
+    }
+  }
+
   /* ── load AI brief via real MCP ── */
   const loadBrief = React.useCallback(async (item: InboxItem) => {
     setSelectedId(item.id)
@@ -194,7 +264,6 @@ export default function DoctorDashboard() {
     setBrief(null)
     setBriefError(null)
     setReplyText("")
-    setReplySent(false)
 
     // Mark as no longer "new" in the inbox
     setInbox(prev => prev.map(i => i.id === item.id ? { ...i, isNew: false } : i))
@@ -226,6 +295,9 @@ export default function DoctorDashboard() {
         focus_areas: data.suggested_focus_areas ?? [],
       })
       updateTrace(tid, { status: "success", duration: Date.now() - t0 })
+      
+      // Fetch goals too
+      loadGoals(item.patient_id)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error"
       setBriefError(msg)
@@ -236,31 +308,9 @@ export default function DoctorDashboard() {
 
   }, [])
 
-  /* ── send reply ── */
-  const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedId) return
-    setSending(true)
-    const tid = addTrace({ tool: "post_message", status: "pending", resources: ["messages"] })
-    const t0 = Date.now()
-    try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consultation_id: selectedId, content: replyText }),
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      setReplySent(true)
-      setReplyText("")
-      updateTrace(tid, { status: "success", duration: Date.now() - t0 })
-    } catch {
-      updateTrace(tid, { status: "error", duration: Date.now() - t0 })
-    } finally {
-      setSending(false)
-    }
-  }
 
-  /* ── mark resolved ── */
+
+
   const handleMarkResolved = async () => {
     if (!selectedId) return
     const tid = addTrace({ tool: "resolve_consultation", status: "pending", resources: ["consultations"] })
@@ -275,11 +325,72 @@ export default function DoctorDashboard() {
       if (data.error) throw new Error(data.error)
       
       setInbox(prev => prev.map(i => i.id === selectedId ? { ...i, status: "resolved" } : i))
-      setSelectedId(null)
-      setBrief(null)
       updateTrace(tid, { status: "success", duration: Date.now() - t0 })
+      setActiveTab("overview")
     } catch {
       updateTrace(tid, { status: "error", duration: Date.now() - t0 })
+    }
+  }
+
+  /* ── execute clinical action ── */
+  const handleExecuteAction = async () => {
+    if (!actionInput.trim() || !activeProfileId) return
+    setExecutingAction(true)
+    const tid = addTrace({ tool: "execute_clinical_action", status: "pending", resources: ["medications", "prescriptions", "groq_api"] })
+    const t0 = Date.now()
+    
+    try {
+      // 1. Send the natural language command to Groq for intent parsing
+      const res = await fetch("/api/ai/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: actionInput }),
+      })
+      
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      
+      const { action } = data
+      
+      // 2. Execute the corresponding database action based on the AI's structured output
+      if (action.action_type === "prescribe") {
+        await supabase.from("medications").insert({
+          patient_id: activeProfileId,
+          name: action.medication_name || "Unknown Medication",
+          dose: action.dose || "As directed",
+          time: action.frequency || "Daily",
+          status: "active",
+          adherence: 100
+        })
+      } else if (action.action_type === "log_alert") {
+        await supabase.from("notifications").insert({
+          user_id: activeProfileId,
+          title: "Doctor Alert",
+          message: action.alert_reason || "Your doctor has added an alert to your file.",
+          type: "alert"
+        })
+      } else if (action.action_type === "schedule_followup") {
+         await supabase.from("notifications").insert({
+          user_id: activeProfileId,
+          title: "Follow-up Scheduled",
+          message: `Your doctor has requested a follow-up in ${action.timeframe || "the near future"}.`,
+          type: "info"
+        })
+      } else {
+        throw new Error("Could not understand clinical intent. Please rephrase.")
+      }
+
+      setActionInput("")
+      updateTrace(tid, { status: "success", duration: Date.now() - t0 })
+      
+      // Global refresh so patient/doctor dashboards sync instantly
+      window.dispatchEvent(new Event("curaiva-refresh-data"))
+    } catch (err: unknown) {
+      updateTrace(tid, { status: "error", duration: Date.now() - t0 })
+      // Display a quick alert so the doctor knows the parse failed
+      alert(err instanceof Error ? err.message : "Failed to execute clinical command")
+    } finally {
+      setExecutingAction(false)
     }
   }
 
@@ -458,11 +569,43 @@ export default function DoctorDashboard() {
                         FHIR Patient/{brief.patient.id} · {new Date().toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge variant="new">FHIR R4 + SHARP</Badge>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="new">FHIR R4 + SHARP</Badge>
+                      <Button variant="ghost" size="sm" onClick={handleMarkResolved} className="h-7 text-xs border border-border-base text-text-muted hover:text-text-white hover:border-text-muted">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Resolve
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Tab Navigation */}
+                  <div className="flex items-center gap-6 mt-4 border-b border-brand-lime/10">
+                    {[
+                      { id: "overview", label: "AI Brief", icon: FileText },
+                      { id: "chat", label: "Patient Chat", icon: MessageSquare },
+                      { id: "history", label: "History", icon: History },
+                      { id: "goals", label: "Goals", icon: CheckCircle2 },
+                      { id: "actions", label: "Clinical Actions", icon: Activity }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as "overview" | "chat" | "history" | "goals" | "actions")}
+                        className={cn(
+                          "pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all relative top-px",
+                          activeTab === tab.id 
+                            ? "border-brand-lime text-brand-lime" 
+                            : "border-transparent text-text-muted hover:text-text-white"
+                        )}
+                      >
+                        <tab.icon className="w-4 h-4" />
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
+                <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
+                  {activeTab === "overview" && (
+                    <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
                   {brief.severity === "critical" && (
                     <div className="p-4 rounded-xl bg-red/10 border border-red/20 flex items-start gap-3 animate-in slide-in-from-top-2">
                       <AlertCircle className="w-5 h-5 text-red shrink-0" />
@@ -528,33 +671,178 @@ export default function DoctorDashboard() {
                       )) : <p className="text-xs text-text-muted">No specific focus areas identified.</p>}
                     </ul>
                   </section>
+                    </div>
+                  )}
 
-                  {/* Reply */}
-                  <section className="space-y-3 pt-2 border-t border-border-base">
-                    <h5 className="text-[10px] font-mono font-bold text-brand-lime uppercase tracking-widest">Reply to Patient</h5>
-                    {replySent ? (
-                      <div className="flex items-center gap-2 p-3 rounded-xl bg-teal/10 border border-teal/20 text-teal text-sm font-semibold">
-                        <CheckCircle2 className="w-4 h-4" /> Message sent to patient.
+                  {activeTab === "chat" && (
+                    <div className="flex-1 flex flex-col h-full bg-surface-2/30">
+                      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        {messages.length === 0 ? (
+                          <div className="text-center text-text-muted text-sm mt-10">No messages in this thread yet.</div>
+                        ) : (
+                          messages.map((m) => {
+                            const isDoctor = m.sender_id === profile?.id
+                            return (
+                              <div key={m.id} className={cn("flex w-full", isDoctor ? "justify-end" : "justify-start")}>
+                                <div className={cn(
+                                  "max-w-[80%] p-4 rounded-2xl",
+                                  isDoctor ? "bg-brand-lime/10 border border-brand-lime/20 text-brand-lime rounded-br-none" 
+                                           : "bg-surface border border-border-base text-text-light rounded-bl-none"
+                                )}>
+                                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                                  <span className="text-[10px] font-mono opacity-50 mt-2 block">
+                                    {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })
+                        )}
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <textarea
-                          value={replyText}
-                          onChange={e => setReplyText(e.target.value)}
-                          rows={3}
-                          placeholder="Type your response to the patient..."
-                          className="w-full p-3 rounded-xl bg-surface border border-border-base focus:border-brand-lime outline-none transition-all resize-none text-sm text-text-light placeholder:text-text-muted/50"
-                        />
-                        <div className="flex gap-2">
-                          <Button variant="primary" className="flex-1 gap-2" disabled={!replyText.trim() || sending} onClick={handleSendReply}>
-                            {sending ? <Spinner size="sm" className="border-bg" /> : <Send className="w-4 h-4" />}
-                            Send Reply
+                      <div className="p-4 border-t border-border-base bg-surface">
+                        <form onSubmit={(e) => { e.preventDefault(); sendThreadMessage(profile?.id || "", replyText); setReplyText(""); }} className="relative flex gap-2">
+                          <input 
+                            type="text" 
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Message patient directly..."
+                            className="flex-1 h-12 pl-4 pr-4 rounded-xl bg-surface-2 border border-border-base focus:border-brand-lime outline-none text-sm transition-all"
+                          />
+                          <Button type="submit" disabled={!replyText.trim()} size="icon" className="h-12 w-12 bg-brand-lime text-bg hover:opacity-90 shrink-0 rounded-xl">
+                            <Send className="w-5 h-5" />
                           </Button>
-                          <Button variant="ghost" className="px-4" onClick={handleMarkResolved}>Mark Resolved</Button>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "history" && (
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      <h4 className="font-bold text-lg text-text-white mb-4 flex items-center gap-2">
+                        <History className="w-5 h-5 text-brand-lime" /> Timeline
+                      </h4>
+                      {patientHistory.length === 0 ? (
+                        <p className="text-text-muted text-sm">No previous consultations found for this patient.</p>
+                      ) : (
+                        <div className="space-y-4 border-l-2 border-border-base pl-6 relative">
+                          {patientHistory.map(hist => (
+                            <div key={hist.id} className="relative">
+                              <div className="absolute left-[-31px] top-1 w-3 h-3 rounded-full bg-surface-2 border-2 border-brand-lime" />
+                              <div className="bg-surface border border-border-base rounded-xl p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-mono text-text-muted">{new Date(hist.created_at).toLocaleDateString()}</span>
+                                  <Badge variant={hist.severity as "critical" | "moderate" | "low"} className="text-[10px]">{hist.severity}</Badge>
+                                </div>
+                                <p className="text-sm text-text-light">{hist.ai_summary}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Goals Tab */}
+                  {activeTab === "goals" && (
+                    <div className="p-6 space-y-6 animate-in fade-in duration-300">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-mono font-bold text-brand-lime uppercase tracking-widest">Active Health Goals</h4>
+                        <Badge variant="stable">{goals.length} Tracked</Badge>
+                      </div>
+                      
+                      {/* Add Goal Input */}
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="Set a new clinical goal (e.g. Weight loss 5kg)" 
+                          className="flex-1 bg-bg border border-border-base rounded-xl px-4 py-2 text-sm text-text-light focus:border-brand-lime outline-none transition-all"
+                          value={goalInput}
+                          onChange={e => setGoalInput(e.target.value)}
+                        />
+                        <Button 
+                          size="sm" 
+                          className="bg-brand-lime text-bg font-bold rounded-xl h-10"
+                          disabled={loadingGoals || !goalInput.trim()}
+                          onClick={handleAddGoal}
+                        >
+                          {loadingGoals ? <Spinner size="sm" className="border-bg" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                          Set Goal
+                        </Button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {loadingGoals && goals.length === 0 ? (
+                          <div className="py-12 text-center text-text-muted animate-pulse">FETCHING FHIR GOALS...</div>
+                        ) : goals.length === 0 ? (
+                          <div className="py-12 text-center text-text-muted italic bg-surface-2 rounded-2xl border-2 border-dashed border-border-base">
+                            No active goals for this patient.
+                          </div>
+                        ) : (
+                          goals.map((g, i) => (
+                            <div key={g.id || i} className="p-4 rounded-xl bg-bg border border-border-base hover:border-brand-lime/30 transition-all flex items-center justify-between group">
+                              <div className="flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-full bg-brand-lime/10 flex items-center justify-center text-brand-lime">
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold text-text-white">{g.description}</p>
+                                  <p className="text-[10px] text-text-muted font-mono uppercase mt-1">
+                                    Target: {g.target_date || "No date set"} · {g.category}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant={g.status === "active" ? "stable" : "new"}>{g.status.toUpperCase()}</Badge>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "actions" && (
+                    <div className="flex-1 p-6 flex flex-col">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-lg text-text-white mb-2 flex items-center gap-2">
+                          <Zap className="w-5 h-5 text-brand-lime" /> AI Command Center
+                        </h4>
+                        <p className="text-sm text-text-muted mb-6">
+                          Type a clinical command. The AI will parse intent and execute the database action automatically.
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                          <div className="p-4 rounded-xl border border-border-base bg-surface-2">
+                            <h5 className="font-bold text-xs uppercase text-text-muted mb-2">Example Commands</h5>
+                            <ul className="text-sm text-text-light space-y-2 font-mono">
+                              <li>&gt; &quot;Prescribe 10mg Lisinopril&quot;</li>
+                              <li>&gt; &quot;Log high blood pressure alert&quot;</li>
+                              <li>&gt; &quot;Schedule follow-up next week&quot;</li>
+                            </ul>
+                          </div>
                         </div>
                       </div>
-                    )}
-                  </section>
+
+                      <div className="mt-auto">
+                        <div className="relative">
+                          <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-lime" />
+                          <input 
+                            type="text" 
+                            value={actionInput}
+                            onChange={e => setActionInput(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && handleExecuteAction()}
+                            placeholder="E.g. Prescribe 500mg Metformin twice daily..."
+                            className="w-full h-14 pl-12 pr-24 rounded-2xl bg-surface border border-brand-lime/30 focus:border-brand-lime focus:ring-1 focus:ring-brand-lime outline-none transition-all font-mono text-sm"
+                          />
+                          <Button 
+                            onClick={handleExecuteAction}
+                            disabled={!actionInput.trim() || executingAction}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-10 bg-brand-lime text-bg font-bold rounded-xl"
+                          >
+                            {executingAction ? <Spinner size="sm" className="border-bg" /> : "Execute"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </>
             ) : null}
