@@ -25,6 +25,7 @@ import { ToolTrace, type TraceEntry } from "@/components/ui/tool-trace"
 import { Sparkline } from "@/components/ui/sparkline"
 import { createClient } from "@/lib/supabase"
 import { useDoctorConsultation } from "@/hooks/use-doctor-consultation"
+import { useSearchParams } from "next/navigation"
 
 /* ── types ── */
 interface InboxItem {
@@ -213,6 +214,7 @@ export default function DoctorDashboard() {
     return () => { supabase.removeChannel(channel) }
   }, [supabase])
 
+
   /* ── goal tracking ── */
   const loadGoals = async (pid: string) => {
     setLoadingGoals(true)
@@ -307,6 +309,22 @@ export default function DoctorDashboard() {
     }
 
   }, [])
+
+  // Handle deep-linked consultation from Patient Registry
+  const searchParams = useSearchParams()
+  React.useEffect(() => {
+    const cid = searchParams.get("consultationId")
+    if (cid && inbox.length > 0 && !selectedId) {
+      const item = inbox.find(i => i.id === cid)
+      if (item) {
+        const timer = setTimeout(() => {
+          loadBrief(item)
+          setActiveTab("chat")
+        }, 0)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [searchParams, inbox, selectedId, loadBrief])
 
 
 

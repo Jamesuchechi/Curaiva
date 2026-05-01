@@ -7,9 +7,11 @@ import { Search, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase"
 import { Spinner } from "@/components/ui/loading"
+import { useRouter } from "next/navigation"
 
 interface PatientItem {
   id: string
+  consultationId: string
   name: string
   age: number
   condition: string
@@ -18,6 +20,7 @@ interface PatientItem {
 }
 
 export default function DoctorPatientsPage() {
+  const router = useRouter()
   const [search, setSearch] = React.useState("")
   const [filter, setFilter] = React.useState<"all" | "critical" | "moderate" | "low">("all")
   const [patients, setPatients] = React.useState<PatientItem[]>([])
@@ -28,25 +31,27 @@ export default function DoctorPatientsPage() {
     const fetchPatients = async () => {
       const { data, error } = await supabase
         .from("consultations")
-        .select("created_at, priority, ai_summary, profiles!patient_id(full_name, fhir_patient_id)")
+        .select("id, created_at, priority, ai_summary, profiles!patient_id(id, full_name, fhir_patient_id)")
         .order("created_at", { ascending: false })
 
       if (!error && data) {
         // Group by patient
         const uniquePatients = new Map<string, PatientItem>()
         interface ConsultRow {
+          id: string;
           created_at: string;
           priority: string;
           ai_summary: string | null;
-          profiles: { full_name: string; fhir_patient_id: string | null } | { full_name: string; fhir_patient_id: string | null }[] | null;
+          profiles: { id: string; full_name: string; fhir_patient_id: string | null } | null;
         }
 
         (data as unknown as ConsultRow[]).forEach((c) => {
-          const pat = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles
-          const pId = pat?.fhir_patient_id || "592903"
-          if (!uniquePatients.has(pId)) {
-            uniquePatients.set(pId, {
-              id: pId,
+          const pat = c.profiles
+          const fhirId = pat?.fhir_patient_id || "592903"
+          if (!uniquePatients.has(fhirId)) {
+            uniquePatients.set(fhirId, {
+              id: fhirId,
+              consultationId: c.id,
               name: pat?.full_name || "Unknown Patient",
               age: 41, // Not provided in current schema, using fallback
               condition: c.ai_summary || "Consultation record",
@@ -102,8 +107,13 @@ export default function DoctorPatientsPage() {
              <div className="p-12 flex justify-center"><Spinner size="md" className="border-brand-lime" /></div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center text-text-muted">No patients match your search.</div>
-          ) : filtered.map(p => (
-            <div key={p.id} className="flex items-center gap-5 p-5 hover:bg-surface-2 transition-all group cursor-pointer">
+          ) : (
+            filtered.map(p => (
+              <div 
+                key={p.id} 
+                onClick={() => router.push(`/dashboard/doctor?consultationId=${p.consultationId}`)}
+                className="flex items-center gap-5 p-5 hover:bg-surface-2 transition-all group cursor-pointer"
+              >
               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-bold text-lg",
                 p.severity === "critical" ? "bg-red/10 text-red" : p.severity === "moderate" ? "bg-amber/10 text-amber" : "bg-teal/10 text-teal"
               )}>
@@ -123,7 +133,8 @@ export default function DoctorPatientsPage() {
               </div>
               <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
 
