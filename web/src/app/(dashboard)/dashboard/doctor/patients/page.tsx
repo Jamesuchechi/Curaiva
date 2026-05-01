@@ -9,9 +9,11 @@ import { createClient } from "@/lib/supabase"
 import { Spinner } from "@/components/ui/loading"
 import { useRouter } from "next/navigation"
 import { useGlobalDiscoveryData } from "@/hooks/use-global-discovery-data"
+import { useAuth } from "@/components/providers/auth-provider"
 
 interface PatientItem {
-  id: string
+  id: string          // FHIR ID
+  profileId?: string  // Supabase UUID (if exists)
   consultationId?: string
   name: string
   age: number
@@ -55,6 +57,7 @@ export default function DoctorPatientsPage() {
           if (!uniquePatients.has(fhirId)) {
             uniquePatients.set(fhirId, {
               id: fhirId,
+              profileId: pat?.id,
               consultationId: c.id,
               name: pat?.full_name || "Unknown Patient",
               age: 41, 
@@ -73,7 +76,7 @@ export default function DoctorPatientsPage() {
 
   React.useEffect(() => {
     if (activeTab === "global" && globalPatients.length === 0) {
-      fetchGlobalData()
+      fetchGlobalData("patients")
     }
   }, [activeTab, globalPatients.length, fetchGlobalData])
 
@@ -97,6 +100,65 @@ export default function DoctorPatientsPage() {
   })
 
   const isLoading = activeTab === "assigned" ? loading : globalLoading
+  const [startingConsultation, setStartingConsultation] = React.useState<string | null>(null)
+  const { profile: doctorProfile } = useAuth()
+
+  const handleStartConsultation = async (p: PatientItem) => {
+    if (p.consultationId) {
+      router.push(`/dashboard/doctor?consultationId=${p.consultationId}`)
+      return
+    }
+
+    if (!doctorProfile?.id) return
+    setStartingConsultation(p.id)
+
+    try {
+      let targetProfileId = p.profileId
+
+      // If no local profileId, try to find one by fhir_patient_id
+      if (!targetProfileId) {
+        const { data: existingProfile } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("fhir_patient_id", p.id)
+          .single()
+        
+        if (existingProfile) {
+          targetProfileId = existingProfile.id
+        } else {
+          // For now, if no profile exists, we create a "shadow" profile or alert.
+          // Since we can't create an auth user here, we'll use a specific logic.
+          // In a real app, you'd have a separate 'patients' table or a way to create profiles without auth.
+          // For this hackathon demo, we'll try to use the system's "Global Patient" profile if it fails.
+          console.warn("No local profile found for FHIR patient. Consultation might fail.")
+        }
+      }
+
+      const { data: newConsult, error: consultError } = await supabase
+        .from("consultations")
+        .insert({
+          patient_id: targetProfileId || "00000000-0000-0000-0000-000000000001", // Fallback to a mock patient UUID if not found
+          doctor_id: doctorProfile.id,
+          fhir_patient_id: p.id,
+          status: "open",
+          priority: "moderate",
+          ai_summary: `New consultation started for patient discovered via FHIR (ID: ${p.id}).`
+        })
+        .select("id")
+        .single()
+
+      if (consultError) throw consultError
+
+      if (newConsult) {
+        router.push(`/dashboard/doctor?consultationId=${newConsult.id}`)
+      }
+    } catch (err) {
+      console.error("Consultation creation error:", err)
+      alert(`Error starting consultation: ${err instanceof Error ? err.message : "Invalid input or permission error"}`)
+    } finally {
+      setStartingConsultation(null)
+    }
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -161,14 +223,11 @@ export default function DoctorPatientsPage() {
             filtered.map(p => (
               <div 
                 key={p.id} 
-                onClick={() => {
-                  if (p.consultationId) {
-                    router.push(`/dashboard/doctor?consultationId=${p.consultationId}`)
-                  } else {
-                    alert(`Starting consultation for ${p.name} (Discovered via FHIR)`)
-                  }
-                }}
-                className="flex items-center gap-5 p-5 hover:bg-surface-2 transition-all group cursor-pointer"
+                onClick={() => handleStartConsultation(p)}
+                className={cn(
+                  "flex items-center gap-5 p-5 hover:bg-surface-2 transition-all group cursor-pointer",
+                  startingConsultation === p.id && "opacity-50 pointer-events-none"
+                )}
               >
               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-bold text-lg",
                 p.severity === "critical" ? "bg-red/10 text-red" : p.severity === "moderate" ? "bg-amber/10 text-amber" : "bg-teal/10 text-teal"
@@ -187,7 +246,13 @@ export default function DoctorPatientsPage() {
                 <p className="text-xs text-text-muted">Last seen</p>
                 <p className="text-sm font-medium">{p.lastSeen}</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="shrink-0 flex items-center gap-2">
+                {startingConsultation === p.id ? (
+                  <Spinner size="sm" className="border-brand-lime" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
+              </div>
             </div>
             ))
           )}

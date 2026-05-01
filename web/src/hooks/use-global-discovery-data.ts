@@ -22,20 +22,24 @@ export function useGlobalDiscoveryData() {
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
-  const fetchGlobalData = async () => {
+  const fetchGlobalData = async (type: "all" | "patients" | "practitioners" = "all") => {
     setLoading(true)
     setError(null)
     try {
-      const [patRes, pracRes] = await Promise.all([
-        fetch("/api/discovery/patients"),
-        fetch("/api/discovery/practitioners")
-      ])
-
-      const patData = await patRes.json()
-      const pracData = await pracRes.json()
-
-      if (patData.patients) setPatients(patData.patients)
-      if (pracData.practitioners) setPractitioners(pracData.practitioners)
+      const promises = []
+      if (type === "all" || type === "patients") promises.push(fetch("/api/discovery/patients").then(r => r.json()))
+      if (type === "all" || type === "practitioners") promises.push(fetch("/api/discovery/practitioners").then(r => r.json()))
+      
+      const results = await Promise.all(promises)
+      
+      if (type === "all") {
+        if (results[0]?.patients) setPatients(results[0].patients)
+        if (results[1]?.practitioners) setPractitioners(results[1].practitioners)
+      } else if (type === "patients") {
+        if (results[0]?.patients) setPatients(results[0].patients)
+      } else {
+        if (results[0]?.practitioners) setPractitioners(results[0].practitioners)
+      }
       
     } catch (err: unknown) {
       console.error("Discovery error:", err)

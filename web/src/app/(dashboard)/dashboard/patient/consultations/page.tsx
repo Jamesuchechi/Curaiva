@@ -74,6 +74,27 @@ export default function ConsultationsPage() {
       }).select("id").single()
 
       if (insertError) {
+        // If it's a UUID error, it's likely because we passed a FHIR ID to a UUID column
+        if (insertError.code === "22P02") {
+           // Fallback: Use a known system doctor UUID and store the FHIR ID
+           const { data: fallbackData, error: fallbackError } = await supabase.from("consultations").insert({
+            patient_id: profile.id,
+            doctor_id: "00000000-0000-0000-0000-000000000002", // Mock System Doctor
+            status: "open",
+            priority: "low",
+            ai_summary: `New consultation request for external specialist (FHIR ID: ${doctorId}).`
+          }).select("id").single()
+          
+          if (fallbackError) {
+            console.error("Consultation fallback error:", fallbackError)
+            return
+          }
+          if (fallbackData) {
+            refetch()
+            setActiveThreadId(fallbackData.id)
+          }
+          return
+        }
         console.error("Consultation creation error:", insertError)
         return
       }

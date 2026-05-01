@@ -24,7 +24,7 @@ export function DoctorSelectionModal({ isOpen, onClose, onSelect, patientKeyword
 
   React.useEffect(() => {
     if (isOpen && activeTab === "global" && practitioners.length === 0) {
-      fetchGlobalData()
+      fetchGlobalData("practitioners")
     }
   }, [isOpen, activeTab, practitioners.length, fetchGlobalData])
 
