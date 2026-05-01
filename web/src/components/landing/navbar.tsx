@@ -26,7 +26,7 @@ export function LandingNavbar() {
       )}
     >
       <Link href="/" className="flex items-center gap-2.5 group z-50">
-        <Image src="/logo.png" alt="Curaiva Logo" width={28} height={28} className="object-contain group-hover:scale-110 transition-transform" />
+        <Image src="/logo.png" alt="Curaiva Logo" width={28} height={28} className="object-contain group-hover:scale-110 transition-transform" priority />
         <span className="font-display text-xl font-bold tracking-tight text-text-white">Curaiva</span>
       </Link>
 

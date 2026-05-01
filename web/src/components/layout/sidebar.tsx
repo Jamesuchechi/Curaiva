@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Bell
+  Bell,
+  User
 } from "lucide-react"
 import { Avatar } from "@/components/ui/avatar"
 import { UserRole } from "@/types"
@@ -28,18 +29,21 @@ const navItems = {
     { label: "Medications",  icon: Pill,            href: "/dashboard/patient/medications" },
     { label: "Mental Health",icon: Heart,           href: "/dashboard/patient/mental-health" },
     { label: "Consultations",icon: MessageSquare,   href: "/dashboard/patient/consultations" },
+    { label: "Profile",      icon: User,            href: "/dashboard/profile" },
     { label: "Notifications",icon: Bell,            href: "/dashboard/notifications" },
   ],
   doctor: [
     { label: "Workspace",  icon: Stethoscope,     href: "/dashboard/doctor" },
     { label: "Patients",   icon: Users,           href: "/dashboard/doctor/patients" },
     { label: "Analytics",  icon: LayoutDashboard, href: "/dashboard/doctor/analytics" },
+    { label: "Profile",    icon: User,            href: "/dashboard/profile" },
     { label: "Notifications",icon: Bell,           href: "/dashboard/notifications" },
   ],
   chw: [
     { label: "Command Centre", icon: Users,           href: "/dashboard/chw" },
     { label: "Priority Queue", icon: LayoutDashboard, href: "/dashboard/chw/queue" },
     { label: "Community",      icon: MessageSquare,   href: "/dashboard/chw/community" },
+    { label: "Profile",        icon: User,            href: "/dashboard/profile" },
     { label: "Notifications",  icon: Bell,            href: "/dashboard/notifications" },
   ],
 }
@@ -71,7 +75,7 @@ export function Sidebar({ role = "patient" }: { role?: UserRole }) {
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-brand-lime/20 bg-white shadow-sm">
-          <Image src="/logo.png" alt="Curaiva Logo" width={40} height={40} className="object-contain" />
+          <Image src="/logo.png" alt="Curaiva Logo" width={40} height={40} className="object-contain" priority />
         </div>
         {!isCollapsed && (
           <span className="font-display font-bold text-xl tracking-tight">
@@ -105,7 +109,11 @@ export function Sidebar({ role = "patient" }: { role?: UserRole }) {
 
       {/* User Card */}
       <div className="p-4 border-t border-border-base">
-        <div className={cn("flex items-center gap-3 p-2 rounded-xl bg-surface-2", isCollapsed && "justify-center")}>
+        <Link href="/dashboard/profile" className={cn(
+          "flex items-center gap-3 p-2 rounded-xl bg-surface-2 hover:bg-surface-2-hover transition-all", 
+          isCollapsed && "justify-center",
+          pathname === "/dashboard/profile" && "ring-1 ring-brand-lime bg-brand-lime-dim"
+        )}>
           <Avatar fallback={initials} size="sm" />
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
@@ -113,7 +121,7 @@ export function Sidebar({ role = "patient" }: { role?: UserRole }) {
               <p className="text-xs text-text-muted capitalize">{role}</p>
             </div>
           )}
-        </div>
+        </Link>
 
         <button
           onClick={handleSignOut}

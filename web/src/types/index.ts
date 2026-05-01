@@ -8,6 +8,12 @@ export interface Profile {
   fhir_base_url?: string
   avatar_url?: string
   created_at?: string
+  // Professional fields
+  specialty?: string | null
+  bio?: string | null
+  is_available?: boolean
+  rating?: number
+  years_experience?: number
 }
 
 export interface TriageAssessment {

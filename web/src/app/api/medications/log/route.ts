@@ -1,79 +1,70 @@
 import { NextResponse } from "next/server";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function PATCH(req: Request) {
   try {
-    const cookieStore = await cookies();
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: "", ...options });
-          },
-        },
-      }
-    );
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },
+      error: authError
     } = await supabase.auth.getUser();
-    if (!user) {
+
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { medication_id, log_id } = await req.json();
     const now = new Date().toISOString();
 
-    interface LogPayload {
-      patient_id: string;
-      medication_id: string;
-      status: string;
-      scheduled_at?: string;
-      id?: string;
+    // Validation
+    const isUUID = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+    
+    if (!medication_id || !isUUID(medication_id)) {
+      return NextResponse.json({ 
+        error: "Invalid medication_id format", 
+        received: medication_id,
+        hint: "Expected a valid UUID string" 
+      }, { status: 400 });
     }
 
-    const payload: LogPayload = {
-      patient_id: user.id,
-      medication_id,
-      status: "taken",
-      scheduled_at: now
-    };
-
-    // Only include ID if it's a valid truthy value
-    if (log_id && log_id !== "undefined") {
-      payload.id = log_id;
-    }
-
-    // Attempt the upsert
-    const { data, error } = await supabase
-      .from("medication_logs")
-      .upsert(payload)
-      .select();
-
-    if (error) {
-      console.error("Supabase Error Details:", error);
-      // If scheduled_at failed, try one more time without it
-      if (error.message?.includes("column \"scheduled_at\" does not exist")) {
-        const rest = { ...payload };
-        delete rest.scheduled_at;
-        const { error: retryError } = await supabase.from("medication_logs").upsert(rest);
-        if (retryError) throw retryError;
-      } else {
+    let result;
+    
+    // If we have a log_id, we update existing log. Otherwise we insert new.
+    if (log_id && log_id !== "undefined" && log_id !== "null" && isUUID(log_id)) {
+      console.log("Updating log:", log_id);
+      const { data, error } = await supabase
+        .from("medication_logs")
+        .update({ status: "taken", scheduled_at: now })
+        .eq("id", log_id);
+      
+      if (error) {
+        console.error("Supabase Update Error:", error);
         throw error;
       }
+      result = data;
+    } else {
+      // Normal insert
+      const insertPayload = {
+        patient_id: user.id,
+        medication_id: medication_id,
+        status: "taken",
+        scheduled_at: now
+      };
+      
+      const { data, error } = await supabase
+        .from("medication_logs")
+        .insert(insertPayload);
+
+      if (error) {
+        console.error("Supabase Insert Error:", error);
+        throw error;
+      }
+      result = data;
     }
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: result });
+
   } catch (error: unknown) {
     console.error("Medication Log API Error:", error);
     const err = error as { message?: string; details?: string; hint?: string };

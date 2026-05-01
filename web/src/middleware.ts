@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -13,42 +13,23 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
+        getAll() {
+          return request.cookies.getAll().map(cookie => {
+            let value = cookie.value
+            if (value.startsWith('"') && value.endsWith('"')) {
+              value = value.substring(1, value.length - 1)
+            }
+            return { ...cookie, value }
           })
         },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request,
           })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
         },
       },
     }
@@ -59,11 +40,11 @@ export async function middleware(request: NextRequest) {
   // Protect dashboard routes
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
     }
 
-    // Role-based access control
-    // Fetch profile to check role
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -74,25 +55,30 @@ export async function middleware(request: NextRequest) {
       const role = profile.role
       const path = request.nextUrl.pathname
 
-      // If user tries to access /dashboard but has a specific role, redirect to their role dashboard
       if (path === '/dashboard') {
-        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
+        const url = request.nextUrl.clone()
+        url.pathname = `/dashboard/${role}`
+        return NextResponse.redirect(url)
       }
 
-      // Prevent cross-role access (e.g. patient accessing /dashboard/doctor)
       if (path.startsWith('/dashboard/patient') && role !== 'patient') {
-        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
+        const url = request.nextUrl.clone()
+        url.pathname = `/dashboard/${role}`
+        return NextResponse.redirect(url)
       }
       if (path.startsWith('/dashboard/doctor') && role !== 'doctor') {
-        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
+        const url = request.nextUrl.clone()
+        url.pathname = `/dashboard/${role}`
+        return NextResponse.redirect(url)
       }
       if (path.startsWith('/dashboard/chw') && role !== 'chw') {
-        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
+        const url = request.nextUrl.clone()
+        url.pathname = `/dashboard/${role}`
+        return NextResponse.redirect(url)
       }
     }
   }
 
-  // Redirect authenticated users away from login/register
   if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -101,7 +87,9 @@ export async function middleware(request: NextRequest) {
       .single()
     
     if (profile) {
-      return NextResponse.redirect(new URL(`/dashboard/${profile.role}`, request.url))
+      const url = request.nextUrl.clone()
+      url.pathname = `/dashboard/${profile.role}`
+      return NextResponse.redirect(url)
     }
   }
 

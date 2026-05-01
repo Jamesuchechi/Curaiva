@@ -1,10 +1,11 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string
   fallback: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
 function Avatar({ className, src, fallback, size = 'md', ...props }: AvatarProps) {
@@ -12,6 +13,7 @@ function Avatar({ className, src, fallback, size = 'md', ...props }: AvatarProps
     sm: "h-8 w-8 text-xs",
     md: "h-10 w-10 text-sm",
     lg: "h-16 w-16 text-xl",
+    xl: "h-32 w-32 text-4xl",
   }
 
   return (
@@ -24,7 +26,13 @@ function Avatar({ className, src, fallback, size = 'md', ...props }: AvatarProps
       {...props}
     >
       {src ? (
-        <img src={src} alt={fallback} className="aspect-square h-full w-full" />
+        <Image 
+          src={src} 
+          alt={fallback} 
+          fill 
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
       ) : (
         <span>{fallback}</span>
       )}
