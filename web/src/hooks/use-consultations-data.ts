@@ -8,7 +8,7 @@ export interface Consultation {
   doctor_id: string | null
   doctor_name: string
   status: "open" | "active" | "resolved"
-  severity: "low" | "moderate" | "high" | "critical"
+  priority: "low" | "moderate" | "high" | "critical"
   created_at: string
   snippet: string
 }
@@ -81,7 +81,7 @@ export function useConsultationsData(userId: string | undefined) {
         doctor_id: c.doctor_id,
         doctor_name: c.profiles?.full_name || "Unassigned Provider",
         status: c.status as "open" | "active" | "resolved",
-        severity: (c.priority || "moderate") as "low" | "moderate" | "high" | "critical",
+        priority: (c.priority || "moderate") as "low" | "moderate" | "high" | "critical",
         created_at: c.created_at,
         snippet: c.ai_summary || "No summary available."
       }))

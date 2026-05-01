@@ -65,15 +65,20 @@ export default function ConsultationsPage() {
     setStarting(true)
     setShowDoctorModal(false)
     try {
-      const { data, error } = await supabase.from("consultations").insert({
+      const { data, error: insertError } = await supabase.from("consultations").insert({
         patient_id: profile.id,
         doctor_id: doctorId,
         status: "open",
-        severity: "low",
+        priority: "low",
         ai_summary: "New consultation request from patient dashboard."
       }).select("id").single()
 
-      if (!error && data) {
+      if (insertError) {
+        console.error("Consultation creation error:", insertError)
+        return
+      }
+
+      if (data) {
         // Optimistically reload the list and select the new one
         refetch()
         setActiveThreadId(data.id)
@@ -187,7 +192,7 @@ export default function ConsultationsPage() {
                     <p className="font-bold text-text-white">{activeConsultation.doctor_name}</p>
                     <p className="text-xs text-text-muted">Started: {new Date(activeConsultation.created_at).toLocaleString()}</p>
                   </div>
-                  <Badge variant={activeConsultation.severity === "high" ? "urgent" : (activeConsultation.severity as "low" | "moderate" | "critical")}>{activeConsultation.status}</Badge>
+                  <Badge variant={activeConsultation.priority === "high" ? "urgent" : (activeConsultation.priority as "low" | "moderate" | "critical")}>{activeConsultation.status}</Badge>
                 </div>
               </CardHeader>
               
