@@ -290,27 +290,28 @@ function calculateAge(birthDate?: string): number | null {
 
 // ─── MCP Server ───────────────────────────────────────────────────────────────
 
-const server = new McpServer(
-  {
-    name: "curaiva-ai",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      extensions: {
-        "ai.promptopinion/fhir-context": {
-          scopes: [
-            { name: "patient/Patient.rs", required: true },
-            { name: "patient/Condition.rs", required: true },
-            { name: "patient/MedicationRequest.rs", required: true },
-            { name: "patient/Observation.rs", required: true },
-            { name: "patient/Encounter.rs", required: false }
-          ]
+function createMcpServer() {
+  const server = new McpServer(
+    {
+      name: "curaiva-ai",
+      version: "1.0.0",
+    },
+    {
+      capabilities: {
+        extensions: {
+          "ai.promptopinion/fhir-context": {
+            scopes: [
+              { name: "patient/Patient.rs", required: true },
+              { name: "patient/Condition.rs", required: true },
+              { name: "patient/MedicationRequest.rs", required: true },
+              { name: "patient/Observation.rs", required: true },
+              { name: "patient/Encounter.rs", required: false }
+            ]
+          }
         }
       }
     }
-  }
-);
+  );
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TOOL 1: triage_patient
@@ -1086,6 +1087,9 @@ server.tool(
   }
 );
 
+  return server;
+}
+
 // ─── Express HTTP Server ──────────────────────────────────────────────────────
 
 const app = express();
@@ -1139,6 +1143,7 @@ app.get("/mcp", async (req: Request, res: Response) => {
     transports.delete(transport.sessionId);
   });
 
+  const server = createMcpServer();
   await server.connect(transport);
 });
 
