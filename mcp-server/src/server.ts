@@ -1168,11 +1168,11 @@ app.use((err: Error, req: Request, res: Response, _next: express.NextFunction) =
   });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+const PORT = Number(process.env.PORT) || 3001;
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🏥 Curaiva AI MCP Server running on port ${PORT}`);
-  console.log(`   Health:  http://localhost:${PORT}/health`);
-  console.log(`   MCP:     http://localhost:${PORT}/mcp`);
-  console.log(`   Tools:   6 FHIR-powered healthcare tools`);
+  console.log(`   Health:  /health`);
+  console.log(`   MCP:     /mcp`);
+  console.log(`   Tools:   8 FHIR-powered healthcare tools`);
   console.log(`   SHARP:   Compliant with Prompt Opinion extension specs\n`);
 });
