@@ -51,8 +51,8 @@
 ║              │ FHIR R4 calls (SHARP context)                             ║
 ║              │                                                           ║
 ║   ┌──────────▼──────────────────────────┐                               ║
-║   │  CLAUDE API (MISTRAL/GROQ)             │                               ║
-║   │  claude-opus-4-6                    │                               ║
+║   │  GROQ + MISTRAL API                    │                               ║
+║   │  llama-3.3-70b / mistral-large      │                               ║
 ║   │                                     │                               ║
 ║   │  Triage · Summarisation             │                               ║
 ║   │  Mental Health · Brief Generation   │                               ║
@@ -88,7 +88,7 @@
 | Web App      | Vercel         | Next.js frontend, API routes, SSR | `curaiva-ai.vercel.app`     |
 | MCP Server   | render         | 6 FHIR-powered clinical tools     | `curaiva-ai-mcp.render.app` |
 | Database     | Supabase       | PostgreSQL + Auth + Realtime      | Supabase project URL        |
-| AI Engine    | MISTRAL/GROQ   | Claude Opus — all AI inference    | `api.MISTRAL/GROQ.com`      |
+| AI Engine    | Groq + Mistral | Llama 3.3 & Mistral Large     | `api.groq.com / api.mistral.ai` |
 | FHIR Server  | HAPI / EHR     | Patient health records (R4)       | `hapi.fhir.org/baseR4`      |
 | MCP Registry | Prompt Opinion | Tool + Agent marketplace          | `promptopinion.com`         |
 
@@ -116,7 +116,7 @@ MCP Server (render)
       GET /Condition?patient={id}
       GET /Observation?patient={id}&category=vital-signs
   → Builds structured prompt with FHIR data
-  → Calls Claude API (claude-opus-4-6)
+  → Calls Groq/Mistral APIs (llama-3.3-70b-versatile)
   → Parses JSON response
   → Returns: { severity, severity_score, escalate_to_doctor, ... }
         │
@@ -220,7 +220,7 @@ DATABASE LAYER (Row Level Security)
   └── Crisis alerts: visible only to the assigned CHW
 
 API KEY LAYER
-  └── MISTRAL/GROQ_API_KEY: server-side only, never in browser bundle
+  └── GROQ_API_KEY and MISTRAL_API_KEY: server-side only, never in browser bundle
   └── SUPABASE_SERVICE_ROLE_KEY: server-side only
   └── FHIR access tokens: passed per-request via SHARP context, never stored
 ```
@@ -234,7 +234,7 @@ API KEY LAYER
 | Next.js                     | 15.x    | App Router, Server Components        |
 | TypeScript                  | 5.7.x   | Strict mode                          |
 | `@modelcontextprotocol/sdk` | 1.15.x  | MCP server + transport               |
-| `@MISTRAL/GROQ-ai/sdk`      | 0.52.x  | Claude API client                    |
+| `groq-sdk + @mistralai/mistralai` | 0.12.x + 1.5.x | Groq & Mistral API clients |
 | `@supabase/supabase-js`     | 2.x     | DB + Auth + Realtime                 |
 | `zod`                       | 3.24.x  | Schema validation on all tool inputs |
 | `express`                   | 4.21.x  | HTTP server for MCP transport        |

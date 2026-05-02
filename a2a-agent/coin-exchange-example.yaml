@@ -1,0 +1,52 @@
+# Curaiva AI — COIN Protocol Exchange Example
+# Demonstrates how external agents call Curaiva AI via A2A
+
+# SCENARIO 1: Scheduling Agent requests CHW priority queue
+scenario_1:
+  outbound:
+    from_agent: "scheduling-agent-v1"
+    to_agent: "curaiva-ai"
+    intent: "chw_briefing"
+    payload:
+      patient_ids: ["592903", "12724", "88234", "45611"]
+      chw_id: "CHW-FATIMA-001"
+    sharp_context:
+      fhir_base_url: "https://hapi.fhir.org/baseR4"
+      practitioner_id: "CHW-FATIMA-001"
+
+  result:
+    from_agent: "curaiva-ai"
+    intent_emitted: "chw_queue_ready"
+    payload:
+      queue:
+        - patient_id: "592903"
+          priority_score: 87
+          priority_tier: "critical"
+          visit_recommendation: "Visit today"
+          primary_concern: "Critical BP + 3 missed Lisinopril doses"
+        - patient_id: "88234"
+          priority_score: 54
+          priority_tier: "high"
+          visit_recommendation: "Visit this week"
+          primary_concern: "Mental health flag — low mood 4 days"
+
+# SCENARIO 2: Wellness Agent routes crisis to Curaiva AI
+scenario_2:
+  outbound:
+    from_agent: "wellness-companion-agent"
+    to_agent: "curaiva-ai"
+    intent: "mental_health_check"
+    payload:
+      patient_id: "88234"
+      session_notes: "I cannot sleep and feel like there is no point. It would be easier if I was not here."
+
+  result:
+    from_agent: "curaiva-ai"
+    intent_emitted: "crisis_alert"
+    payload:
+      crisis_flag: true
+      escalation_action: "emergency_referral"
+      emergency_resources:
+        nigeria: "SURPIN: 0800-787746-1"
+        global: "https://www.iasp.info/resources/Crisis_Centres/"
+      chw_notified: true

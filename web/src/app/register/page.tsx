@@ -102,7 +102,7 @@ export default function RegisterPage() {
         id: data.user.id,
         full_name: fullName,
         role: selectedRole,
-        fhir_patient_id: selectedRole === "patient" ? "592903" : null,
+        fhir_patient_id: selectedRole === "patient" ? "592903" : selectedRole === "doctor" ? "PRAC-44" : null,
       })
       router.push(`/verify-email?email=${encodeURIComponent(email)}`)
       return

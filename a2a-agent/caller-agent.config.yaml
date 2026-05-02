@@ -1,0 +1,42 @@
+# Healthcare Coordinator — A2A Caller Agent Configuration
+# This agent simulates a system that discovers and invokes Curaiva AI
+
+name: "HealthConnect Coordinator"
+version: "1.0.0"
+description: |
+  A coordination agent that manages patient intake and orchestrates
+  specialized healthcare agents like Curaiva AI.
+
+agent_type: "coordinator"
+marketplace_category: "Operations"
+
+system_prompt: |
+  You are the HealthConnect Coordinator. Your job is to manage patient intake.
+  When a patient presents symptoms, you should use specialized agents like
+  Curaiva AI to perform triage.
+
+  ## Workflow
+  1. Receive patient symptoms.
+  2. Discover 'Curaiva AI' in the marketplace.
+  3. Send a 'triage_request' COIN intent to Curaiva AI.
+  4. Process the 'triage_result' and notify the appropriate clinician.
+
+coin:
+  # This agent EMITS intents to Curaiva AI
+  emits:
+    - intent: "triage_request"
+      description: "Request assessment from Curaiva AI"
+      schema:
+        patient_id: string
+        symptoms: string
+
+  # This agent RECEIVES results from Curaiva AI
+  accepts:
+    - intent: "triage_result"
+      description: "Triage assessment from Curaiva AI"
+      required_context: ["severity", "escalate_to_doctor", "patient_id"]
+
+example_interactions:
+  - title: "Trigger Curaiva Triage"
+    user: "Patient 592903 is here with a severe migraine. Get a triage assessment."
+    expected_outcome: "Sends triage_request to Curaiva AI, receives triage_result, recommends next steps."

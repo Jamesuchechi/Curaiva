@@ -9,7 +9,7 @@
 1. [Architecture Overview](#1-architecture-overview)
 2. [Database Schema](#2-database-schema)
 3. [Authentication & Authorization](#3-authentication--authorization)
-4. [AI Integration (Claude API)](#4-ai-integration-claude-api)
+4. [AI Integration (Groq + Mistral)](#4-ai-integration-groq--mistral)
 5. [API Reference](#5-api-reference)
 6. [Supabase Edge Functions](#6-supabase-edge-functions)
 7. [Real-Time Features](#7-real-time-features)
@@ -43,9 +43,9 @@ Curaiva AI follows a **role-based, serverless-first** architecture optimized for
     │             │
     ▼             ▼
 ┌───────┐   ┌──────────────────────┐
-│Claude │   │  Supabase            │
-│  API  │   │  ├── Auth            │
-│       │   │  ├── PostgreSQL DB   │
+│ Groq  │   │  Supabase            │
+│Mistral│   │  ├── Auth            │
+│  API  │   │  ├── PostgreSQL DB   │
 │       │   │  ├── Storage         │
 └───────┘   │  └── Edge Functions  │
             └──────────────────────┘
@@ -62,13 +62,13 @@ Curaiva AI follows a **role-based, serverless-first** architecture optimized for
 ### Key Design Decisions
 
 **Why Next.js App Router?**
-Server Components allow AI API calls to happen server-side, keeping the MISTRAL/GROQ API key secure and reducing client bundle size significantly.
+Server Components allow AI API calls to happen server-side, keeping the GROQ_API_KEY and MISTRAL_API_KEY secure and reducing client bundle size significantly.
 
 **Why Supabase?**
 Supabase provides auth, a relational database, realtime subscriptions, and edge functions in one managed service — ideal for a hackathon where velocity matters. Row Level Security (RLS) enforces data isolation at the database layer, not just the application layer.
 
-**Why Claude API?**
-Claude's long context window and instruction-following quality make it ideal for medical triage — it handles nuanced, multi-symptom descriptions far better than simpler models, while its safety training reduces the risk of dangerous health advice.
+**Why Groq + Mistral?**
+Mistral's clinical reasoning and Groq's sub-second performance make them ideal for healthcare workflows. Mistral Large handles nuanced, multi-symptom descriptions with high accuracy, while Llama 3.3 on Groq ensures the UI feels instantaneous.
 
 ---
 
@@ -120,7 +120,7 @@ CREATE TABLE triage_sessions (
   patient_id      UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
   symptoms_raw    TEXT NOT NULL,             -- Raw patient input
   severity        TEXT NOT NULL CHECK (severity IN ('low', 'moderate', 'critical')),
-  ai_assessment   JSONB NOT NULL,            -- Full Claude response object
+  ai_assessment   JSONB NOT NULL,            -- Full AI response object
   escalated       BOOLEAN DEFAULT FALSE,     -- Whether routed to a doctor
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -150,7 +150,7 @@ CREATE TABLE consultations (
   patient_id       UUID NOT NULL REFERENCES patients(id),
   doctor_id        UUID NOT NULL REFERENCES profiles(id),
   status           TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved')),
-  ai_summary       TEXT,                    -- Claude-generated patient brief for the doctor
+  ai_summary       TEXT,                    -- AI-generated patient brief for the doctor
   priority         TEXT DEFAULT 'normal' CHECK (priority IN ('normal', 'urgent', 'critical')),
   created_at       TIMESTAMPTZ DEFAULT NOW(),
   resolved_at      TIMESTAMPTZ
@@ -313,9 +313,9 @@ export async function middleware(request: NextRequest) {
 
 ---
 
-## 4. AI Integration (Claude API)
+## 4. AI Integration (Groq + Mistral)
 
-All Claude API calls are made server-side in Next.js API Routes or Server Components to keep the API key secure.
+All Groq and Mistral API calls are made server-side in Next.js API Routes or Server Components to keep the API key secure.
 
 ### 4.1 Symptom Triage
 
@@ -353,15 +353,14 @@ Guidelines:
 export async function POST(request: Request) {
   const { symptoms, patientHistory } = await request.json();
 
-  const response = await fetch("https://api.MISTRAL/GROQ.com/v1/messages", {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": process.env.MISTRAL / GROQ_API_KEY!,
-      "MISTRAL/GROQ-version": "2023-06-01",
+      "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "claude-opus-4-6",
+      model: "llama-3.3-70b-versatile",
       max_tokens: 1024,
       system: TRIAGE_SYSTEM_PROMPT,
       messages: [
@@ -400,7 +399,7 @@ export async function POST(request: Request) {
 
 ### 4.2 Patient Summary for Doctors
 
-When a doctor opens a consultation, Claude generates a concise patient brief:
+When a doctor opens a consultation, Groq generates a concise patient brief:
 
 ```typescript
 const SUMMARY_PROMPT = `
@@ -721,12 +720,13 @@ Curaiva AI uses React Server Components for data fetching and `useState`/`useRed
 | `NEXT_PUBLIC_SUPABASE_URL`      | ✅          | Your Supabase project URL                 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅          | Supabase public anon key                  |
 | `SUPABASE_SERVICE_ROLE_KEY`     | ✅          | Service role key (server-side only)       |
-| `MISTRAL/GROQ_API_KEY`          | ✅          | Claude API key                            |
+| `GROQ_API_KEY`                 | ✅          | Groq API key (Llama 3.3 — fast generation) |
+| `MISTRAL_API_KEY`              | ✅          | Mistral API key (Mistral Large — clinical reasoning) |
 | `RESEND_API_KEY`                | ⚠️ Optional | For email notifications                   |
 | `TERMII_API_KEY`                | ⚠️ Optional | For SMS notifications (Nigeria-optimized) |
 | `TERMII_SENDER_ID`              | ⚠️ Optional | SMS sender name                           |
 
-> ⚠️ Never expose `SUPABASE_SERVICE_ROLE_KEY` or `MISTRAL/GROQ_API_KEY` in client-side code. Only use them in Server Components, API Routes, or Edge Functions.
+> ⚠️ Never expose `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY` or `MISTRAL_API_KEY` in client-side code. Only use them in Server Components, API Routes, or Edge Functions.
 
 ---
 
@@ -773,7 +773,7 @@ In the Supabase Dashboard → Edge Functions → Schedules:
 - **API Keys** are never exposed to the client. All AI calls go through Next.js API routes.
 - **Row Level Security** is enabled on every Supabase table. Patients cannot access other patients' data at the database level.
 - **Role validation** happens both in Next.js middleware (routing) and in API route handlers (before any data operation).
-- **Claude AI prompts** include explicit instructions not to provide specific drug dosages, diagnoses, or replace emergency care — reducing liability risk.
+- **AI prompts** include explicit instructions not to provide specific drug dosages, diagnoses, or replace emergency care — reducing liability risk.
 - **Crisis escalation** is automatic and does not rely on user action — once `crisis_flagged = true` is set, the edge function fires immediately.
 
 ---
@@ -782,7 +782,7 @@ In the Supabase Dashboard → Edge Functions → Schedules:
 
 ### AI Response Failures
 
-If a Claude API call fails, the triage endpoint returns a safe fallback:
+If an AI API call fails, the triage endpoint returns a safe fallback:
 
 ```typescript
 catch (error) {

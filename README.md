@@ -9,7 +9,8 @@
 [![A2A](https://img.shields.io/badge/A2A-Agent-7c3aed)](https://promptopinion.com)
 [![FHIR R4](https://img.shields.io/badge/FHIR-R4-e85d2e)](https://hl7.org/fhir/R4/)
 [![SHARP](https://img.shields.io/badge/SHARP-Compliant-0891b2)](https://docs.promptopinion.com/sharp)
-[![Claude](https://img.shields.io/badge/Claude-Opus-d97706)](https://MISTRAL/GROQ.com)
+[![Groq](https://img.shields.io/badge/Groq-Llama_3.3-f55036)](https://groq.com)
+[![Mistral](https://img.shields.io/badge/Mistral-Large-ff7000)](https://mistral.ai)
 
 ---
 
@@ -82,7 +83,7 @@ npm install
 
 ```bash
 cp .env.example .env
-# Fill in MISTRAL/GROQ_API_KEY and optionally DEFAULT_FHIR_BASE_URL
+# Fill in GROQ_API_KEY, MISTRAL_API_KEY and optionally DEFAULT_FHIR_BASE_URL
 ```
 
 ### 3. Run the MCP Server
@@ -112,7 +113,7 @@ render init
 render up
 ```
 
-Add `MISTRAL/GROQ_API_KEY` in render dashboard → Variables.
+Add `GROQ_API_KEY` and `MISTRAL_API_KEY` in render dashboard → Variables.
 
 Your MCP server URL will be: `https://your-app.render.app/mcp`
 
@@ -180,7 +181,15 @@ The Curaiva AI agent on Prompt Opinion can:
 - `triage_result` — severity + escalation flag
 - `clinical_brief_ready` — structured physician document
 - `crisis_alert` — immediate escalation with emergency resources
-- `chw_queue_ready` — ranked patient watchlist
+---
+
+### A2A Simulation & Verification
+
+Verify the Agent-to-Agent (COIN) protocol exchange:
+
+- **Live Demo Route:** `POST /api/a2a-demo` (Full COIN Intent Router — accepts `triage_request`, etc.)
+- **CLI Demo:** `node scripts/a2a-demo.js` (Simulates agent discovery and exchange)
+- **A2A Specs:** `a2a-agent/coin-exchange-example.yaml` (Structured protocol examples)
 
 ---
 
@@ -250,6 +259,7 @@ curaiva-ai/
 | **Real Healthcare Value** | ✅ Solves 4 critical gaps: access, diagnosis, mental health, adherence          |
 | **Marketplace Ready**     | ✅ Discoverable and invokable by other platform agents                          |
 | **Demo Quality**          | ✅ Live FHIR data, real AI responses, 3-minute video                            |
+| **AI Stack**              | ✅ Mistral Large for clinical triage reasoning · Groq/Llama 3.3 for sub-second brief generation |
 
 ---
 

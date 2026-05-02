@@ -65,12 +65,13 @@ RLS is enabled on: `profiles`, `patient_assignments`, `consultations`, `messages
 
 | Key                             | Location                             | Accessible To                                     |
 | ------------------------------- | ------------------------------------ | ------------------------------------------------- |
-| `MISTRAL/GROQ_API_KEY`          | Server environment variable          | Next.js server-side only, render server-side only |
+| `GROQ_API_KEY`                 | Server environment variable          | Next.js server-side only, render server-side only |
+| `MISTRAL_API_KEY`              | Server environment variable          | Next.js server-side only, render server-side only |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Server environment variable          | Next.js server-side only                          |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-accessible                    | Browser (this key has RLS enforced)               |
 | FHIR access tokens              | Passed per-request via SHARP context | MCP server only, discarded after response         |
 
-**The MISTRAL/GROQ API key is never included in the client-side JavaScript bundle.** All Claude AI calls are made through Next.js API routes (server-side) or the MCP server (server-side). The browser never has direct access to Claude.
+**The Groq and Mistral API keys are never included in the client-side JavaScript bundle.** All AI calls are made through Next.js API routes (server-side) or the MCP server (server-side). The browser never has direct access to these AI providers.
 
 ---
 
@@ -86,7 +87,7 @@ EHR / FHIR Server
 MCP Server (render)
       │
       │  Fetches patient data at request time
-      │  Processes with Claude API
+      │  Processes with Groq/Mistral APIs
       │  Returns structured assessment
       │  FHIR data discarded from memory
       ▼
@@ -141,7 +142,7 @@ Curaiva AI includes automatic crisis detection in the mental health assessment t
 
 Curaiva AI is an AI tool designed to assist healthcare workflows. Deploying organisations are responsible for:
 
-1. **HIPAA compliance** (US): Executing a Business Associate Agreement (BAA) with Supabase and MISTRAL/GROQ before processing real PHI in production
+1. **HIPAA compliance** (US): Executing a Business Associate Agreement (BAA) with Supabase, Groq, and Mistral before processing real PHI in production
 2. **NDPA compliance** (Nigeria): Ensuring patient data handling complies with the Nigeria Data Protection Act 2023
 3. **GDPR compliance** (EU/UK): Ensuring appropriate data processing agreements and user consent mechanisms are in place
 4. **EHR integration security**: Ensuring FHIR server credentials (access tokens) are provisioned with the minimum required scopes (read-only on Patient, Condition, MedicationRequest, Observation)
@@ -166,7 +167,7 @@ If you discover a security vulnerability in Curaiva AI, please report it respons
 
 - Dependencies are audited with `npm audit` before every deployment
 - No dependencies with known high/critical vulnerabilities are permitted in production
-- Supabase, MISTRAL/GROQ SDK, and MCP SDK are actively maintained packages from reputable publishers
+- Supabase, Groq/Mistral SDKs, and MCP SDK are actively maintained packages from reputable publishers
 
 ---
 

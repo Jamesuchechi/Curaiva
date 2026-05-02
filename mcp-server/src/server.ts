@@ -91,8 +91,11 @@ class FhirClient {
     
     if (!res.ok) {
       // Graceful fallback for the default test patient if it's missing from the public HAPI server
-      if (res.status === 404 && path.includes("Patient/592903")) {
-        console.warn(`FHIR: Patient/592903 not found on ${this.baseUrl}. Using virtual fallback.`);
+      if (res.status === 404 && (path.includes("Patient/592903") || path.includes("Practitioner/PRAC-44"))) {
+        console.warn(`FHIR: Resource not found on ${this.baseUrl}. Using virtual fallback.`);
+        if (path.includes("Practitioner/PRAC-44")) {
+          return { id: "PRAC-44", name: [{ family: "Obi", given: ["Doctor"] }] } as unknown as T;
+        }
         return {
           id: "592903",
           name: [{ family: "Uchechi", given: ["James"] }],

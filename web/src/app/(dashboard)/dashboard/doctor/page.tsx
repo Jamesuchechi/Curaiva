@@ -141,7 +141,7 @@ export default function DoctorDashboard() {
             status: (c.status as "open" | "active" | "resolved") ?? "open",
             time: relativeTime(String(c.created_at)),
             snippet: String(c.ai_summary ?? "Consultation request received."),
-            patient_id: String(pat?.fhir_patient_id ?? "592903"),
+            patient_id: String(pat?.fhir_patient_id ?? ""),
             profile_id: String(pat?.id ?? "")
           }
         })
@@ -193,7 +193,7 @@ export default function DoctorDashboard() {
             status: (payload.new.status as "open" | "active" | "resolved") ?? "open",
             time: "Just now",
             snippet: String(payload.new.ai_summary ?? "New consultation request."),
-            patient_id: String(pat?.fhir_patient_id ?? "592903"),
+            patient_id: String(pat?.fhir_patient_id ?? ""),
             profile_id: String(payload.new.patient_id),
             isNew: true,
           }

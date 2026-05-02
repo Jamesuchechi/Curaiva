@@ -10,7 +10,7 @@ Thank you for your interest in contributing. Curaiva AI is a healthcare AI platf
 
 - Node.js 18+
 - A Supabase account (free tier works)
-- An MISTRAL/GROQ API key
+- Groq and Mistral API keys
 - Access to a FHIR R4 server (HAPI public server works for development)
 
 ### Local Setup
@@ -24,7 +24,7 @@ cd curaiva-ai
 cd mcp-server
 npm install
 cp .env.example .env
-# Fill in MISTRAL/GROQ_API_KEY in .env
+# Fill in GROQ_API_KEY and MISTRAL_API_KEY in .env
 npm run dev
 # Server runs on http://localhost:3001
 
@@ -71,9 +71,9 @@ node scripts/fhir-seed.js             # Actually seed
 - TypeScript strict mode — no `any` types
 - Zod validation on all MCP tool inputs
 - All colours via CSS variables — no hardcoded hex values in components
-- All Claude calls server-side — never in client components
+- All AI calls server-side — never in client components
 - RLS on every new Supabase table you add
-- Error handling required on all FHIR and Claude calls
+- Error handling required on all FHIR and AI calls
 
 ---
 
